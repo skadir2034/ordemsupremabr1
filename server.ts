@@ -8,7 +8,7 @@ import bcrypt from 'bcryptjs';
 
 dotenv.config();
 
-const app = express();
+export const app = express();
 const PORT = 3000;
 
 // Initialize Neon client
@@ -498,4 +498,9 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-startServer();
+// Only start the server if this file is run directly
+if (import.meta.url === `file://${process.argv[1]}` || process.env.NODE_ENV === 'production') {
+  startServer();
+}
+
+export default app;
