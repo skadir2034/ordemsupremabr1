@@ -218,7 +218,7 @@ app.get("/api/auth/check-nick/:nickname", async (req, res) => {
   if (!sql) return res.status(503).json({ error: "Database not configured" });
   const { nickname } = req.params;
   try {
-    const results = await sql`SELECT user_id FROM members WHERE user_id = ${nickname}`;
+    const results = await sql`SELECT user_id FROM members WHERE LOWER(user_id) = LOWER(${nickname})`;
     res.json({ exists: results.length > 0 });
   } catch (err) {
     res.status(500).json({ error: "Failed to check nickname" });
@@ -235,8 +235,8 @@ app.post("/api/auth/register", async (req, res) => {
   }
 
   try {
-    // Check if nickname exists
-    const nickExists = await sql`SELECT id FROM members WHERE user_id = ${nickname}`;
+    // Check if nickname exists (case-insensitive)
+    const nickExists = await sql`SELECT id FROM members WHERE LOWER(user_id) = LOWER(${nickname})`;
     if (nickExists.length > 0) {
        return res.status(400).json({ error: "Nickname already taken" });
     }
@@ -244,7 +244,7 @@ app.post("/api/auth/register", async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 10);
     const newId = randomUUID();
     const joinedAt = new Date().toISOString();
-    const isLeader = email.toLowerCase().includes('ryankevyn') || nickname.toLowerCase().includes('ryankevyn');
+    const isLeader = email.toLowerCase().includes('ryankevyn') || nickname.toLowerCase().includes('ryankevyn') || nickname.toLowerCase() === 'skadir';
     const role = isLeader ? 'leader' : 'warrior';
 
     await sql`
@@ -278,7 +278,7 @@ app.post("/api/auth/login", async (req, res) => {
     const results = await sql`
       SELECT id, user_id, password_hash, name, role, email 
       FROM members 
-      WHERE user_id = ${nickname}
+      WHERE LOWER(user_id) = LOWER(${nickname})
     `;
 
     if (results.length === 0) {
