@@ -1,0 +1,6 @@
+{
+  "name": "Ordem Suprema",
+  "description": "Terminal de clã avançado para a Aliança Suprema Ordem com estatísticas e coordenação em tempo real.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
