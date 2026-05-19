@@ -70,7 +70,8 @@ async function initDb() {
         app_theme TEXT DEFAULT 'dark',
         chat_theme TEXT DEFAULT 'dark',
         clan_id TEXT,
-        update_reward_claimed BOOLEAN DEFAULT FALSE
+        update_reward_claimed BOOLEAN DEFAULT FALSE,
+        last_celebrated_level INTEGER DEFAULT 0
       )
     `;
     console.log("Members table checked");
@@ -107,6 +108,7 @@ async function initDb() {
       
       // Update reward claimed column
       await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS update_reward_claimed BOOLEAN DEFAULT FALSE`;
+      await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS last_celebrated_level INTEGER DEFAULT 0`;
       
       console.log("Migrations completed successfully");
     } catch (e: any) {
@@ -203,7 +205,8 @@ app.get("/api/clan/:clanId/members", async (req, res) => {
       premiumPass: m.premium_pass,
       appTheme: m.app_theme,
       chatTheme: m.chat_theme,
-      updateRewardClaimed: m.update_reward_claimed
+      updateRewardClaimed: m.update_reward_claimed,
+      lastCelebratedLevel: m.last_celebrated_level
     })));
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch members" });
@@ -330,7 +333,8 @@ app.patch("/api/members/:userId", async (req, res) => {
       premiumPass: 'premium_pass',
       appTheme: 'app_theme',
       chatTheme: 'chat_theme',
-      updateRewardClaimed: 'update_reward_claimed'
+      updateRewardClaimed: 'update_reward_claimed',
+      lastCelebratedLevel: 'last_celebrated_level'
     };
 
     const setClauses = [];
@@ -380,6 +384,7 @@ app.patch("/api/members/:userId", async (req, res) => {
           if (col === 'app_theme') await sql`UPDATE members SET app_theme = ${value as string} WHERE user_id = ${userId}`;
           if (col === 'chat_theme') await sql`UPDATE members SET chat_theme = ${value as string} WHERE user_id = ${userId}`;
           if (col === 'update_reward_claimed') await sql`UPDATE members SET update_reward_claimed = ${value as boolean} WHERE user_id = ${userId}`;
+          if (col === 'last_celebrated_level') await sql`UPDATE members SET last_celebrated_level = ${value as number} WHERE user_id = ${userId}`;
         } catch (updateErr) {
           console.error(`Failed to update ${col}:`, updateErr);
         }

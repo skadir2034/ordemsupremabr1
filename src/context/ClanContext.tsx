@@ -416,7 +416,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <ClanContext.Provider value={{ 
-      user, login, clan, members, myMember, loading, isAdmin, logout, 
+      user, login, register, checkNick, clan, members, myMember, loading, isAdmin, logout, 
       updateMemberData, claimDailyBonus, redeemPromoCode, 
       completeMission, markVisitedMissions, deleteMember, banMember, updateMemberRole,
       updateClanGuideImage, updateClanLogo, updatePresenceStatus,
