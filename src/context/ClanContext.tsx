@@ -60,7 +60,9 @@ interface Clan {
 
 interface ClanContextType {
   user: User | null;
-  login: (userId: string, name?: string) => Promise<void>;
+  login: (nickname: string, password?: string) => Promise<void>;
+  register: (nickname: string, email: string, password?: string) => Promise<void>;
+  checkNick: (nickname: string) => Promise<boolean>;
   clan: Clan | null;
   members: Member[];
   myMember: Member | null;
@@ -152,13 +154,13 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => clearInterval(interval);
   }, [user?.uid, myMember?.role]);
 
-  const login = async (userId: string, name?: string) => {
+  const login = async (nickname: string, password?: string) => {
     setLoading(true);
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, name })
+        body: JSON.stringify({ nickname, password })
       });
       if (res.ok) {
         const userData = await res.json();
@@ -167,13 +169,54 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('app_user', JSON.stringify(fullUser));
         await fetchData();
       } else {
-        throw new Error('Login failed');
+        const error = await res.json();
+        throw new Error(error.error || 'Login failed');
       }
     } catch (err) {
       console.error(err);
       throw err;
     } finally {
       setLoading(false);
+    }
+  };
+
+  const register = async (nickname: string, email: string, password?: string) => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nickname, email, password })
+      });
+      if (res.ok) {
+        const userData = await res.json();
+        const fullUser = { uid: userData.userId, email: userData.email, displayName: userData.name };
+        setUser(fullUser);
+        localStorage.setItem('app_user', JSON.stringify(fullUser));
+        await fetchData();
+      } else {
+        const error = await res.json();
+        throw new Error(error.error || 'Registration failed');
+      }
+    } catch (err) {
+      console.error(err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkNick = async (nickname: string) => {
+    try {
+      const res = await fetch(`/api/auth/check-nick/${nickname}`);
+      if (res.ok) {
+        const data = await res.json();
+        return data.exists;
+      }
+      return false;
+    } catch (err) {
+      console.error(err);
+      return false;
     }
   };
 

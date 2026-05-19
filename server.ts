@@ -4,6 +4,7 @@ import { createServer as createViteServer } from "vite";
 import { neon } from '@neondatabase/serverless';
 import dotenv from 'dotenv';
 import crypto, { randomUUID } from 'crypto';
+import bcrypt from 'bcryptjs';
 
 dotenv.config();
 
@@ -99,6 +100,10 @@ async function initDb() {
       // Check column existence for members.clan_id
       await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS clan_id TEXT`;
       await sql`ALTER TABLE theft_reports ADD COLUMN IF NOT EXISTS clan_id TEXT`;
+      
+      // Auth migrations
+      await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS email TEXT UNIQUE`;
+      await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS password_hash TEXT`;
       
       // Update reward claimed column
       await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS update_reward_claimed BOOLEAN DEFAULT FALSE`;
@@ -205,47 +210,95 @@ app.get("/api/clan/:clanId/members", async (req, res) => {
   }
 });
 
-// Simple Login / Register
-app.post("/api/auth/login", async (req, res) => {
+// Authentication: Check if Nickname exists
+app.get("/api/auth/check-nick/:nickname", async (req, res) => {
   if (!sql) return res.status(503).json({ error: "Database not configured" });
-  const { userId, name } = req.body;
-  if (!userId) return res.status(400).json({ error: "User ID required" });
+  const { nickname } = req.params;
+  try {
+    const results = await sql`SELECT user_id FROM members WHERE user_id = ${nickname}`;
+    res.json({ exists: results.length > 0 });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to check nickname" });
+  }
+});
+
+// Authentication: Register Complete (Nick + Email + PW)
+app.post("/api/auth/register", async (req, res) => {
+  if (!sql) return res.status(503).json({ error: "Database not configured" });
+  const { nickname, email, password } = req.body;
+
+  if (!nickname || !email || !password) {
+    return res.status(400).json({ error: "All fields required" });
+  }
 
   try {
-    const existing = await sql`SELECT * FROM members WHERE user_id = ${userId}`;
-    if (existing.length > 0) {
-      const m = existing[0];
-      return res.json({
-        id: m.id,
-        userId: m.user_id,
-        name: m.name,
-        role: m.role,
-        email: userId // Simulating email with userId for UI compatibility
-      });
+    // Check if nickname exists
+    const nickExists = await sql`SELECT id FROM members WHERE user_id = ${nickname}`;
+    if (nickExists.length > 0) {
+       return res.status(400).json({ error: "Nickname already taken" });
     }
 
-    // Register new member
+    const passwordHash = await bcrypt.hash(password, 10);
     const newId = randomUUID();
     const joinedAt = new Date().toISOString();
-    const isLeader = userId.toLowerCase() === 'ryankevyn' || userId.toLowerCase() === 'ryankevyn2020@gmail.com' || userId.toLowerCase() === 'ryankevyn3000@gmail.com';
+    const isLeader = email.toLowerCase().includes('ryankevyn') || nickname.toLowerCase().includes('ryankevyn');
     const role = isLeader ? 'leader' : 'warrior';
-    
-    console.log(`Registering new member: ${userId} (${name}) with role ${role}`);
+
     await sql`
-      INSERT INTO members (id, user_id, name, role, clan_id, joined_at)
-      VALUES (${newId}, ${userId}, ${name || 'Recruta'}, ${role}, 'main-clan', ${joinedAt})
+      INSERT INTO members (id, user_id, name, email, password_hash, role, clan_id, joined_at)
+      VALUES (${newId}, ${nickname}, ${nickname}, ${email}, ${passwordHash}, ${role}, 'main-clan', ${joinedAt})
     `;
 
     res.json({
-      id: newId,
-      userId: userId,
-      name: name || 'Recruta',
+      userId: nickname,
+      name: nickname,
       role: role,
-      email: userId // Simulating email with userId for UI compatibility
+      email: email,
+      id: newId
     });
   } catch (err) {
-    console.error("Auth error:", err);
-    res.status(500).json({ error: "Login failed" });
+    console.error("Registration error:", err);
+    res.status(500).json({ error: "Registration failed" });
+  }
+});
+
+// Authentication: Login (Nickname + Password)
+app.post("/api/auth/login", async (req, res) => {
+  if (!sql) return res.status(503).json({ error: "Database not configured" });
+  const { nickname, password } = req.body;
+
+  if (!nickname || !password) {
+    return res.status(400).json({ error: "Nickname and password required" });
+  }
+
+  try {
+    const results = await sql`
+      SELECT id, user_id, password_hash, name, role, email 
+      FROM members 
+      WHERE user_id = ${nickname}
+    `;
+
+    if (results.length === 0) {
+      return res.status(401).json({ error: "User not found" });
+    }
+
+    const user = results[0];
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: "Invalid password" });
+    }
+
+    res.json({
+      userId: user.user_id,
+      name: user.name,
+      role: user.role,
+      email: user.email,
+      id: user.id
+    });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ error: "Authentication failed" });
   }
 });
 
