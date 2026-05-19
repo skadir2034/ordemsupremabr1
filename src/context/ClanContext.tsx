@@ -192,7 +192,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (data.xp !== undefined) {
       const newXp = data.xp;
-      const thresholds = [0, 50, 100, 200, 500, 1000, 2000, 3000, 4000, 5000, 6000];
+      const thresholds = [0, 100, 250, 500, 1000, 2000, 3500, 5000, 7500, 10000, 15000];
       let calculatedLevel = 0;
       for (let i = 0; i < thresholds.length; i++) {
         if (newXp >= thresholds[i]) calculatedLevel = i;

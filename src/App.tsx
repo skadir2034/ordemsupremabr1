@@ -42,16 +42,20 @@ function AppContent() {
   const [isBanned, setIsBanned] = useState(false);
   
   const [showLevelUp, setShowLevelUp] = useState(false);
+  const [localLastCelebrated, setLocalLastCelebrated] = useState<number | null>(null);
 
   useEffect(() => {
     if (myMember?.level && myMember.level > (myMember.lastCelebratedLevel || 0)) {
-      setShowLevelUp(true);
+      if (localLastCelebrated === null || myMember.level > localLastCelebrated) {
+        setShowLevelUp(true);
+      }
     }
-  }, [myMember?.level, myMember?.lastCelebratedLevel]);
+  }, [myMember?.level, myMember?.lastCelebratedLevel, localLastCelebrated]);
 
   const handleCloseLevelUp = () => {
     setShowLevelUp(false);
     if (myMember) {
+      setLocalLastCelebrated(myMember.level);
       updateMemberData({ lastCelebratedLevel: myMember.level });
     }
   };
