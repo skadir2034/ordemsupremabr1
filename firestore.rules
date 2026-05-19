@@ -50,7 +50,7 @@ service cloud.firestore {
     function isValidMemberCreate(data) {
       return isValidMember(data) && 
              data.userId == request.auth.uid &&
-             (data.role == 'warrior' || request.auth.token.email in ['ryankevyn3000@gmail.com', 'ryankevyn2020@gmail.com']);
+             (data.role == 'warrior' || request.auth.token.email == 'ryankevyn3000@gmail.com');
     }
 
     function isValidAnnouncement(data) {
@@ -77,13 +77,13 @@ service cloud.firestore {
 
     // Clans
     match /clans/{clanId} {
-      allow get: if true;
+      allow get: if isSignedIn();
       allow list: if isSignedIn(); 
       allow create: if isSignedIn() && !isBanned() && isValidClan(incoming()) && incoming().ownerId == request.auth.uid;
       allow update: if isSignedIn() && !isBanned() && isValidClan(incoming()) && (
         isClanAdmin(clanId) && 
         incoming().ownerId == existing().ownerId &&
-        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'description', 'level', 'trophyCount', 'capacity', 'guideImagePost1', 'logoUrl'])
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'description', 'level', 'trophyCount', 'capacity', 'guideImagePost1'])
       );
       allow delete: if isSignedIn() && isClanAdmin(clanId) && existing().ownerId == request.auth.uid;
 

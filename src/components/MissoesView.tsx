@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { motion } from 'motion/react';
-import { ClipboardList, CheckCircle2, Star, Zap, Sword, Shield, Lock } from 'lucide-react';
+import { ClipboardList, CheckCircle2, Star, Zap, Sword, Shield, Lock, Settings } from 'lucide-react';
 import { useClan } from '../context/ClanContext';
 
 export function MissoesView() {
@@ -31,6 +31,13 @@ export function MissoesView() {
       description: 'Edite seu poder de herói pela primeira vez no perfil.',
       xp: 50,
       icon: Sword,
+    },
+    {
+      id: 'check_optimization',
+      title: 'Ajuste de Combate',
+      description: 'Verifique as configurações e use otimizações/eco se houver travamentos.',
+      xp: 20,
+      icon: Settings,
     },
     {
       id: 'join_tournament',

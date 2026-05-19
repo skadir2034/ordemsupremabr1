@@ -8,12 +8,13 @@ import { BaseStats, DetailedStats } from './components/Stats';
 import { MemberList } from './components/MemberList';
 import { Login } from './components/Login';
 import { NicknameSelector } from './components/NicknameSelector';
-import { useClan, ClanProvider } from './context/ClanContext';
+import { useClan } from './context/ClanContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { useDevice } from './hooks/useDevice';
-
 import { Monitor, Smartphone, RefreshCw, Loader2, ShieldAlert, LogOut } from 'lucide-react';
 import { LevelUpModal } from './components/LevelUpModal';
+import { db } from './lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 import { 
   CombateView, 
@@ -28,34 +29,22 @@ import {
 import { MissoesView } from './components/MissoesView';
 
 export default function App() {
-  return (
-    <ClanProvider>
-      <AppContent />
-    </ClanProvider>
-  );
-}
-
-function AppContent() {
   const { isMobile, viewMode, setViewMode } = useDevice();
-  const { user, loading, clan, members, myMember, isOptimizing, isEcoMode, updateMemberData, logout, activeTab, setActiveTab, setActiveSubTab } = useClan();
+  const { user, loading, clan, members, myMember, isOptimizing, isEcoMode, updateMemberData, logout, activeTab, setActiveTab } = useClan();
   const [initializing, setInitializing] = useState(false);
   const [isBanned, setIsBanned] = useState(false);
   
   const [showLevelUp, setShowLevelUp] = useState(false);
-  const [localLastCelebrated, setLocalLastCelebrated] = useState<number | null>(null);
 
   useEffect(() => {
     if (myMember?.level && myMember.level > (myMember.lastCelebratedLevel || 0)) {
-      if (localLastCelebrated === null || myMember.level > localLastCelebrated) {
-        setShowLevelUp(true);
-      }
+      setShowLevelUp(true);
     }
-  }, [myMember?.level, myMember?.lastCelebratedLevel, localLastCelebrated]);
+  }, [myMember?.level, myMember?.lastCelebratedLevel]);
 
   const handleCloseLevelUp = () => {
     setShowLevelUp(false);
     if (myMember) {
-      setLocalLastCelebrated(myMember.level);
       updateMemberData({ lastCelebratedLevel: myMember.level });
     }
   };
@@ -101,18 +90,15 @@ function AppContent() {
           >
             {/* Banner Urgente de Guerra (Topo) */}
             <motion.div 
-              initial={isEcoMode ? { opacity: 1, y: 0 } : { opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               className="relative overflow-hidden group cursor-pointer"
-              onClick={() => {
-                setActiveTab('guia');
-                setActiveSubTab('avisos');
-              }}
+              onClick={() => setActiveTab('guia')}
             >
-              {!isEcoMode && <div className="absolute inset-0 bg-red-600/5 animate-pulse" />}
-              <div className={`relative border border-red-500/20 bg-red-950/20 ${isEcoMode ? '' : 'backdrop-blur-md'} px-4 py-2 rounded-xl flex items-center justify-between gap-4`}>
+              <div className="absolute inset-0 bg-red-600/5 animate-pulse" />
+              <div className="relative border border-red-500/20 bg-red-950/20 backdrop-blur-md px-4 py-2 rounded-xl flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className={`w-2 h-2 rounded-full bg-red-500 ${isEcoMode ? '' : 'animate-ping'}`} />
+                  <div className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
                   <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] text-red-500 italic">
                     Prioridade Máxima: Convocação para Guerra de Servidores
                   </span>
@@ -193,10 +179,16 @@ function AppContent() {
 
   useEffect(() => {
     if (user) {
-      // Presence management via our new API
+      getDoc(doc(db, 'bans', user.uid)).then(snap => {
+        if (snap.exists()) setIsBanned(true);
+      }).catch(() => {});
+
+      // Presence management
       const updateStatus = async (status: 'online' | 'away' | 'offline') => {
         try {
-          await updateMemberData({ status: status === 'away' ? 'offline' : status });
+          const memberRef = doc(db, 'clans', 'main-clan', 'members', user.uid);
+          const { updateDoc } = await import('firebase/firestore');
+          await updateDoc(memberRef, { status });
         } catch (err) {
           // Fail silently
         }
@@ -217,6 +209,8 @@ function AppContent() {
       
       // Set offline on close
       const handleUnload = () => {
+        // Use synchronous update or navigator.sendBeacon pattern if possible, 
+        // but for Firestore we just attempt a fire-and-forget.
         updateStatus('offline');
       };
 
@@ -228,7 +222,7 @@ function AppContent() {
         updateStatus('offline');
       };
     }
-  }, [user?.uid]);
+  }, [user]);
 
   if (loading) {
     return (
@@ -345,12 +339,9 @@ function AppContent() {
 
       <Sidebar isMobile={isMobile} activeTab={activeTab} setActiveTab={setActiveTab} />
       
-      <main className={`flex-1 flex flex-col ${isEcoMode ? 'bg-gaming-bg' : 'gaming-gradient'} min-h-screen transition-all duration-300 ${!isMobile ? 'ml-16' : 'pb-20'}`}>
+      <main className={`flex-1 flex flex-col gaming-gradient min-h-screen transition-all duration-500 ${!isMobile ? 'ml-16' : 'pb-20'}`}>
         <Header isMobile={isMobile} />
-        <InitialNotice onExplore={() => {
-          setActiveTab('guia');
-          setActiveSubTab('avisos');
-        }} />
+        <InitialNotice onExplore={() => setActiveTab('guia')} />
         <UpdateRewardNotice />
         
         <div className={`flex-1 flex flex-col gap-6 ${isMobile ? 'px-4' : 'px-8 pb-8'}`}>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Skull, 
@@ -44,48 +44,15 @@ import {
 } from 'lucide-react';
 import { useClan } from '../context/ClanContext';
 
-// --- SHARED UTILS ---
-const compressImage = (base64: string, maxWidth = 800, maxHeight = 800, quality = 0.7): Promise<string> => {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.src = base64;
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      let width = img.width;
-      let height = img.height;
-
-      if (width > height) {
-        if (width > maxWidth) {
-          height *= maxWidth / width;
-          width = maxWidth;
-        }
-      } else {
-        if (height > maxHeight) {
-          width *= maxHeight / height;
-          height = maxHeight;
-        }
-      }
-
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx?.drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL('image/jpeg', quality));
-    };
-  });
-};
-
 // --- GUIA VIEW ---
 export function GuiaView() {
-  const { isEcoMode, myMember, clan, updateClanGuideImage, reportTheft, user, activeSubTab, setActiveSubTab } = useClan();
+  const { isEcoMode, myMember, clan, updateClanGuideImage, reportTheft } = useClan();
   const [selectedGuide, setSelectedGuide] = useState<string | null>(null);
   const [showTheftReported, setShowTheftReported] = useState(false);
+  const [activeSubTab, setActiveSubTab] = useState<'guias' | 'avisos'>('guias');
 
-  const isLeader = myMember?.role === 'leader' || user?.email === 'ryankevyn2020@gmail.com' || user?.email === 'ryankevyn3000@gmail.com';
-  // Heuristic: If guideImagePost1 is a data URL, it's likely the logo used as fallback. Use default guide image instead.
-  const displayImage = (clan?.guideImagePost1 && !clan?.guideImagePost1.startsWith('data:image')) 
-    ? clan.guideImagePost1 
-    : 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070';
+  const isLeader = myMember?.role === 'leader';
+  const displayImage = clan?.guideImagePost1 || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070';
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!isLeader) return;
@@ -93,14 +60,9 @@ export function GuiaView() {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = async (event) => {
+    reader.onload = (event) => {
       if (event.target?.result) {
-        try {
-          const compressed = await compressImage(event.target.result as string, 800, 800, 0.5);
-          updateClanGuideImage(compressed);
-        } catch (err) {
-          console.error('Error compressing guide image:', err);
-        }
+        updateClanGuideImage(event.target.result as string);
       }
     };
     reader.readAsDataURL(file);
@@ -235,8 +197,8 @@ export function GuiaView() {
              Guia & <span className="text-gaming-gold">Dicas Estratégicas</span>
            </h2>
         </div>
-        <div className={`flex items-center gap-4 bg-white/5 border border-white/10 px-5 py-3 rounded-2xl ${isEcoMode ? '' : 'backdrop-blur-md'}`}>
-           <div className={`w-2 h-2 rounded-full bg-green-500 ${isEcoMode ? '' : 'animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]'}`} />
+        <div className="flex items-center gap-4 bg-white/5 border border-white/10 px-5 py-3 rounded-2xl backdrop-blur-md">
+           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
            <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Manual Atualizado v2.5</span>
         </div>
       </div>
@@ -260,9 +222,9 @@ export function GuiaView() {
 
       {activeSubTab === 'avisos' ? (
         <motion.div 
-          initial={isEcoMode ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-[#0a0a0a] border-2 border-red-600/20 rounded-[2.5rem] p-8 md:p-12 relative overflow-hidden shadow-2xl"
+          className="bg-[#0a0a0a] border-2 border-red-600/20 rounded-[2.5rem] p-8 md:p-12 relative overflow-hidden shadow-[0_0_50px_rgba(220,38,38,0.1)]"
         >
           {/* Background pattern */}
           <div className="absolute inset-0 opacity-5 pointer-events-none">
@@ -362,8 +324,8 @@ export function GuiaView() {
               </div>
            </div>
            
-         <div className={`w-20 h-20 bg-linear-to-br from-blue-600/30 to-blue-900/10 rounded-[2rem] flex items-center justify-center text-blue-400 ${isEcoMode ? '' : 'group-hover:scale-110 group-hover:rotate-6 shadow-[0_0_40px_rgba(59,130,246,0.15)]'} transition-all border border-blue-500/30 relative overflow-hidden`}>
-              {!isEcoMode && <div className="absolute inset-0 bg-linear-to-t from-blue-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />}
+           <div className="w-20 h-20 bg-linear-to-br from-blue-600/30 to-blue-900/10 rounded-[2rem] flex items-center justify-center text-blue-400 group-hover:scale-110 group-hover:rotate-6 transition-all border border-blue-500/30 shadow-[0_0_40px_rgba(59,130,246,0.15)] relative overflow-hidden">
+              <div className="absolute inset-0 bg-linear-to-t from-blue-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <Sword size={40} className="relative z-10" />
            </div>
            
@@ -409,8 +371,8 @@ export function GuiaView() {
               </div>
            </div>
 
-         <div className={`w-20 h-20 bg-linear-to-br from-gaming-gold/30 to-gaming-gold/10 rounded-[2rem] flex items-center justify-center text-gaming-gold ${isEcoMode ? '' : 'group-hover:scale-110 group-hover:-rotate-6 shadow-[0_0_40px_rgba(251,191,36,0.15)]'} transition-all border border-gaming-gold/30 relative overflow-hidden`}>
-              {!isEcoMode && <div className="absolute inset-0 bg-linear-to-t from-gaming-gold/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />}
+           <div className="w-20 h-20 bg-linear-to-br from-gaming-gold/30 to-gaming-gold/10 rounded-[2rem] flex items-center justify-center text-gaming-gold group-hover:scale-110 group-hover:-rotate-6 transition-all border border-gaming-gold/30 shadow-[0_0_40px_rgba(251,191,36,0.15)] relative overflow-hidden">
+              <div className="absolute inset-0 bg-linear-to-t from-gaming-gold/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <Gem size={40} className="relative z-10" />
            </div>
 
@@ -611,10 +573,14 @@ export function PerfilView() {
   const [profileSubView, setProfileSubView] = useState<'main' | 'aura_store'>('main');
   const [purchaseStatus, setPurchaseStatus] = useState<{ id: string, message: string, type: 'success' | 'error' } | null>(null);
 
+  const [avatarModalOpen, setAvatarModalOpen] = useState(false);
+  const [uploadAcceptType, setUploadAcceptType] = useState('image/*');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const borders = [
     { id: 'border_cyan', title: 'Cibernética Blue', desc: 'Aura neon azul.', price: 50, color: 'border-cyan-400' },
     { id: 'border_purple', title: 'Aura Púrpura', desc: 'Proteção mística violeta.', price: 50, color: 'border-purple-500' },
-    { id: 'border_gold', title: 'Fogo Dourado', desc: 'A borda suprema animada.', price: 50, color: 'border-gaming-gold', animated: true }
+    { id: 'border_gold', title: 'Fogo Dourado', desc: 'A borda suprema animada.', price: 50, color: 'border-gaming-gold', animated: true, inDevelopment: true }
   ];
 
   const handleBuyBorder = (border: any) => {
@@ -649,14 +615,70 @@ export function PerfilView() {
     }
   };
   
+  const compressImage = (base64: string, maxWidth = 300, maxHeight = 300): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = base64;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height *= maxWidth / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width *= maxHeight / height;
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', 0.6)); 
+      };
+    });
+  };
+
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (file.size > 50 * 1024 * 1024) {
+      alert("O arquivo excede o limite máximo de 50MB.");
+      return;
+    }
+
+    const isGif = file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif');
+    if (isGif) {
+      const currentLevel = myMember?.level || 0;
+      if (currentLevel < 2) {
+        alert("Acesso Bloqueado! Você precisa ser Nível 2 ou superior para usar GIFs animados. Continue completando missões da aliança!");
+        return;
+      }
+    }
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       const dataUrl = event.target?.result as string;
-      updateMemberData({ avatarUrl: dataUrl });
+      try {
+        const finalImage = isGif ? dataUrl : await compressImage(dataUrl);
+
+        // Check if final size is within Firestore document single-row limitations (under ~850,000 chars)
+        if (finalImage.length > 850000) {
+          alert("O GIF animado é muito pesado para o banco de dados da Aliança (Limite de ~600KB). Por favor, use um GIF menor ou compactado/otimizado para caber no banco de dados.");
+          return;
+        }
+
+        await updateMemberData({ avatarUrl: finalImage });
+      } catch (err) {
+        console.error('Failed to compress or save image:', err);
+        alert("Erro ao processar imagem. Tente outra imagem ou um GIF menor.");
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -719,8 +741,13 @@ export function PerfilView() {
                        />
                     )}
                   </div>
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1 items-center">
                     <span className="text-[11px] font-black uppercase text-white tracking-widest">{border.title}</span>
+                    {border.inDevelopment && (
+                      <span className="text-[7px] font-black uppercase bg-red-600/20 text-red-500 border border-red-600/30 px-2 py-0.5 rounded-full tracking-widest mt-1 animate-pulse">
+                        Em Desenvolvimento
+                      </span>
+                    )}
                   </div>
                   <button 
                     onClick={() => handleBuyBorder(border)}
@@ -745,26 +772,118 @@ export function PerfilView() {
   return (
     <div className="flex flex-col gap-6 md:gap-8 p-4 md:p-8">
       <div className="flex flex-col lg:flex-row items-center gap-6 md:gap-8 bg-gaming-card/40 border border-gaming-border rounded-3xl p-6 md:p-8">
-         <div className={`w-32 h-32 md:w-40 md:h-40 rounded-full p-1 relative group bg-black/20 flex items-center justify-center ${getBorderClasses(myMember?.profileBorder)}`}>
-            {!isEcoMode && <div className={`absolute -inset-2 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity ${myMember?.profileBorder === 'border_gold' ? 'bg-gaming-gold/20' : 'bg-gaming-gold/10'}`} />}
-            <img 
-              src={myMember?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.uid}`} 
-              alt="Avatar" 
-              className="w-full h-full rounded-full object-cover relative z-10"
-              referrerPolicy="no-referrer"
-            />
-            <div 
-              className="absolute inset-0 z-20 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-gaming-gold gap-2 pointer-events-none rounded-full"
-            >
-              <Camera size={24} />
-              <span className="text-[8px] font-black uppercase tracking-widest">Trocar Foto</span>
-            </div>
-            <input 
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarChange}
-              className="absolute inset-0 opacity-0 z-30 cursor-pointer"
-            />
+         <div className="flex flex-col items-center gap-2 shrink-0">
+           <div 
+             onClick={() => setAvatarModalOpen(true)}
+             className={`w-32 h-32 md:w-40 md:h-40 rounded-full p-1 relative group bg-black/20 flex items-center justify-center cursor-pointer ${getBorderClasses(myMember?.profileBorder)}`}
+           >
+              {!isEcoMode && <div className={`absolute -inset-2 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity ${myMember?.profileBorder === 'border_gold' ? 'bg-gaming-gold/20' : 'bg-gaming-gold/10'}`} />}
+              <img 
+                src={myMember?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.uid}`} 
+                alt="Avatar" 
+                className="w-full h-full rounded-full object-cover relative z-10"
+                referrerPolicy="no-referrer"
+              />
+              <div 
+                className="absolute inset-0 z-20 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-gaming-gold gap-2 pointer-events-none rounded-full"
+              >
+                <Camera size={24} />
+                <span className="text-[8px] font-black uppercase tracking-widest">Trocar Foto</span>
+              </div>
+           </div>
+           <input 
+             type="file"
+             ref={fileInputRef}
+             accept={uploadAcceptType}
+             onChange={handleAvatarChange}
+             className="hidden"
+           />
+           <span className="text-[8px] text-white/40 uppercase tracking-widest font-black">Aceita GIFs de até 50MB</span>
+
+           {/* Avatar Selection Choice Modal */}
+           {avatarModalOpen && (
+             <div 
+               className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
+               onClick={(e) => { e.stopPropagation(); setAvatarModalOpen(false); }}
+             >
+               <div 
+                 className="bg-gaming-card border border-gaming-border p-6 rounded-3xl max-w-sm w-full flex flex-col gap-5 shadow-2xl relative text-left"
+                 onClick={(e) => e.stopPropagation()}
+               >
+                 <div className="flex flex-col gap-1 text-center">
+                   <h3 className="text-sm font-display font-black uppercase text-gaming-gold tracking-wider font-bold">Alterar Foto de Perfil</h3>
+                   <p className="text-[9px] text-white/40 uppercase font-black tracking-widest font-bold">Escolha a sua forma de identificação</p>
+                 </div>
+
+                 <div className="flex flex-col gap-3">
+                   {/* Option 1: Standard Image */}
+                   <button
+                     onClick={() => {
+                       setUploadAcceptType('image/png, image/jpeg, image/jpg, image/webp');
+                       setAvatarModalOpen(false);
+                       setTimeout(() => {
+                         fileInputRef.current?.click();
+                       }, 150);
+                     }}
+                     className="p-4 bg-white/[0.02] hover:bg-white/[0.07] hover:border-gaming-gold/40 border border-white/5 rounded-2xl flex items-center gap-4 transition-all text-left group"
+                   >
+                     <div className="w-10 h-10 rounded-xl bg-gaming-gold/10 flex items-center justify-center text-gaming-gold group-hover:scale-105 transition-transform shrink-0">
+                       <Camera size={18} />
+                     </div>
+                     <div className="flex flex-col gap-0.5">
+                       <span className="text-xs font-black uppercase tracking-wider text-white">Foto Personalizada</span>
+                       <span className="text-[9px] text-white/40 uppercase font-black tracking-wide">PNG, JPG, JPEG ou WEBP</span>
+                     </div>
+                   </button>
+
+                   {/* Option 2: Animated GIF */}
+                   <button
+                     onClick={() => {
+                       const currentLevel = myMember?.level || 0;
+                       if (currentLevel < 2) {
+                         alert("Acesso Bloqueado! Você precisa ser Nível 2 ou superior para usar GIFs animados. Continue completando missões da aliança!");
+                         return;
+                       }
+                       setUploadAcceptType('image/gif');
+                       setAvatarModalOpen(false);
+                       setTimeout(() => {
+                         fileInputRef.current?.click();
+                       }, 150);
+                     }}
+                     className={`p-4 border rounded-2xl flex items-center gap-4 transition-all text-left group relative overflow-hidden ${
+                       (myMember?.level || 0) < 2
+                         ? 'bg-black/40 border-white/5 opacity-50 cursor-not-allowed'
+                         : 'bg-white/[0.02] hover:bg-white/[0.07] hover:border-gaming-gold/40 border-white/5'
+                     }`}
+                   >
+                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-display font-black text-xs ${
+                       (myMember?.level || 0) < 2 ? 'bg-red-500/10 text-red-500' : 'bg-purple-500/10 text-purple-400 group-hover:scale-105 transition-transform'
+                     }`}>
+                       GIF
+                     </div>
+                     <div className="flex flex-col gap-0.5">
+                       <div className="flex items-center gap-2 flex-wrap">
+                         <span className="text-xs font-black uppercase tracking-wider text-white">GIF Animado</span>
+                         {(myMember?.level || 0) < 2 && (
+                           <span className="text-[8px] bg-red-600/30 text-red-400 border border-red-600/40 px-2 py-0.5 rounded-md font-black uppercase tracking-tight animate-pulse text-right">
+                             BLOQUEADO (NV. 2)
+                           </span>
+                         )}
+                       </div>
+                       <span className="text-[9px] text-white/40 uppercase font-black tracking-wide">Arquivos .GIF de até 50MB</span>
+                     </div>
+                   </button>
+                 </div>
+
+                 <button
+                   onClick={() => setAvatarModalOpen(false)}
+                   className="w-full py-2.5 bg-white/5 hover:bg-white/10 active:bg-white/15 border border-white/10 text-white/60 hover:text-white uppercase font-black text-[9px] tracking-widest rounded-xl transition-all"
+                 >
+                   Fechar
+                 </button>
+               </div>
+             </div>
+           )}
          </div>
 
          <div className="flex flex-col items-center lg:items-start text-center lg:text-left gap-4 flex-1">
@@ -839,7 +958,11 @@ export function PerfilView() {
 
 // --- CONFIGURACOES VIEW ---
 export function ConfiguracoesView() {
-  const { logout, myMember, updateMemberData, isEcoMode, toggleEcoMode, isOptimizing, deleteMember } = useClan();
+  const { logout, myMember, updateMemberData, isEcoMode, toggleEcoMode, isOptimizing, deleteMember, completeMission } = useClan();
+
+  React.useEffect(() => {
+    completeMission('check_optimization', 20);
+  }, []);
 
   const handleThemeChange = (theme: 'dark' | 'neon' | 'gold' | 'classic') => {
     updateMemberData({ appTheme: theme });
@@ -1210,48 +1333,9 @@ export function DevelopmentView({ tab, progress = 65 }: { tab: string, progress?
 
 // --- GERENCIA VIEW ---
 export function GerenciaView() {
-  const { members, myMember, deleteMember, banMember, updateMemberRole, theftReports, clearTheftReport, isEcoMode, updateClanLogo, clan } = useClan();
+  const { members, myMember, deleteMember, banMember, updateMemberRole, theftReports, clearTheftReport, isEcoMode } = useClan();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [logoUploading, setLogoUploading] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-
-  const clanEmojis = ['🐺', '🦁', '🦅', '🎯', '⚔️', '🛡️', '👑', '🔥', '💎', '🐲', '⚡', '🌌', '💀', '⛩️', '⚔️', '🔱'];
-
-  const handleEmojiSelect = async (emoji: string) => {
-    setLogoUploading(true);
-    try {
-      // Clearing both fields and setting emoji (we'll store emoji string in logoUrl)
-      // The UI already handles strings that aren't URLs/base64 by not rendering <img>
-      await updateClanLogo(emoji);
-      setShowEmojiPicker(false);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLogoUploading(false);
-    }
-  };
-
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setLogoUploading(true);
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      if (event.target?.result) {
-        try {
-          const compressed = await compressImage(event.target.result as string, 400, 400, 0.5);
-          await updateClanLogo(compressed);
-        } catch (err) {
-          console.error(err);
-        } finally {
-          setLogoUploading(false);
-        }
-      }
-    };
-    reader.readAsDataURL(file);
-  };
 
   const handleDeleteMember = async (memberId: string, name: string, definitive: boolean = false) => {
     const actionText = definitive ? 'BANIR' : 'EXPULSAR';
@@ -1352,77 +1436,6 @@ export function GerenciaView() {
              Gestão de <span className="text-gaming-gold">Membros</span>
            </h2>
         </div>
-      </div>
-
-      {/* Global Clan Settings (Leader Only) */}
-      <div className={`bg-gaming-card/60 border border-white/5 rounded-[2.5rem] p-8 md:p-10 flex flex-col md:flex-row items-center gap-8 shadow-2xl relative overflow-hidden ${isEcoMode ? '' : 'backdrop-blur-md'}`}>
-         {!isEcoMode && (
-           <div className="absolute inset-0 opacity-5 pointer-events-none">
-             <div className="absolute top-0 right-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30" />
-           </div>
-         )}
-         
-         <div className="relative group">
-           <div className={`w-32 h-32 md:w-40 md:h-40 rounded-full border-2 border-gaming-gold/30 p-2 relative flex items-center justify-center bg-black/40 overflow-hidden ${logoUploading ? 'animate-pulse' : ''}`}>
-             {clan?.logoUrl || clan?.guideImagePost1 ? (
-               ((clan.logoUrl && clan.logoUrl.length < 8) || (clan.guideImagePost1 && clan.guideImagePost1.length < 8)) ? (
-                 <span className="text-7xl md:text-8xl select-none">
-                   {clan.logoUrl || clan.guideImagePost1}
-                 </span>
-               ) : (
-                 <img 
-                   src={clan?.logoUrl || clan?.guideImagePost1} 
-                   alt="Global Logo" 
-                   className="w-full h-full object-contain"
-                 />
-               )
-             ) : (
-               <span className="text-7xl md:text-8xl select-none">🐺</span>
-             )}
-             <label className="absolute inset-x-0 bottom-0 top-1/2 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer gap-1 z-10">
-               <Camera size={16} className="text-gaming-gold" />
-               <span className="text-[8px] font-black uppercase tracking-widest text-white">Galeria</span>
-               <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
-             </label>
-
-             <button 
-               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-               className="absolute inset-x-0 top-0 bottom-1/2 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer gap-1 z-10 border-b border-white/10"
-             >
-               <span className="text-lg">😊</span>
-               <span className="text-[8px] font-black uppercase tracking-widest text-white">Emoji</span>
-             </button>
-           </div>
-         </div>
-
-         {showEmojiPicker && (
-           <motion.div 
-             initial={isEcoMode ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
-             animate={{ opacity: 1, y: 0 }}
-             className={`w-full max-w-xs mx-auto grid grid-cols-8 gap-2 p-4 ${isEcoMode ? 'bg-black/90' : 'bg-black/40 backdrop-blur-xl'} border border-gaming-gold/20 rounded-2xl`}
-           >
-             {clanEmojis.map(emoji => (
-               <button
-                 key={emoji}
-                 onClick={() => handleEmojiSelect(emoji)}
-                 className={`text-2xl ${isEcoMode ? '' : 'hover:scale-125'} transition-transform p-1 rounded-lg hover:bg-white/5`}
-               >
-                 {emoji}
-               </button>
-             ))}
-           </motion.div>
-         )}
-
-         <div className="flex flex-col gap-4 flex-1 text-center md:text-left">
-           <div>
-             <span className="text-gaming-gold font-black uppercase text-[10px] tracking-[0.4em]">Identidade Visual Global</span>
-             <h3 className="text-2xl md:text-3xl font-display font-black uppercase italic text-white tracking-tighter">Personalizar <span className="text-gaming-gold">Logomarca</span></h3>
-           </div>
-           <p className="text-xs text-white/40 font-bold uppercase italic leading-relaxed max-w-lg">
-             Esta imagem será exibida para todos os membros na tela de Login e na Barra Lateral. Escolha uma imagem que represente a grandeza da Ordem Suprema.
-           </p>
-           {logoUploading && <span className="text-[9px] font-black uppercase tracking-widest text-gaming-gold animate-bounce">Sincronizando com os servidores...</span>}
-         </div>
       </div>
 
       {/* Reports Section */}

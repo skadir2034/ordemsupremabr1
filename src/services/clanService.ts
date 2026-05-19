@@ -1,36 +1,77 @@
+import { doc, setDoc, updateDoc, collection, addDoc, serverTimestamp, increment } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+
 export const createInitialClan = async (userId: string, userEmail: string | null) => {
-  // Our server already initializes the default clan, but we can hit an endpoint if needed
-  // For now, we'll just return as the default clan is created on server start
-  return;
+  const clanId = 'main-clan';
+  const clanRef = doc(db, 'clans', clanId);
+  
+  await setDoc(clanRef, {
+    name: 'Aliança Suprema Ordem',
+    tag: 'ORDM',
+    displayId: 'GO ORDM',
+    level: 1,
+    description: 'A aliança suprema para dominadores do reino.',
+    capacity: 100,
+    ownerId: userId,
+    trophyCount: 0
+  });
 };
 
 export const joinClan = async (userId: string, userName: string, userEmail: string | null) => {
-  // Our new Login endpoint also handles registration/joining
-  const res = await fetch('/api/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ userId, name: userName })
-  });
+  const clanId = 'main-clan';
+  const isLeader = userEmail === 'ryankevyn3000@gmail.com';
+  const clanRef = doc(db, 'clans', clanId);
   
-  if (!res.ok) throw new Error('Failed to join clan');
+  if (isLeader) {
+    await updateDoc(clanRef, {
+      name: 'Aliança Suprema Ordem',
+      tag: 'ORDM',
+      displayId: 'GO ORDM',
+      capacity: 100
+    }).catch(() => {});
+  }
+
+  const memberRef = doc(db, 'clans', clanId, 'members', userId);
+  
+  await setDoc(memberRef, {
+    userId,
+    name: userName,
+    role: isLeader ? 'leader' : 'warrior',
+    trophies: 0,
+    donations: 0,
+    xp: 0,
+    level: 0,
+    heroPower: 0,
+    diamonds: 0,
+    boxes: 0,
+    coins: 0,
+    completedMissions: [],
+    visitedMissionsBoard: false,
+    premiumPass: false,
+    appTheme: 'dark',
+    chatTheme: 'dark',
+    lastCelebratedLevel: 0,
+    status: 'online',
+    joinedAt: new Date().toLocaleDateString()
+  });
 };
 
 export const updateMemberAvatar = async (clanId: string, memberId: string, avatarUrl: string) => {
-  await fetch(`/api/members/${memberId}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ avatarUrl })
-  });
+  const memberRef = doc(db, 'clans', clanId, 'members', memberId);
+  await updateDoc(memberRef, { avatarUrl });
 };
 
 export const updateMemberStatus = async (clanId: string, memberId: string, status: 'online' | 'offline') => {
-  await fetch(`/api/members/${memberId}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status })
-  });
+  const memberRef = doc(db, 'clans', clanId, 'members', memberId);
+  await updateDoc(memberRef, { status });
 };
 
 export const postAnnouncement = async (clanId: string, authorId: string, title: string, content: string) => {
-  // announcements not yet implemented in backend, ignoring for now
+  const announcementsRef = collection(db, 'clans', clanId, 'announcements');
+  await addDoc(announcementsRef, {
+    title,
+    content,
+    authorId,
+    createdAt: serverTimestamp()
+  });
 };

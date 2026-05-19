@@ -1,64 +1,68 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { LogIn, RefreshCw, AlertCircle, Mail, Lock, User, ChevronRight, ArrowLeft } from 'lucide-react';
-import { useClan } from '../context/ClanContext';
+import { 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  setPersistence, 
+  browserLocalPersistence, 
+  signInWithRedirect, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword 
+} from 'firebase/auth';
+import { auth } from '../lib/firebase';
+import { motion } from 'motion/react';
+import { LogIn, RefreshCw, AlertCircle, Mail, Lock, UserPlus, ShieldAlert } from 'lucide-react';
 
 export function Login() {
-  const { clan, isEcoMode, login, register, checkNick } = useClan();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [registerStep, setRegisterStep] = useState(1);
-
-  // Form states
-  const [nickname, setNickname] = useState('');
+  const [authMode, setAuthMode] = useState<'google' | 'email'>('google');
+  const [isRegistering, setIsRegistering] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!nickname.trim() || !password.trim()) {
-      setError('Nickname e senha são obrigatórios.');
-      return;
-    }
-
+  const handleGoogleLogin = async () => {
     setLoading(true);
     setError('');
+    const provider = new GoogleAuthProvider();
     
     try {
-      await login(nickname.trim(), password);
+      await setPersistence(auth, browserLocalPersistence);
+      provider.setCustomParameters({ prompt: 'select_account' });
+
+      try {
+        const result = await signInWithPopup(auth, provider);
+        console.log('Login successful:', result.user.uid);
+      } catch (popupError: any) {
+        if (popupError.code === 'auth/popup-blocked' || 
+            popupError.code === 'auth/popup-closed-by-user' || 
+            popupError.code === 'auth/cancelled-popup-request') {
+          throw popupError;
+        }
+        
+        console.warn('Popup failed, trying redirect...', popupError);
+        await signInWithRedirect(auth, provider);
+      }
     } catch (err: any) {
-      setError(err.message || 'Falha na autenticação. Verifique suas credenciais.');
+      console.error('Login failed', err);
+      if (err.code === 'auth/popup-blocked') {
+        setError('O popup foi bloqueado pelo seu navegador. Por favor, permita popups para este site ou tente novamente com E-mail.');
+      } else if (err.code === 'auth/popup-closed-by-user') {
+        setError('Login cancelado. Você fechou a janela de autenticação.');
+      } else {
+        setError('Erro ao entrar: ' + (err.message || 'Erro desconhecido'));
+      }
       setLoading(false);
     }
   };
 
-  const handleRegisterStep1 = async (e: React.FormEvent) => {
+  const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password.trim()) {
-      setError('E-mail e senha são obrigatórios.');
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError('As senhas não coincidem.');
+    if (!email || !password) {
+      setError('Por favor, preencha todos os campos.');
       return;
     }
     if (password.length < 6) {
-      setError('A senha deve ter pelo menos 6 caracteres.');
-      return;
-    }
-
-    setError('');
-    setRegisterStep(2);
-  };
-
-  const handleRegisterComplete = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const finalNick = nickname.trim();
-    if (!finalNick) {
-      setError('Nickname é obrigatório.');
+      setError('A senha deve conter pelo menos 6 caracteres.');
       return;
     }
 
@@ -66,226 +70,201 @@ export function Login() {
     setError('');
 
     try {
-      const exists = await checkNick(finalNick);
-      if (exists) {
-        setError('Este nickname já está em uso. Escolha outro.');
-        setLoading(false);
-        return;
+      await setPersistence(auth, browserLocalPersistence);
+      if (isRegistering) {
+        const result = await createUserWithEmailAndPassword(auth, email, password);
+        console.log('Registro bem-sucedido!', result.user.uid);
+      } else {
+        const result = await signInWithEmailAndPassword(auth, email, password);
+        console.log('Login bem-sucedido!', result.user.uid);
       }
-
-      await register(finalNick, email, password);
     } catch (err: any) {
-      setError(err.message || 'Erro ao finalizar cadastro.');
+      console.error('Email authentication factor failed', err);
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        setError('E-mail ou senha inválidos.');
+      } else if (err.code === 'auth/email-already-in-use') {
+        setError('Este endereço de e-mail já está sendo utilizado.');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('Formato de e-mail inválido.');
+      } else {
+        setError(err.message || 'Erro de autenticação.');
+      }
       setLoading(false);
     }
   };
 
-  const resetForm = () => {
-    setAuthMode(authMode === 'login' ? 'register' : 'login');
-    setRegisterStep(1);
-    setError('');
-    setNickname('');
-    setEmail('');
-    setPassword('');
-    setConfirmPassword('');
-  };
-
-  const motionProps = isEcoMode ? {
-    initial: { opacity: 1 },
-    animate: { opacity: 1 },
-    transition: { duration: 0 }
-  } : {
-    initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.5 }
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#050110] text-white p-4 md:p-6 relative overflow-hidden font-sans">
-      {/* Neon Background */}
-      {!isEcoMode && (
-        <div className="absolute inset-0 z-0 overflow-hidden">
-          <div className="absolute top-[-20%] left-[-10%] w-[120%] h-[120%] bg-radial from-cyan-500/10 via-purple-500/5 to-transparent blur-[120px]" />
-          <div className="absolute inset-0 opacity-5 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
-        </div>
-      )}
+    <div className="min-h-screen flex items-center justify-center bg-gaming-bg text-white p-6 relative overflow-hidden">
+      {/* Background elements */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-gaming-gold/5 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-gaming-purple/5 rounded-full blur-[120px]" />
+      </div>
 
       <motion.div 
-        {...motionProps}
-        className={`w-full max-w-lg ${isEcoMode ? 'bg-[#0d0118]' : 'bg-black/40 backdrop-blur-3xl'} border border-white/10 rounded-[2.5rem] md:rounded-[3.5rem] p-8 md:p-12 text-center shadow-2xl relative z-10 overflow-hidden`}
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="w-full max-w-md bg-gaming-card/40 backdrop-blur-3xl border border-gaming-border/50 rounded-[3rem] p-8 md:p-12 text-center shadow-2xl relative z-10 overflow-hidden"
       >
-        {/* Header */}
-        <div className="mb-8">
-          <div className="w-20 h-20 md:w-24 md:h-24 mx-auto relative mb-6">
-            <div className="w-full h-full border-2 border-cyan-400/30 rounded-full flex items-center justify-center relative z-10 shadow-[0_0_20px_rgba(34,211,238,0.2)] bg-black/20">
-               <span className="text-4xl md:text-5xl drop-shadow-glow select-none">
-                 {clan?.logoUrl?.length === 1 ? clan.logoUrl : '🐺'}
-               </span>
-            </div>
-          </div>
-          
-          <h1 className="text-4xl md:text-5xl font-display font-black uppercase italic tracking-tighter leading-none mb-2">
-            <span className="text-white">ORDEM</span>
-            <span className="text-cyan-400 px-2 italic">SUPREMA</span>
-          </h1>
-          <p className="text-white/30 uppercase text-[9px] tracking-[0.4em] font-bold">
-            {authMode === 'login' ? 'Nexus de Autenticação' : 'Protocolo de Recrutamento'}
-          </p>
+        <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-gaming-gold to-transparent shadow-[0_0_25px_rgba(251,191,36,0.5)]" />
+        
+        <motion.div 
+          initial={{ rotate: -10 }}
+          animate={{ rotate: 0 }}
+          transition={{ duration: 0.8, type: 'spring' }}
+          className="w-20 h-20 hex-clip bg-linear-to-br from-gaming-gold/20 to-gaming-purple/20 border border-gaming-gold/30 flex items-center justify-center mx-auto mb-6 shadow-[0_0_40px_rgba(251,191,36,0.3)] relative group"
+        >
+           <div className="absolute inset-0 bg-gaming-gold/20 animate-ping rounded-full scale-50 opacity-0 group-hover:opacity-100 transition-opacity" />
+           <img 
+            src="/src/assets/images/supreme_order_gold_logo_1778976451328.png" 
+            alt="Logo" 
+            className="w-12 h-12 object-contain relative z-10 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]"
+           />
+        </motion.div>
+
+         <h1 className="text-3xl md:text-4xl font-display font-black uppercase tracking-tighter mb-2 italic leading-tight">
+          Aliança Suprema <br />
+          <span className="text-gaming-gold drop-shadow-[0_0_15px_rgba(251,191,36,0.3)]">Ordem</span>
+         </h1>
+        
+        <p className="text-white/40 uppercase text-[9px] tracking-[0.3em] font-bold mb-8 px-4">
+          O portal definitivo para a gestão da sua guilda e glória militar.
+        </p>
+
+        {/* Auth Method Selector Tabs */}
+        <div className="flex bg-white/5 border border-white/10 rounded-2xl p-1 mb-8">
+          <button 
+            type="button"
+            onClick={() => {
+              setAuthMode('google');
+              setError('');
+            }}
+            className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${authMode === 'google' ? 'bg-gaming-gold text-black' : 'text-white/50 hover:text-white'}`}
+          >
+            Google
+          </button>
+          <button 
+            type="button"
+            onClick={() => {
+              setAuthMode('email');
+              setError('');
+            }}
+            className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${authMode === 'email' ? 'bg-gaming-gold text-black' : 'text-white/50 hover:text-white'}`}
+          >
+            E-mail/Senha
+          </button>
         </div>
 
-        {/* Error Display */}
-        <AnimatePresence mode="wait">
-          {error && (
-            <motion.div 
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mb-6 overflow-hidden"
-            >
-              <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-500 text-[10px] font-bold uppercase tracking-widest flex items-center gap-3">
-                <AlertCircle size={16} className="shrink-0" />
-                <span className="text-left">{error}</span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {error && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-[10px] font-black uppercase tracking-widest leading-relaxed flex items-center gap-3 text-left"
+          >
+            <AlertCircle size={18} className="shrink-0" />
+            <div className="flex-1">{error}</div>
+          </motion.div>
+        )}
 
-        {/* Forms */}
-        <div className="space-y-4">
-          {authMode === 'login' ? (
-            <form onSubmit={handleLogin} className="space-y-4">
+        {authMode === 'google' ? (
+          <div className="space-y-4">
+            <button 
+              onClick={handleGoogleLogin}
+              disabled={loading}
+              className="w-full relative group overflow-hidden rounded-xl"
+            >
+              <div className="absolute inset-0 bg-white group-hover:bg-gaming-gold transition-colors duration-300" />
+              <div className="relative py-4 font-display font-black uppercase tracking-widest flex items-center justify-center gap-3 text-black transition-transform group-active:scale-95">
+                {loading ? (
+                  <RefreshCw size={20} className="animate-spin" />
+                ) : (
+                  <LogIn size={20} className="group-hover:translate-x-1 transition-transform" />
+                )}
+                {loading ? 'Sincronizando...' : 'Entrar com Google'}
+              </div>
+            </button>
+            <p className="text-[9px] text-white/30 uppercase font-bold tracking-widest leading-relaxed px-4">
+              Opção recomendada para sincronização instantânea de conta Google.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleEmailAuth} className="space-y-4 text-left">
+            <div className="space-y-3">
               <div className="relative group">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-cyan-400 transition-colors" size={18} />
+                <span className="absolute inset-y-0 left-4 flex items-center text-white/30 group-focus-within:text-gaming-gold transition-colors">
+                  <Mail size={16} />
+                </span>
                 <input 
-                  type="text"
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                  placeholder="Seu Nickname"
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-sm font-bold tracking-widest focus:outline-none focus:border-cyan-400 transition-all uppercase placeholder:normal-case"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Seu endereço de e-mail"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-xs font-bold focus:outline-none focus:border-gaming-gold/40 focus:bg-white/15 transition-all text-white placeholder-white/30"
+                  required
                 />
               </div>
+
               <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-cyan-400 transition-colors" size={18} />
+                <span className="absolute inset-y-0 left-4 flex items-center text-white/30 group-focus-within:text-gaming-gold transition-colors">
+                  <Lock size={16} />
+                </span>
                 <input 
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Sua Senha"
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-sm font-bold tracking-widest focus:outline-none focus:border-cyan-400 transition-all"
+                  placeholder="Sua senha de segurança"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-xs font-bold focus:outline-none focus:border-gaming-gold/40 focus:bg-white/15 transition-all text-white placeholder-white/30"
+                  required
                 />
               </div>
-              <button 
-                type="submit"
-                disabled={loading}
-                className="w-full py-4 bg-linear-to-r from-cyan-500 to-blue-600 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg"
-              >
-                {loading ? <RefreshCw className="animate-spin" size={20} /> : <><LogIn size={20} /> ENTRAR NO NEXUS</>}
-              </button>
-            </form>
-          ) : (
-            <AnimatePresence mode="wait">
-              {registerStep === 1 ? (
-                <motion.form 
-                  key="step1"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  onSubmit={handleRegisterStep1} 
-                  className="space-y-4"
-                >
-                  <div className="relative group">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-cyan-400 transition-colors" size={18} />
-                    <input 
-                      type="email"
-                      value={email}
-                      required
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Seu E-mail"
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-sm font-bold tracking-widest focus:outline-none focus:border-cyan-400 transition-all"
-                    />
-                  </div>
-                  <div className="relative group">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-cyan-400 transition-colors" size={18} />
-                    <input 
-                      type="password"
-                      value={password}
-                      required
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Criar Senha"
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-sm font-bold tracking-widest focus:outline-none focus:border-cyan-400 transition-all"
-                    />
-                  </div>
-                  <div className="relative group">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-cyan-400 transition-colors" size={18} />
-                    <input 
-                      type="password"
-                      value={confirmPassword}
-                      required
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Confirmar Senha"
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-sm font-bold tracking-widest focus:outline-none focus:border-cyan-400 transition-all"
-                    />
-                  </div>
-                  <button 
-                    type="submit"
-                    className="w-full py-4 bg-white text-black rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-cyan-400 transition-all"
-                  >
-                    CONTINUAR <ChevronRight size={20} />
-                  </button>
-                </motion.form>
-              ) : (
-                <motion.form 
-                  key="step2"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  onSubmit={handleRegisterComplete} 
-                  className="space-y-4"
-                >
-                  <div className="flex items-center gap-2 text-cyan-400 text-[9px] font-black uppercase mb-4 cursor-pointer hover:text-white transition-colors" onClick={() => setRegisterStep(1)}>
-                    <ArrowLeft size={12} /> VOLTAR
-                  </div>
-                  <div className="p-4 bg-white/5 border border-white/10 rounded-2xl text-left mb-4">
-                    <p className="text-[10px] text-white/40 uppercase font-black tracking-widest mb-2">Atenção Guerreiro:</p>
-                    <p className="text-xs text-white/80 leading-relaxed font-medium">Seu Nickname será sua identidade única na Ordem. <span className="text-cyan-400 underline">Ele não poderá ser alterado posteriormente.</span></p>
-                  </div>
-                  <div className="relative group">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-cyan-400 transition-colors" size={18} />
-                    <input 
-                      type="text"
-                      value={nickname}
-                      onChange={(e) => setNickname(e.target.value)}
-                      placeholder="Nickname Único"
-                      required
-                      className="w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-6 py-4 text-sm font-bold tracking-widest focus:outline-none focus:border-cyan-400 transition-all uppercase placeholder:normal-case"
-                    />
-                  </div>
-                  <button 
-                    type="submit"
-                    disabled={loading}
-                    className="w-full py-4 bg-linear-to-r from-purple-600 to-magenta-600 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                  >
-                    {loading ? <RefreshCw className="animate-spin" size={20} /> : 'FINALIZAR RECRUTAMENTO'}
-                  </button>
-                </motion.form>
-              )}
-            </AnimatePresence>
-          )}
-        </div>
+            </div>
 
-        {/* Footer Link */}
-        <div className="mt-8 pt-8 border-t border-white/5">
-          <p className="text-white/30 text-[10px] uppercase font-bold tracking-widest">
-            {authMode === 'login' ? 'Novo por aqui?' : 'Já possui acesso?'}
-          </p>
-          <button 
-            onClick={resetForm}
-            className="mt-2 text-xs font-black uppercase tracking-widest text-cyan-400 hover:text-white transition-colors"
-          >
-            {authMode === 'login' ? 'SOLICITAR RECRUTAMENTO' : 'ACESSAR TERMINAL'}
-          </button>
+            <button 
+              type="submit"
+              disabled={loading}
+              className="w-full relative group overflow-hidden rounded-xl mt-2"
+            >
+              <div className="absolute inset-0 bg-white group-hover:bg-gaming-gold transition-colors duration-300" />
+              <div className="relative py-3.5 font-display font-black uppercase tracking-widest flex items-center justify-center gap-3 text-black transition-transform group-active:scale-95 text-xs">
+                {loading ? (
+                  <RefreshCw size={18} className="animate-spin" />
+                ) : isRegistering ? (
+                  <UserPlus size={18} />
+                ) : (
+                  <LogIn size={18} />
+                )}
+                {loading ? 'Processando...' : isRegistering ? 'Criar Nova Conta' : 'Entrar com E-mail'}
+              </div>
+            </button>
+
+            <button 
+              type="button"
+              onClick={() => {
+                setIsRegistering(!isRegistering);
+                setError('');
+              }}
+              className="w-full text-center text-[10px] font-black uppercase tracking-widest text-gaming-gold/60 hover:text-gaming-gold transition-colors pt-2 block"
+            >
+              {isRegistering ? 'Já possui uma conta? Entre com seus dados' : 'Novo por aqui? Criar conta de membro'}
+            </button>
+          </form>
+        )}
+
+        <div className="mt-10 pt-6 border-t border-white/5">
+          <div className="flex justify-center gap-4 text-[9px] font-black text-white/20 uppercase tracking-widest italic">
+            <span>Batalhe</span>
+            <span className="w-1 h-1 bg-white/20 rounded-full my-auto" />
+            <span>Conquiste</span>
+            <span className="w-1 h-1 bg-white/20 rounded-full my-auto" />
+            <span>Domine</span>
+          </div>
         </div>
       </motion.div>
+
+      {/* Grid Pattern Background */}
+      <div className="fixed inset-0 pointer-events-none -z-10 opacity-20">
+        <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0)', backgroundSize: '40px 40px' }} />
+      </div>
     </div>
   );
 }

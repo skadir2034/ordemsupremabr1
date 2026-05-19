@@ -11,8 +11,7 @@
         "capacity": { "type": "number", "description": "Max capacity of members" },
         "ownerId": { "type": "string", "description": "UID of the clan owner" },
         "trophyCount": { "type": "number", "description": "Total trophies" },
-        "guideImagePost1": { "type": "string", "description": "Main guide image URL" },
-        "logoUrl": { "type": "string", "description": "Global clan logo URL" }
+        "guideImagePost1": { "type": "string", "description": "Main guide image URL" }
       },
       "required": ["name", "level", "ownerId"]
     },

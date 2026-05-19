@@ -1,6 +1,8 @@
 {
-  "name": "Ordem Suprema",
-  "description": "Terminal de clã avançado para a Aliança Suprema Ordem com estatísticas e coordenação em tempo real.",
+  "name": "Aliança Suprema Ordem",
+  "description": "Sistema de elite para gerenciamento, combate e sincronização de poder da Aliança Suprema Ordem.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
