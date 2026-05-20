@@ -28,11 +28,40 @@
                 radial-gradient(circle at 0% 100%, rgba(226, 180, 77, 0.04) 0%, transparent 40%);
   }
   
-  .eco-mode * {
+  .eco-mode, .eco-mode * {
     animation-duration: 0s !important;
+    animation-delay: 0s !important;
     transition-duration: 0s !important;
+    transition-delay: 0s !important;
     box-shadow: none !important;
+    text-shadow: none !important;
     filter: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .eco-mode .gaming-gradient {
+    background: #090611 !important;
+  }
+
+  /* Replace heavy blurs with solid styling to avoid mobile GPU lag */
+  .eco-mode .bg-gaming-card\/30,
+  .eco-mode .bg-gaming-card\/40,
+  .eco-mode .bg-gaming-card\/60,
+  .eco-mode .bg-gaming-card\/80,
+  .eco-mode .bg-white\/5,
+  .eco-mode .backdrop-blur-sm,
+  .eco-mode .backdrop-blur-md,
+  .eco-mode .backdrop-blur-lg,
+  .eco-mode .backdrop-blur-xl,
+  .eco-mode .backdrop-blur-2xl {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: #120e1e !important;
+  }
+
+  .eco-mode .border-white\/10 {
+    border-color: rgba(255, 255, 255, 0.04) !important;
   }
 
   .no-scrollbar::-webkit-scrollbar {

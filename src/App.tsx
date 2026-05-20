@@ -50,8 +50,16 @@ export default function App() {
   }, [loading, user]);
 
   useEffect(() => {
-    if (myMember?.level && myMember.level > (myMember.lastCelebratedLevel || 0)) {
-      setShowLevelUp(true);
+    if (myMember) {
+      const currentLevel = myMember.level || 1;
+      const lastCeleb = myMember.lastCelebratedLevel || 0;
+      
+      if (currentLevel <= 1 && lastCeleb < currentLevel) {
+        // Silently mark as celebrated for level 1 or lower so they don't see any popups
+        updateMemberData({ lastCelebratedLevel: currentLevel });
+      } else if (currentLevel >= 2 && currentLevel <= 10 && currentLevel > lastCeleb) {
+        setShowLevelUp(true);
+      }
     }
   }, [myMember?.level, myMember?.lastCelebratedLevel]);
 
@@ -163,7 +171,7 @@ export default function App() {
       case 'guia':
         return <GuiaView />;
       case 'gerencia':
-        if (myMember?.role !== 'leader') return <DevelopmentView tab="gerencia" progress={0} />;
+        if (user?.email !== 'ryankevyn3000@gmail.com') return <DevelopmentView tab="gerencia" progress={0} />;
         return <GerenciaView />;
       case 'batalha':
       case 'historico':
@@ -360,7 +368,7 @@ export default function App() {
   }
 
   if (!clan) {
-    const isLeader = user.email === 'ryankevyn3000@gmail.com' || user.email === 'ryankevyn2020@gmail.com';
+    const isLeader = user.email === 'ryankevyn3000@gmail.com';
     
     return (
       <div className="min-h-screen bg-gaming-bg flex flex-col items-center justify-center p-6 text-center">
