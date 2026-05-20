@@ -56,6 +56,9 @@ interface Clan {
   capacity: number;
   ownerId: string;
   trophyCount: number;
+  guideImagePost1?: string;
+  guideImageGuerraDia1?: string;
+  loginLogoImage?: string;
 }
 
 interface ClanContextType {
@@ -75,6 +78,8 @@ interface ClanContextType {
   banMember: (memberId: string) => Promise<void>;
   updateMemberRole: (memberId: string, role: string) => Promise<void>;
   updateClanGuideImage: (imageUrl: string) => Promise<void>;
+  updateClanGuerraDia1Image: (imageUrl: string) => Promise<void>;
+  updateClanLoginLogoImage: (imageUrl: string) => Promise<void>;
   updatePresenceStatus: (status: 'online' | 'away' | 'offline') => Promise<void>;
   isEcoMode: boolean;
   toggleEcoMode: () => Promise<void>;
@@ -87,13 +92,17 @@ interface ClanContextType {
   setActiveTab: (tab: string) => void;
   dbError: string | null;
   retryConnection: () => void;
+  loginAsGuest: (nickname: string) => Promise<void>;
 }
 
 const ClanContext = createContext<ClanContextType | undefined>(undefined);
 
 export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [clan, setClan] = useState<Clan | null>(null);
+  const [clan, setClan] = useState<Clan | null>(() => {
+    const saved = localStorage.getItem('cached_clan');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEcoMode, setIsEcoMode] = useState<boolean>(() => {
@@ -105,6 +114,198 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [activeTab, setActiveTab] = useState('inicio');
   const [dbError, setDbError] = useState<string | null>(null);
   const [retryTrigger, setRetryTrigger] = useState(0);
+
+  // Load Local Data (simulating Firestore collections for guests / offline fallback)
+  const getLocalMembers = (): Member[] => {
+    const saved = localStorage.getItem('local_members');
+    if (saved) {
+      try {
+        const loaded: Member[] = JSON.parse(saved);
+        // Force donations to be 0 for all existing members in storage as requested ("Zere as doações")
+        if (loaded.some(m => m.donations !== 0)) {
+          const updated = loaded.map(m => ({ ...m, donations: 0 }));
+          localStorage.setItem('local_members', JSON.stringify(updated));
+          return updated;
+        }
+        return loaded;
+      } catch (e) {
+        console.error('Failed to parse local members, resetting...', e);
+      }
+    }
+    
+    // Initialize with nice default members so the clan is populated
+    const defaultMembers: Member[] = [
+      {
+        id: 'skadir_leader',
+        userId: 'skadir_leader',
+        name: 'Skadir',
+        role: 'leader',
+        trophies: 4500,
+        donations: 0,
+        heroPower: 9200,
+        diamonds: 1500,
+        boxes: 12,
+        coins: 8500,
+        xp: 1500,
+        level: 5,
+        completedMissions: ['first_login', 'complete_profile'],
+        visitedMissionsBoard: true,
+        status: 'online',
+        joinedAt: '20/05/2026'
+      },
+      {
+        id: 'miyake_warrior',
+        userId: 'miyake_warrior',
+        name: 'Miyake',
+        role: 'warrior',
+        trophies: 2800,
+        donations: 0,
+        heroPower: 5400,
+        diamonds: 200,
+        boxes: 2,
+        coins: 1400,
+        xp: 650,
+        level: 3,
+        completedMissions: ['first_login'],
+        visitedMissionsBoard: true,
+        status: 'online',
+        joinedAt: '20/05/2026'
+      },
+      {
+        id: 'riccardo_diplomat',
+        userId: 'riccardo_diplomat',
+        name: 'Riccardo',
+        role: 'diplomat',
+        trophies: 3400,
+        donations: 0,
+        heroPower: 7200,
+        diamonds: 800,
+        boxes: 5,
+        coins: 4300,
+        xp: 1100,
+        level: 4,
+        completedMissions: ['first_login', 'visit_guilda'],
+        visitedMissionsBoard: true,
+        status: 'offline',
+        joinedAt: '18/05/2026'
+      },
+      {
+        id: 'lobo_warrior',
+        userId: 'lobo_warrior',
+        name: 'guerreiro lobo',
+        role: 'warrior',
+        trophies: 1500,
+        donations: 0,
+        heroPower: 3100,
+        diamonds: 50,
+        boxes: 1,
+        coins: 500,
+        xp: 120,
+        level: 1,
+        completedMissions: [],
+        visitedMissionsBoard: false,
+        status: 'online',
+        joinedAt: '20/05/2026'
+      },
+      {
+        id: 'riccelli_diplomat',
+        userId: 'riccelli_diplomat',
+        name: 'Riccelli',
+        role: 'diplomat',
+        trophies: 2100,
+        donations: 0,
+        heroPower: 4500,
+        diamonds: 150,
+        boxes: 3,
+        coins: 1200,
+        xp: 400,
+        level: 2,
+        completedMissions: ['first_login'],
+        visitedMissionsBoard: true,
+        status: 'offline',
+        joinedAt: '19/05/2026'
+      }
+    ];
+    localStorage.setItem('local_members', JSON.stringify(defaultMembers));
+    return defaultMembers;
+  };
+
+  const getLocalClan = (): Clan => {
+    const saved = localStorage.getItem('local_clan');
+    if (saved) return JSON.parse(saved);
+    const defaultClan: Clan = {
+      id: 'main-clan',
+      name: 'Aliança Suprema Ordem',
+      tag: 'ORDM',
+      displayId: 'GO ORDM',
+      level: 1,
+      description: 'A aliança suprema para dominadores do reino.',
+      capacity: 100,
+      ownerId: 'skadir_leader',
+      trophyCount: 14300
+    };
+    localStorage.setItem('local_clan', JSON.stringify(defaultClan));
+    return defaultClan;
+  };
+
+  const initializeClientGuestMember = (userId: string, name: string) => {
+    const currentMembers = getLocalMembers();
+    const exists = currentMembers.find(m => m.userId === userId);
+    if (!exists) {
+      const newMember: Member = {
+        id: userId,
+        userId: userId,
+        name: name,
+        role: 'warrior',
+        trophies: 0,
+        donations: 0,
+        xp: 0,
+        level: 1,
+        heroPower: 0,
+        diamonds: 0,
+        boxes: 0,
+        coins: 0,
+        completedMissions: [],
+        visitedMissionsBoard: false,
+        premiumPass: false,
+        appTheme: 'dark',
+        chatTheme: 'dark',
+        profileBg: 'https://cdnb.artstation.com/p/assets/images/images/017/680/475/small/andrej-otepka-square-04-tmp04web.jpg?1556922748',
+        lastCelebratedLevel: 0,
+        status: 'online',
+        joinedAt: new Date().toLocaleDateString()
+      };
+      const updated = [...currentMembers, newMember];
+      localStorage.setItem('local_members', JSON.stringify(updated));
+      setMembers(updated);
+    } else {
+      setMembers(currentMembers);
+    }
+  };
+
+  const loginAsGuest = async (nickname: string) => {
+    setLoading(true);
+    setDbError(null);
+    try {
+      const { signInAnonymously: fSignInAnonymously } = await import('firebase/auth');
+      const result = await fSignInAnonymously(auth);
+      // Success! Sign-in anonymously worked. Let's save a flag to set character nickname
+      localStorage.setItem('pending_guest_nickname', nickname);
+    } catch (authErr: any) {
+      console.warn("Could not sign in anonymously via Firebase. Falling back to local guest mode.", authErr);
+      // Local fallback
+      const guestUid = 'guest_' + nickname.toLowerCase().replace(/\s+/g, '_') + '_' + Math.floor(Math.random() * 100000);
+      const guestUser = {
+        uid: guestUid,
+        email: 'convidado@supremaordem.com',
+        displayName: nickname,
+        isGuest: true
+      };
+      localStorage.setItem('guest_user', JSON.stringify(guestUser));
+      setUser(guestUser as any);
+      setLoading(true); // triggers useEffect to populate guest state
+    }
+  };
 
   const retryConnection = () => {
     setDbError(null);
@@ -139,14 +340,27 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      if (!currentUser) {
-        setClan(null);
-        setMembers([]);
-        setLoading(false);
-      } else {
-        // When user is found, we keep loading as true until snapshots return or fail
+      if (currentUser) {
+        setUser(currentUser);
+        localStorage.removeItem('guest_user');
         setLoading(true);
+      } else {
+        const savedGuest = localStorage.getItem('guest_user');
+        if (savedGuest) {
+          try {
+            setUser(JSON.parse(savedGuest));
+          } catch {
+            setUser(null);
+            setClan(null);
+            setMembers([]);
+            setLoading(false);
+          }
+        } else {
+          setUser(null);
+          setClan(null);
+          setMembers([]);
+          setLoading(false);
+        }
       }
     });
 
@@ -155,7 +369,8 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Update specific user name and role to Skadir/Leader if needed
   useEffect(() => {
-    if ((user?.email === 'ryankevyn3000@gmail.com' || user?.email === 'ryankevyn2020@gmail.com') && members.length > 0) {
+    if (user && (user as any).isGuest) return;
+    if (user?.email === 'ryankevyn3000@gmail.com' && members.length > 0) {
       const myMember = members.find(m => m.userId === user.uid);
       if (myMember && (myMember.name !== 'Skadir' || myMember.role !== 'leader')) {
         const memberRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'members', user.uid);
@@ -176,6 +391,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // One-time data reset requested by user "reset for me and for everyone"
   useEffect(() => {
+    if (user && (user as any).isGuest) return;
     if (myMember && (myMember.diamonds !== 0 || myMember.trophies !== 0)) {
        const memberRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'members', user!.uid);
        updateDoc(memberRef, { 
@@ -209,6 +425,42 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     if (!user) return;
+
+    if ((user as any).isGuest) {
+      // Local Mode Setup
+      const localClan = getLocalClan();
+      setClan(localClan);
+      initializeClientGuestMember(user.uid, user.displayName || 'Guerreiro');
+      
+      const savedReports = localStorage.getItem('local_theft_reports');
+      setTheftReports(savedReports ? JSON.parse(savedReports) : []);
+      
+      setLoading(false);
+      return;
+    }
+
+    // Auto-join if pending guest nickname exists (Anonymous Auth)
+    const pendingNick = localStorage.getItem('pending_guest_nickname');
+    if (pendingNick) {
+      localStorage.removeItem('pending_guest_nickname');
+      // Create member in Firestore
+      import('../services/clanService').then(({ joinClan }) => {
+        joinClan(user.uid, pendingNick, user.email || null)
+          .then(() => console.log('Successfully completed guest registration in Firestore!'))
+          .catch(err => {
+            console.error('Failed to complete guest registration in Firestore:', err);
+            // Fallback: Convert to Local Guest
+            const guestUser = {
+              uid: 'guest_' + user.uid,
+              email: 'convidado@supremaordem.com',
+              displayName: pendingNick,
+              isGuest: true
+            };
+            localStorage.setItem('guest_user', JSON.stringify(guestUser));
+            setUser(guestUser as any);
+          });
+      });
+    }
 
     setLoading(true);
     setDbError(null);
@@ -246,7 +498,9 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const clanDocRef = doc(db, 'clans', DEFAULT_CLAN_ID);
     const unsubscribeClan = onSnapshot(clanDocRef, (snapshot) => {
       if (snapshot.exists()) {
-        setClan({ id: snapshot.id, ...snapshot.data() } as Clan);
+        const clanData = { id: snapshot.id, ...snapshot.data() } as Clan;
+        setClan(clanData);
+        localStorage.setItem('cached_clan', JSON.stringify(clanData));
       } else {
         // Fallback for demo: if clan doesn't exist, we don't set it
         setClan(null);
@@ -333,6 +587,11 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
+      localStorage.removeItem('guest_user');
+      setUser(null);
+      setClan(null);
+      setMembers([]);
+      setLoading(false);
       await signOut(auth);
     } catch (err) {
       console.error('Failed to logout', err);
@@ -341,6 +600,36 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateMemberData = async (data: Partial<Member>) => {
     if (!user || !myMember) return;
+    
+    if ((user as any).isGuest) {
+      const currentMembers = getLocalMembers();
+      const { id, ...dataToUpdate } = data as any;
+      let finalData = { ...dataToUpdate };
+
+      if (data.xp !== undefined) {
+        const newXp = data.xp;
+        const thresholds = [0, 0, 100, 200, 400, 700, 1100, 1600, 2200, 2900, 3700];
+        let calculatedLevel = 0;
+        for (let i = 0; i < thresholds.length; i++) {
+          if (newXp >= thresholds[i]) calculatedLevel = i;
+          else break;
+        }
+        calculatedLevel = Math.min(calculatedLevel, 10);
+        if (calculatedLevel > (myMember.level || 0)) {
+          finalData.level = calculatedLevel;
+        }
+      }
+
+      const updated = currentMembers.map(m => {
+        if (m.userId === user.uid) {
+          return { ...m, ...finalData };
+        }
+        return m;
+      });
+      localStorage.setItem('local_members', JSON.stringify(updated));
+      setMembers(updated);
+      return;
+    }
     
     const memberRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'members', user.uid);
     // Sanitize data to remove 'id' if present, and any other internal fields
@@ -352,8 +641,8 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const newXp = data.xp;
       
       // Calculate new level based on provided thresholds
-      // Level 1: 50, Level 2: 100, Level 3: 200, Level 4: 500, Level 5: 1000...
-      const thresholds = [0, 50, 100, 200, 500, 1000, 2000, 3000, 4000, 5000, 6000];
+      // Level 1: 0, Level 2: 100, Level 3: 200, Level 4: 400, up to Level 10
+      const thresholds = [0, 0, 100, 200, 400, 700, 1100, 1600, 2200, 2900, 3700];
       let calculatedLevel = 0;
       for (let i = 0; i < thresholds.length; i++) {
         if (newXp >= thresholds[i]) calculatedLevel = i;
@@ -393,6 +682,17 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const deleteMember = async (memberId: string) => {
     if (!user || !myMember) return;
     
+    if ((user as any).isGuest) {
+      const currentMembers = getLocalMembers();
+      const updated = currentMembers.filter(m => m.userId !== memberId);
+      localStorage.setItem('local_members', JSON.stringify(updated));
+      setMembers(updated);
+      if (myMember.userId === memberId || user.uid === memberId) {
+        await logout();
+      }
+      return;
+    }
+
     // Permission: Only leader can delete others, but anyone can delete themselves
     if (myMember.role !== 'leader' && myMember.userId !== memberId) {
       console.warn('Unauthorized: You can only delete your own account unless you are a leader.');
@@ -416,6 +716,14 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const banMember = async (memberId: string) => {
     if (!user || !myMember || myMember.role !== 'leader') return;
     
+    if ((user as any).isGuest) {
+      const currentMembers = getLocalMembers();
+      const updated = currentMembers.filter(m => m.userId !== memberId);
+      localStorage.setItem('local_members', JSON.stringify(updated));
+      setMembers(updated);
+      return;
+    }
+
     const banRef = doc(db, 'bans', memberId);
     const memberRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'members', memberId);
     
@@ -440,6 +748,18 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.warn('UpdateMemberRole aborted: No user or member data');
       return;
     }
+
+    if ((user as any).isGuest) {
+      const currentMembers = getLocalMembers();
+      const updated = currentMembers.map(m => {
+        if (m.userId === memberId) return { ...m, role: role as any };
+        return m;
+      });
+      localStorage.setItem('local_members', JSON.stringify(updated));
+      setMembers(updated);
+      return;
+    }
+
     if (myMember.role !== 'leader') {
       console.warn(`UpdateMemberRole aborted: User is not leader (Role: ${myMember.role})`);
       return;
@@ -455,6 +775,15 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateClanGuideImage = async (imageUrl: string) => {
     if (!user || !myMember || myMember.role !== 'leader') return;
+
+    if ((user as any).isGuest) {
+      const localClan = getLocalClan();
+      const updated = { ...localClan, guideImagePost1: imageUrl };
+      localStorage.setItem('local_clan', JSON.stringify(updated));
+      setClan(updated as any);
+      return;
+    }
+
     const clanRef = doc(db, 'clans', DEFAULT_CLAN_ID);
     try {
       await updateDoc(clanRef, { guideImagePost1: imageUrl });
@@ -463,8 +792,58 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateClanGuerraDia1Image = async (imageUrl: string) => {
+    if (!user || !myMember || myMember.role !== 'leader') return;
+
+    if ((user as any).isGuest) {
+      const localClan = getLocalClan();
+      const updated = { ...localClan, guideImageGuerraDia1: imageUrl };
+      localStorage.setItem('local_clan', JSON.stringify(updated));
+      setClan(updated as any);
+      return;
+    }
+
+    const clanRef = doc(db, 'clans', DEFAULT_CLAN_ID);
+    try {
+      await updateDoc(clanRef, { guideImageGuerraDia1: imageUrl });
+    } catch (err) {
+      console.error('Failed to update guerra dia 1 image', err);
+    }
+  };
+
+  const updateClanLoginLogoImage = async (imageUrl: string) => {
+    if (!user || !myMember || myMember.role !== 'leader') return;
+
+    if ((user as any).isGuest) {
+      const localClan = getLocalClan();
+      const updated = { ...localClan, loginLogoImage: imageUrl };
+      localStorage.setItem('local_clan', JSON.stringify(updated));
+      setClan(updated as any);
+      return;
+    }
+
+    const clanRef = doc(db, 'clans', DEFAULT_CLAN_ID);
+    try {
+      await updateDoc(clanRef, { loginLogoImage: imageUrl });
+    } catch (err) {
+      console.error('Failed to update login logo image', err);
+    }
+  };
+
   const updatePresenceStatus = async (status: 'online' | 'away' | 'offline') => {
     if (!user) return;
+
+    if ((user as any).isGuest) {
+      const currentMembers = getLocalMembers();
+      const updated = currentMembers.map(m => {
+        if (m.userId === user.uid) return { ...m, status: status as any };
+        return m;
+      });
+      localStorage.setItem('local_members', JSON.stringify(updated));
+      setMembers(updated);
+      return;
+    }
+
     const memberRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'members', user.uid);
     try {
       await updateDoc(memberRef, { status });
@@ -518,6 +897,22 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const reportTheft = async () => {
     if (!user || !myMember) return;
+
+    if ((user as any).isGuest) {
+      const savedReports = localStorage.getItem('local_theft_reports');
+      const reports: TheftReport[] = savedReports ? JSON.parse(savedReports) : [];
+      const newReport: TheftReport = {
+        id: 'report_' + Date.now(),
+        reporterId: user.uid,
+        reporterName: myMember.name || 'Guerreiro anônimo',
+        timestamp: new Date().toISOString()
+      };
+      const updated = [newReport, ...reports];
+      localStorage.setItem('local_theft_reports', JSON.stringify(updated));
+      setTheftReports(updated);
+      return;
+    }
+
     const reportRef = doc(collection(db, 'clans', DEFAULT_CLAN_ID, 'theft_reports'));
     await setDoc(reportRef, {
       reporterId: user.uid,
@@ -536,6 +931,15 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const clearTheftReport = async (reportId: string) => {
+    if ((user as any).isGuest) {
+      const savedReports = localStorage.getItem('local_theft_reports');
+      const reports: TheftReport[] = savedReports ? JSON.parse(savedReports) : [];
+      const updated = reports.filter(r => r.id !== reportId);
+      localStorage.setItem('local_theft_reports', JSON.stringify(updated));
+      setTheftReports(updated);
+      return;
+    }
+
     const reportRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'theft_reports', reportId);
     await deleteDoc(reportRef);
   };
@@ -545,13 +949,14 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
       user, clan, members, myMember, loading, isAdmin, logout, 
       updateMemberData, claimDailyBonus, redeemPromoCode, 
       completeMission, markVisitedMissions, deleteMember, banMember, updateMemberRole,
-      updateClanGuideImage, updatePresenceStatus,
+      updateClanGuideImage, updateClanGuerraDia1Image, updateClanLoginLogoImage, updatePresenceStatus,
       isEcoMode, toggleEcoMode, isOptimizing,
       reportTheft, theftReports, clearTheftReport,
       claimUpdateReward,
       activeTab, setActiveTab,
       dbError,
-      retryConnection
+      retryConnection,
+      loginAsGuest
     }}>
       {children}
     </ClanContext.Provider>
