@@ -44,7 +44,11 @@ service cloud.firestore {
              (data.get('level', 0) == null || data.get('level', 0) is number) &&
              (data.get('completedMissions', []) == null || data.get('completedMissions', []) is list) &&
              (data.get('visitedMissionsBoard', false) == null || data.get('visitedMissionsBoard', false) is bool) &&
-             (data.get('userId', '') == null || data.get('userId', '') is string);
+             (data.get('userId', '') == null || data.get('userId', '') is string) &&
+             (data.get('title', '') == null || data.get('title', '') is string) &&
+             (data.get('unlockedTitles', []) == null || data.get('unlockedTitles', []) is list) &&
+             (data.get('nicknameColor', '') == null || data.get('nicknameColor', '') is string) &&
+             (data.get('unlockedColors', []) == null || data.get('unlockedColors', []) is list);
     }
 
     function isValidMemberCreate(data) {
@@ -97,7 +101,8 @@ service cloud.firestore {
             'heroPower', 'diamonds', 'boxes', 'coins', 'lastDailyBonus', 
             'appTheme', 'chatTheme', 'premiumPass', 'xp', 'level',
             'completedMissions', 'visitedMissionsBoard', 'opacityLevel', 'updateRewardClaimed',
-            'lastCelebratedLevel', 'joinedAt', 'userId', 'id', 'profileBorder', 'profileBg'
+            'lastCelebratedLevel', 'joinedAt', 'userId', 'id', 'profileBorder', 'profileBg',
+            'title', 'unlockedTitles', 'nicknameColor', 'unlockedColors'
           ]) && isValidMember(incoming())) ||
           isClanAdmin(clanId)
         );

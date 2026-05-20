@@ -118,11 +118,38 @@ export function ClanProfile({
   const trophyProgress = ((myMember?.trophies || 0) / 100) * 100;
 
   const getBorderClasses = (borderId?: string) => {
+    if (isEcoMode) {
+      switch (borderId) {
+        case 'border_cyan': return 'border-2 border-cyan-400';
+        case 'border_purple': return 'border-2 border-purple-500';
+        case 'border_gold': return 'border-2 border-gaming-gold';
+        case 'border_dark': return 'border-2 border-red-600';
+        case 'border_emerald': return 'border-2 border-emerald-400';
+        case 'border_rgb': return 'border-2 border-pink-500';
+        default: return 'border-2 border-white/10';
+      }
+    }
     switch (borderId) {
       case 'border_cyan': return 'border-2 border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)]';
       case 'border_purple': return 'border-2 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.5)]';
       case 'border_gold': return 'border-2 border-gaming-gold shadow-[0_0_20px_rgba(251,191,36,0.6)] animate-pulse';
+      case 'border_dark': return 'border-2 border-red-600 shadow-[0_0_20px_rgba(220,38,38,0.7)]';
+      case 'border_emerald': return 'border-2 border-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.6)] animate-pulse';
+      case 'border_rgb': return 'border-2 border-pink-500 shadow-[0_0_20px_rgba(236,72,153,0.7)] animate-bounce';
       default: return 'border-2 border-gaming-gold/30';
+    }
+  };
+
+  const getNicknameColorClass = (colorId?: string) => {
+    switch (colorId) {
+      case 'color_gold': return 'text-[#c5a059] font-bold drop-shadow-[0_0_8px_rgba(197,160,89,0.4)]';
+      case 'color_red': return 'text-[#b25d62] font-semibold drop-shadow-[0_0_8px_rgba(178,93,98,0.3)]';
+      case 'color_cyan': return 'text-[#93c5fd] font-semibold drop-shadow-[0_0_8px_rgba(147,197,253,0.3)]';
+      case 'color_pink': return 'text-[#c084fc] font-semibold drop-shadow-[0_0_8px_rgba(192,132,252,0.3)]';
+      case 'color_emerald': return 'text-[#a7f3d0] font-semibold drop-shadow-[0_0_8px_rgba(167,243,208,0.3)]';
+      case 'color_purple': return 'text-[#c0a9df] font-semibold drop-shadow-[0_0_8px_rgba(192,169,223,0.3)]';
+      case 'color_rgb': return 'bg-gradient-to-r from-[#e2e8f0] via-[#c5a059] to-[#93c5fd] bg-clip-text text-transparent font-extrabold drop-shadow-[0_0_3px_rgba(226,232,240,0.3)]';
+      default: return 'text-white';
     }
   };
 
@@ -273,10 +300,17 @@ export function ClanProfile({
             )}
           </div>
 
-          <div className={`flex flex-col gap-3 md:gap-4 ${isMobile ? 'items-center' : ''}`}>
+          <div className={`flex flex-col gap-3 md:gap-4 ${isMobile ? 'items-center' : 'items-start'}`}>
             <div className="flex flex-col">
+              {myMember?.title && (
+                <div className="flex items-center gap-1 mb-1">
+                  <span className="px-2 py-0.5 bg-gaming-gold/10 text-gaming-gold border border-gaming-gold/20 rounded-md text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] shadow-[0_0_10px_rgba(251,191,36,0.1)] block">
+                    🏅 {myMember.title}
+                  </span>
+                </div>
+              )}
               <h1 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-display font-bold tracking-tight mb-1`}>
-                {myMember?.name || 'Recruta'} <span className="text-gaming-gold text-xs md:text-lg opacity-80 uppercase">[{clan?.tag || '---'}]</span>
+                <span className={getNicknameColorClass(myMember?.nicknameColor)}>{myMember?.name || 'Recruta'}</span> <span className="text-gaming-gold text-xs md:text-lg opacity-80 uppercase">[{clan?.tag || '---'}]</span>
               </h1>
               <span className="text-[9px] md:text-[10px] text-white/40 uppercase tracking-widest font-bold max-w-[250px]">{leader && leader.userId === user?.uid ? "Fundador da Ordem Suprema" : "Membro leal da Ordem Suprema"}</span>
             </div>

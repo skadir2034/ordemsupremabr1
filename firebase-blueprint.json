@@ -44,7 +44,11 @@
         "joinedAt": { "type": "string", "description": "ISO join date" },
         "completedMissions": { "type": "array", "items": { "type": "string" }, "description": "List of mission IDs completed" },
         "visitedMissionsBoard": { "type": "boolean", "description": "Whether first time on missions" },
-        "updateRewardClaimed": { "type": "boolean", "description": "Whether user claimed the update reward" }
+        "updateRewardClaimed": { "type": "boolean", "description": "Whether user claimed the update reward" },
+        "title": { "type": "string", "description": "Equipped honor title" },
+        "unlockedTitles": { "type": "array", "items": { "type": "string" }, "description": "Unlocked honor titles" },
+        "nicknameColor": { "type": "string", "description": "Selected nickname color ID" },
+        "unlockedColors": { "type": "array", "items": { "type": "string" }, "description": "Unlocked nickname color IDs" }
       },
       "required": ["userId", "name", "role", "trophies"]
     },

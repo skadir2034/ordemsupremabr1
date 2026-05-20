@@ -113,6 +113,9 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
         case 'border_cyan': return 'border border-cyan-400';
         case 'border_purple': return 'border border-purple-500';
         case 'border_gold': return 'border border-gaming-gold';
+        case 'border_dark': return 'border border-red-600';
+        case 'border_emerald': return 'border border-emerald-400';
+        case 'border_rgb': return 'border border-pink-500';
         default: return 'border border-white/10';
       }
     }
@@ -120,7 +123,23 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
       case 'border_cyan': return 'border border-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.5)]';
       case 'border_purple': return 'border border-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]';
       case 'border_gold': return 'border border-gaming-gold shadow-[0_0_12px_rgba(251,191,36,0.5)] animate-pulse';
+      case 'border_dark': return 'border border-red-600 shadow-[0_0_10px_rgba(220,38,38,0.7)]';
+      case 'border_emerald': return 'border border-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.6)] animate-pulse';
+      case 'border_rgb': return 'border border-pink-500 shadow-[0_0_12px_rgba(236,72,153,0.7)] animate-bounce';
       default: return 'border border-white/10';
+    }
+  };
+
+  const getNicknameColorClass = (colorId?: string) => {
+    switch (colorId) {
+      case 'color_gold': return 'text-[#c5a059] font-bold drop-shadow-[0_0_6px_rgba(197,160,89,0.4)]';
+      case 'color_red': return 'text-[#b25d62] font-semibold drop-shadow-[0_0_6px_rgba(178,93,98,0.3)]';
+      case 'color_cyan': return 'text-[#93c5fd] font-semibold drop-shadow-[0_0_6px_rgba(147,197,253,0.3)]';
+      case 'color_pink': return 'text-[#c084fc] font-semibold drop-shadow-[0_0_6px_rgba(192,132,252,0.3)]';
+      case 'color_emerald': return 'text-[#a7f3d0] font-semibold drop-shadow-[0_0_6px_rgba(167,243,208,0.3)]';
+      case 'color_purple': return 'text-[#c0a9df] font-semibold drop-shadow-[0_0_6px_rgba(192,169,223,0.3)]';
+      case 'color_rgb': return 'bg-gradient-to-r from-[#e2e8f0] via-[#c5a059] to-[#93c5fd] bg-clip-text text-transparent font-extrabold drop-shadow-[0_0_3px_rgba(226,232,240,0.3)]';
+      default: return 'text-white';
     }
   };
 
@@ -194,7 +213,14 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
                           </div>
                           {!isEcoMode && <div className="absolute inset-0 rounded-full bg-gaming-gold/20 blur-md opacity-0 group-hover/avatar:opacity-100 transition-opacity" />}
                         </div>
-                        <span className="text-xs font-bold text-white group-hover:text-gaming-gold transition-colors">{m.name}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`text-xs font-bold transition-colors ${getNicknameColorClass(m.nicknameColor)}`}>{m.name}</span>
+                          {m.title && (
+                            <span className="bg-gaming-gold/10 text-gaming-gold text-[7px] font-black uppercase tracking-[0.1em] px-1 py-0.5 rounded border border-gaming-gold/20 scale-95 uppercase font-sans">
+                              {m.title}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
@@ -253,7 +279,14 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
                       <div className={`absolute -bottom-0.5 -left-0.5 w-3 h-3 rounded-full border-2 border-gaming-card ${m.status === 'online' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]' : 'bg-white/20'}`} />
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-sm font-bold text-white leading-tight">{m.name}</span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className={`text-sm font-bold leading-tight ${getNicknameColorClass(m.nicknameColor)}`}>{m.name}</span>
+                        {m.title && (
+                          <span className="bg-gaming-gold/10 text-gaming-gold text-[7.5px] font-black uppercase tracking-[0.11em] px-1.5 py-0.5 rounded border border-gaming-gold/25 uppercase font-sans">
+                            {m.title}
+                          </span>
+                        )}
+                      </div>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className={`text-[8px] font-black uppercase tracking-widest ${getRoleBadgeColor(m.role)}`}>{getRoleLabel(m.role)}</span>
                       </div>

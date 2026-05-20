@@ -577,10 +577,45 @@ export function PerfilView() {
   const [uploadAcceptType, setUploadAcceptType] = useState('image/*');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [storeTab, setStoreTab] = useState<'auras' | 'titles' | 'backgrounds' | 'colors'>('auras');
+
   const borders = [
-    { id: 'border_cyan', title: 'Cibernética Blue', desc: 'Aura neon azul.', price: 50, color: 'border-cyan-400' },
-    { id: 'border_purple', title: 'Aura Púrpura', desc: 'Proteção mística violeta.', price: 50, color: 'border-purple-500' },
-    { id: 'border_gold', title: 'Fogo Dourado', desc: 'A borda suprema animada.', price: 50, color: 'border-gaming-gold', animated: true, inDevelopment: true }
+    { id: 'border_cyan', title: 'Cibernética Blue', desc: 'Aura neon azul do submundo.', price: 50, color: 'border-cyan-400' },
+    { id: 'border_purple', title: 'Aura Púrpura', desc: 'Proteção mística violeta.', price: 80, color: 'border-purple-500' },
+    { id: 'border_gold', title: 'Fogo Dourado', desc: 'A aura lendária animada.', price: 150, color: 'border-gaming-gold', animated: true },
+    { id: 'border_dark', title: 'Vazio Sombrio', desc: 'Glow vermelho do abismo.', price: 100, color: 'border-red-600' },
+    { id: 'border_emerald', title: 'Jade Imperial', desc: 'Pulso de jade mística.', price: 120, color: 'border-emerald-400', animated: true },
+    { id: 'border_rgb', title: 'Chroma RGB', desc: 'Arco-íris dinâmico supremo.', price: 200, color: 'border-pink-500', animated: true }
+  ];
+
+  const titles = [
+    { id: 'title_reaper', title: 'Ceifador de Almas', desc: 'Carrasco gélido do inferno.', price: 70, levelRequired: 1 },
+    { id: 'title_legend', title: 'Lenda Viva', desc: 'Seu nome cantado pelo tempo.', price: 150, levelRequired: 2 },
+    { id: 'title_protector', title: 'Guardião do Clã', desc: 'Escudo indestrutível da ordem.', price: 50, levelRequired: 1 },
+    { id: 'title_immortal', title: 'Eterno Imortal', desc: 'Aquele que transcendeu o fim.', price: 200, levelRequired: 3 },
+    { id: 'title_supreme', title: 'Mestre Supremo', desc: 'Controle imensurável de energia.', price: 120, levelRequired: 2 },
+    { id: 'title_shadow', title: 'Sombra Silenciosa', desc: 'Invisível, sorrateira, fatal.', price: 60, levelRequired: 1 },
+    { id: 'title_cyberspy', title: 'Infiltrado Cyber', desc: 'Mestre da informação e do hack.', price: 80, levelRequired: 1 }
+  ];
+
+  const backgrounds = [
+    { id: 'padrão', title: 'Clã Padrão', desc: 'Fundo clássico de ordem.', price: 0, url: '/src/assets/images/clan_bg_art_1778972376934.png' },
+    { id: 'cibernética', title: 'Hacker Cyber', desc: 'Terminal em neon azul.', price: 40, url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070' },
+    { id: 'guerra', title: 'Campo de Batalha', desc: 'Solo devastado de guerra.', price: 60, url: 'https://images.unsplash.com/photo-1599394022918-6c276a570aba?q=80&w=2070' },
+    { id: 'moderna', title: 'Neon Moderna', desc: 'Fluido moderno e futurista.', price: 50, url: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=2070' },
+    { id: 'cosmos', title: 'Nebula Profunda', desc: 'Cosmos absoluto galáctico.', price: 100, url: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=2070' },
+    { id: 'vulcao', title: 'Magma Vulcânico', desc: 'Lava ardente de destruição.', price: 120, url: 'https://images.unsplash.com/photo-1610296669228-602fa827fc1f?q=80&w=2070' }
+  ];
+
+  const nicknameColors = [
+    { id: 'color_white', title: 'Branco Padrão', desc: 'Nome clássico de guerreiro.', price: 0, textClass: 'text-white' },
+    { id: 'color_gold', title: 'Ouro Nobre', desc: 'Champagne clássico da realeza.', price: 60, textClass: 'text-[#c5a059] font-bold drop-shadow-[0_0_6px_rgba(197,160,89,0.4)]' },
+    { id: 'color_red', title: 'Fúria do Alfa', desc: 'Tom carmesim escuro e imponente.', price: 40, textClass: 'text-[#b25d62] font-semibold drop-shadow-[0_0_6px_rgba(178,93,98,0.3)]' },
+    { id: 'color_cyan', title: 'Prata da Geada', desc: 'Misty azul-gélido das montanhas.', price: 40, textClass: 'text-[#93c5fd] font-semibold drop-shadow-[0_0_6px_rgba(147,197,253,0.3)]' },
+    { id: 'color_pink', title: 'Rosé de Inverno', desc: 'Toque místico de orquídea e névoa.', price: 50, textClass: 'text-[#c084fc] font-semibold drop-shadow-[0_0_6px_rgba(192,132,252,0.3)]' },
+    { id: 'color_emerald', title: 'Sálvia do Bosque', desc: 'Verde sutil das florestas antigas.', price: 55, textClass: 'text-[#a7f3d0] font-semibold drop-shadow-[0_0_6px_rgba(167,243,208,0.3)]' },
+    { id: 'color_purple', title: 'Névoa Cósmica', desc: 'Aura suave de lavanda do crepúsculo.', price: 45, textClass: 'text-[#c0a9df] font-semibold drop-shadow-[0_0_6px_rgba(192,169,223,0.3)]' },
+    { id: 'color_rgb', title: 'Espírito Lunar', desc: 'Degradê suave do luar com prata e safira.', price: 120, textClass: 'text-transparent bg-clip-text bg-gradient-to-r from-[#e2e8f0] via-[#c5a059] to-[#93c5fd] font-extrabold drop-shadow-[0_0_4px_rgba(226,232,240,0.3)]' }
   ];
 
   const handleBuyBorder = (border: any) => {
@@ -598,12 +633,92 @@ export function PerfilView() {
     setTimeout(() => setPurchaseStatus(null), 2000);
   };
 
+  const handleBuyTitle = (selectedTitleItem: any) => {
+    const userRoleLevel = myMember?.level || 0;
+    if (userRoleLevel < selectedTitleItem.levelRequired) {
+      setPurchaseStatus({ id: selectedTitleItem.id, message: `Requer Nv. ${selectedTitleItem.levelRequired}!`, type: 'error' });
+      setTimeout(() => setPurchaseStatus(null), 2500);
+      return;
+    }
+
+    const alreadyUnlocked = myMember?.unlockedTitles || [];
+    const isAlreadyUnlocked = alreadyUnlocked.includes(selectedTitleItem.title);
+    const cost = isAlreadyUnlocked ? 0 : selectedTitleItem.price;
+
+    if (!isAlreadyUnlocked && (myMember?.coins || 0) < cost) {
+      setPurchaseStatus({ id: selectedTitleItem.id, message: "Moedas insuficientes!", type: 'error' });
+      setTimeout(() => setPurchaseStatus(null), 2000);
+      return;
+    }
+
+    const updatedUnlocked = isAlreadyUnlocked 
+      ? alreadyUnlocked 
+      : [...alreadyUnlocked, selectedTitleItem.title];
+
+    updateMemberData({
+      coins: (myMember?.coins || 0) - cost,
+      title: selectedTitleItem.title,
+      unlockedTitles: updatedUnlocked
+    });
+
+    setPurchaseStatus({ id: selectedTitleItem.id, message: isAlreadyUnlocked ? "Equipado!" : "Comprado & Equipado!", type: 'success' });
+    setTimeout(() => setPurchaseStatus(null), 2000);
+  };
+
+  const handleBuyBackground = (bgItem: any) => {
+    const currentBg = myMember?.profileBg || '/src/assets/images/clan_bg_art_1778972376934.png';
+    const isAlreadyUnlocked = currentBg === bgItem.url || bgItem.price === 0;
+    const cost = isAlreadyUnlocked ? 0 : bgItem.price;
+
+    if (!isAlreadyUnlocked && (myMember?.coins || 0) < cost) {
+      setPurchaseStatus({ id: bgItem.id, message: "Moedas insuficientes!", type: 'error' });
+      setTimeout(() => setPurchaseStatus(null), 2000);
+      return;
+    }
+
+    updateMemberData({
+      coins: (myMember?.coins || 0) - cost,
+      profileBg: bgItem.url
+    });
+
+    setPurchaseStatus({ id: bgItem.id, message: "Fundo Aplicado!", type: 'success' });
+    setTimeout(() => setPurchaseStatus(null), 2000);
+  };
+
+  const handleBuyColor = (colorItem: any) => {
+    const alreadyUnlocked = myMember?.unlockedColors || [];
+    const isAlreadyUnlocked = alreadyUnlocked.includes(colorItem.id) || colorItem.price === 0;
+    const cost = isAlreadyUnlocked ? 0 : colorItem.price;
+
+    if (!isAlreadyUnlocked && (myMember?.coins || 0) < cost) {
+      setPurchaseStatus({ id: colorItem.id, message: "Moedas insuficientes!", type: 'error' });
+      setTimeout(() => setPurchaseStatus(null), 2000);
+      return;
+    }
+
+    const updatedUnlocked = isAlreadyUnlocked
+      ? alreadyUnlocked
+      : [...alreadyUnlocked, colorItem.id];
+
+    updateMemberData({
+      coins: (myMember?.coins || 0) - cost,
+      nicknameColor: colorItem.id,
+      unlockedColors: updatedUnlocked
+    });
+
+    setPurchaseStatus({ id: colorItem.id, message: isAlreadyUnlocked ? "Equipado!" : "Comprado & Equipado!", type: 'success' });
+    setTimeout(() => setPurchaseStatus(null), 2000);
+  };
+
   const getBorderClasses = (borderId?: string) => {
     if (isEcoMode) {
       switch (borderId) {
         case 'border_cyan': return 'border-2 border-cyan-400';
         case 'border_purple': return 'border-2 border-purple-500';
         case 'border_gold': return 'border-2 border-gaming-gold';
+        case 'border_dark': return 'border-2 border-red-600';
+        case 'border_emerald': return 'border-2 border-emerald-400';
+        case 'border_rgb': return 'border-2 border-pink-500';
         default: return 'border-2 border-white/10';
       }
     }
@@ -611,7 +726,23 @@ export function PerfilView() {
       case 'border_cyan': return 'border-2 border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)]';
       case 'border_purple': return 'border-2 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.5)]';
       case 'border_gold': return 'border-2 border-gaming-gold shadow-[0_0_20px_rgba(251,191,36,0.6)] animate-pulse';
+      case 'border_dark': return 'border-2 border-red-600 shadow-[0_0_20px_rgba(220,38,38,0.7)]';
+      case 'border_emerald': return 'border-2 border-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.6)] animate-pulse';
+      case 'border_rgb': return 'border-2 border-pink-500 shadow-[0_0_20px_rgba(236,72,153,0.7)] animate-bounce';
       default: return 'border-2 border-gaming-gold/30';
+    }
+  };
+
+  const getNicknameColorClass = (colorId?: string) => {
+    switch (colorId) {
+      case 'color_gold': return 'text-[#c5a059] font-bold drop-shadow-[0_0_8px_rgba(197,160,89,0.4)]';
+      case 'color_red': return 'text-[#b25d62] font-semibold drop-shadow-[0_0_8px_rgba(178,93,98,0.3)]';
+      case 'color_cyan': return 'text-[#93c5fd] font-semibold drop-shadow-[0_0_8px_rgba(147,197,253,0.3)]';
+      case 'color_pink': return 'text-[#c084fc] font-semibold drop-shadow-[0_0_8px_rgba(192,132,252,0.3)]';
+      case 'color_emerald': return 'text-[#a7f3d0] font-semibold drop-shadow-[0_0_8px_rgba(167,243,208,0.3)]';
+      case 'color_purple': return 'text-[#c0a9df] font-semibold drop-shadow-[0_0_8px_rgba(192,169,223,0.3)]';
+      case 'color_rgb': return 'bg-gradient-to-r from-[#e2e8f0] via-[#c5a059] to-[#93c5fd] bg-clip-text text-transparent font-extrabold drop-shadow-[0_0_4px_rgba(226,232,240,0.3)]';
+      default: return 'text-white';
     }
   };
   
@@ -719,50 +850,232 @@ export function PerfilView() {
         <div className="bg-gaming-card border border-gaming-border rounded-[2.5rem] overflow-hidden shadow-2xl">
           <div className="p-8 border-b border-gaming-border flex items-center justify-between bg-white/[0.02]">
             <div>
-              <h3 className="text-2xl font-display font-black uppercase italic text-white leading-none">Customização de Aura</h3>
-              <p className="text-[10px] text-gaming-gold font-bold uppercase tracking-[0.3em] mt-2">Escolha sua borda lendária</p>
+              <h3 className="text-2xl font-display font-black uppercase italic text-white leading-none">Customização & Cosméticos</h3>
+              <p className="text-[10px] text-gaming-gold font-bold uppercase tracking-[0.3em] mt-2">Escolha seu visual supremo e títulos lendários</p>
+            </div>
+            <div className="flex items-center gap-1.5 px-4 py-2 bg-gaming-gold/10 border border-gaming-gold/20 rounded-2xl text-[10px] font-black uppercase text-gaming-gold font-mono">
+              <Star size={12} fill="currentColor" /> {myMember?.coins || 0} Moedas
             </div>
           </div>
-          
-          <div className="p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-            {borders.map(border => (
-              <div 
-                key={border.id}
-                className={`p-6 rounded-3xl border transition-all ${myMember?.profileBorder === border.id ? 'border-gaming-gold bg-gaming-gold/5 shadow-[0_0_30px_rgba(251,191,36,0.1)]' : 'border-white/5 bg-white/[0.01] hover:border-white/20'}`}
-              >
-                <div className="flex flex-col items-center text-center gap-5">
-                  <div className={`w-20 h-20 rounded-full ${border.color} border-2 relative flex items-center justify-center ${border.animated && !isEcoMode ? 'animate-pulse' : ''} bg-black/20`}>
-                    <User size={36} className="text-white/10" />
-                    {border.animated && !isEcoMode && (
-                       <motion.div 
-                         animate={{ rotate: 360 }}
-                         transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-                         className="absolute inset-0 border border-t-white/40 border-transparent rounded-full"
-                       />
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-1 items-center">
-                    <span className="text-[11px] font-black uppercase text-white tracking-widest">{border.title}</span>
-                    {border.inDevelopment && (
-                      <span className="text-[7px] font-black uppercase bg-red-600/20 text-red-500 border border-red-600/30 px-2 py-0.5 rounded-full tracking-widest mt-1 animate-pulse">
-                        Em Desenvolvimento
-                      </span>
-                    )}
+
+          <div className="p-6 md:p-8">
+            {/* Store categories subtabs */}
+            <div className="grid grid-cols-4 bg-black/40 border border-white/5 rounded-2xl p-1 mb-8">
+              {[
+                { id: 'auras', title: 'Auras & Bordas', icon: Shield },
+                { id: 'titles', title: 'Títulos de Honra', icon: Crown },
+                { id: 'backgrounds', title: 'Planos de Fundo', icon: ImageIcon },
+                { id: 'colors', title: 'Cores de Nick', icon: Palette }
+              ].map((tabItem) => (
+                <button
+                  key={tabItem.id}
+                  onClick={() => setStoreTab(tabItem.id as any)}
+                  className={`py-3 rounded-xl text-[9px] md:text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
+                    storeTab === tabItem.id 
+                      ? 'bg-gaming-gold text-black shadow-lg font-black' 
+                      : 'text-white/40 hover:text-white hover:bg-white/[0.01]'
+                  }`}
+                >
+                  <tabItem.icon size={12} />
+                  <span className="hidden sm:inline">{tabItem.title}</span>
+                  <span className="sm:hidden">{tabItem.title.split(' ')[0]}</span>
+                </button>
+              ))}
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* AURAS */}
+              {storeTab === 'auras' && borders.map(border => (
+                <div 
+                  key={border.id}
+                  className={`p-6 rounded-3xl border transition-all flex flex-col justify-between ${myMember?.profileBorder === border.id ? 'border-gaming-gold bg-gaming-gold/5 shadow-[0_0_30px_rgba(251,191,36,0.1)]' : 'border-white/5 bg-white/[0.01] hover:border-white/20'}`}
+                >
+                  <div className="flex flex-col items-center text-center gap-5 mb-6">
+                    <div className={`w-20 h-20 rounded-full ${border.color} border-2 relative flex items-center justify-center ${border.animated && !isEcoMode ? 'animate-pulse' : ''} bg-black/20`}>
+                      <User size={36} className="text-white/10" />
+                      {border.animated && !isEcoMode && (
+                        <motion.div 
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+                          className="absolute inset-0 border border-t-white/45 border-transparent rounded-full"
+                        />
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1.5 items-center">
+                      <span className="text-[11px] font-black uppercase text-white tracking-widest">{border.title}</span>
+                      <p className="text-[9px] text-white/50 uppercase font-black tracking-wide leading-relaxed">{border.desc}</p>
+                    </div>
                   </div>
                   <button 
                     onClick={() => handleBuyBorder(border)}
                     disabled={myMember?.profileBorder === border.id}
                     className={`w-full py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                       myMember?.profileBorder === border.id 
-                        ? 'bg-green-500/10 text-green-500 border border-green-500/20' 
+                        ? 'bg-green-500/10 text-green-500 border border-green-500/20 shadow-[0_0_10px_rgba(34,197,94,0.15)]' 
                         : 'bg-gaming-gold text-black hover:shadow-[0_0_20px_rgba(251,191,36,0.4)] hover:-translate-y-0.5'
                     }`}
                   >
-                    {purchaseStatus?.id === border.id ? purchaseStatus.message : (myMember?.profileBorder === border.id ? 'Equipado' : '50 Moedas')}
+                    {purchaseStatus?.id === border.id ? purchaseStatus.message : (myMember?.profileBorder === border.id ? 'Equipado' : `${border.price} Moedas`)}
                   </button>
                 </div>
-              </div>
-            ))}
+              ))}
+
+              {/* TITLES */}
+              {storeTab === 'titles' && titles.map(tOption => {
+                const alreadyUnlocked = myMember?.unlockedTitles || [];
+                const isUnlocked = alreadyUnlocked.includes(tOption.title) || false;
+                const isEquipped = myMember?.title === tOption.title;
+                const levelRequired = tOption.levelRequired;
+                const userLevel = myMember?.level || 1;
+                const isLockedByLevel = userLevel < levelRequired;
+
+                return (
+                  <div 
+                    key={tOption.id}
+                    className={`p-6 rounded-3xl border transition-all flex flex-col justify-between ${isEquipped ? 'border-gaming-gold bg-gaming-gold/5 shadow-[0_0_30px_rgba(251,191,36,0.1)]' : 'border-white/5 bg-white/[0.01] hover:border-white/20'}`}
+                  >
+                    <div className="flex flex-col items-center text-center gap-4 h-full justify-between">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-gaming-gold/5 border border-gaming-gold/25 flex items-center justify-center text-gaming-gold relative">
+                          <Crown size={20} className={isEquipped ? 'animate-bounce' : ''} />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[11px] font-black uppercase text-white tracking-widest block">{tOption.title}</span>
+                          <p className="text-[9px] text-white/50 uppercase font-black tracking-wider leading-relaxed">{tOption.desc}</p>
+                        </div>
+                      </div>
+
+                      <div className="w-full flex flex-col gap-2.5 mt-6">
+                        {isLockedByLevel && (
+                          <div className="flex items-center justify-center gap-1.5 text-red-500 text-[10px] uppercase font-black mb-1 animate-pulse">
+                            <Lock size={10} /> Requer Nível {levelRequired}
+                          </div>
+                        )}
+                        
+                        <button 
+                          onClick={() => handleBuyTitle(tOption)}
+                          disabled={isEquipped || isLockedByLevel}
+                          className={`w-full py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                            isEquipped 
+                              ? 'bg-green-500/10 text-green-500 border border-green-500/20' 
+                              : isLockedByLevel
+                                ? 'bg-black/40 border border-white/5 text-white/20 cursor-not-allowed'
+                                : isUnlocked
+                                  ? 'bg-white/5 border border-white/20 text-white hover:bg-white/10'
+                                  : 'bg-gaming-gold text-black hover:shadow-[0_0_20px_rgba(251,191,36,0.4)] hover:-translate-y-0.5'
+                          }`}
+                        >
+                          {purchaseStatus?.id === tOption.id 
+                            ? purchaseStatus.message 
+                            : isEquipped 
+                              ? 'Equipado' 
+                              : isUnlocked 
+                                ? 'Equipar' 
+                                : `${tOption.price} Moedas`}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* BACKGROUNDS */}
+              {storeTab === 'backgrounds' && backgrounds.map(bgOption => {
+                const currentBg = myMember?.profileBg || '/src/assets/images/clan_bg_art_1778972376934.png';
+                const isApplied = currentBg === bgOption.url;
+
+                return (
+                  <div 
+                    key={bgOption.id}
+                    className={`p-4 rounded-3xl border transition-all overflow-hidden flex flex-col justify-between ${isApplied ? 'border-gaming-gold bg-gaming-gold/5 shadow-[0_0_30px_rgba(251,191,36,0.1)]' : 'border-white/5 bg-white/[0.01] hover:border-white/20'}`}
+                  >
+                    <div className="flex flex-col gap-3">
+                      <div className="h-24 rounded-2xl overflow-hidden relative border border-white/5 bg-black/20">
+                        <img src={bgOption.url} className="w-full h-full object-cover opacity-60" alt="" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                        <div className="absolute bottom-2.5 left-2.5">
+                          <span className="text-[10px] font-black uppercase text-white tracking-widest block">{bgOption.title}</span>
+                        </div>
+                      </div>
+                      <p className="text-[9px] text-white/40 uppercase font-black tracking-wide text-center px-2">{bgOption.desc}</p>
+                    </div>
+
+                    <div className="mt-4 w-full">
+                      <button 
+                        onClick={() => handleBuyBackground(bgOption)}
+                        className={`w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                          isApplied 
+                            ? 'bg-green-500/10 text-green-500 border border-green-500/20 shadow-[0_0_10px_rgba(34,197,94,0.15)]' 
+                            : 'bg-white/5 border border-white/10 text-white hover:bg-white/10'
+                        }`}
+                      >
+                        {purchaseStatus?.id === bgOption.id 
+                          ? purchaseStatus.message 
+                          : isApplied 
+                            ? 'Equipado' 
+                            : bgOption.price === 0 
+                              ? 'Equipar Grátis' 
+                              : `${bgOption.price} Moedas`}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* NICKNAME COLORS */}
+              {storeTab === 'colors' && nicknameColors.map(colorOption => {
+                const alreadyUnlocked = myMember?.unlockedColors || [];
+                const isUnlocked = alreadyUnlocked.includes(colorOption.id) || colorOption.price === 0;
+                const isEquipped = (myMember?.nicknameColor || 'color_white') === colorOption.id;
+
+                return (
+                  <div 
+                    key={colorOption.id}
+                    className={`p-6 rounded-3xl border transition-all flex flex-col justify-between ${isEquipped ? 'border-gaming-gold bg-gaming-gold/5 shadow-[0_0_30px_rgba(251,191,36,0.1)]' : 'border-white/5 bg-white/[0.01] hover:border-white/20'}`}
+                  >
+                    <div className="flex flex-col items-center text-center gap-4 h-full justify-between">
+                      <div className="flex flex-col items-center gap-3 w-full">
+                        <div className="w-12 h-12 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-center relative">
+                          <Palette size={20} className={isEquipped ? 'text-gaming-gold animate-pulse' : 'text-white/40'} />
+                        </div>
+                        <div className="flex flex-col gap-1 w-full max-w-full overflow-hidden">
+                          <span className={`text-sm md:text-base font-black uppercase tracking-wider block font-sans truncate py-1 ${colorOption.textClass}`}>
+                            {myMember?.name || 'Recruta'}
+                          </span>
+                          <span className="text-[10px] font-bold text-white/80 tracking-widest block uppercase mt-1">
+                            {colorOption.title}
+                          </span>
+                          <p className="text-[9px] text-white/40 uppercase font-black tracking-wider leading-relaxed">
+                            {colorOption.desc}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="w-full flex flex-col gap-2.5 mt-6">
+                        <button 
+                          onClick={() => handleBuyColor(colorOption)}
+                          className={`w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                            isEquipped 
+                              ? 'bg-green-500/10 text-green-500 border border-green-500/20 shadow-[0_0_10px_rgba(34,197,94,0.15)]' 
+                              : isUnlocked
+                                ? 'bg-white/5 border border-white/10 text-white hover:bg-white/10'
+                                : 'bg-gaming-gold text-black hover:shadow-[0_0_20px_rgba(251,191,36,0.4)] hover:-translate-y-0.5'
+                          }`}
+                        >
+                          {purchaseStatus?.id === colorOption.id 
+                            ? purchaseStatus.message 
+                            : isEquipped 
+                              ? 'Equipado' 
+                              : isUnlocked 
+                                ? 'Equipar' 
+                                : `${colorOption.price} Moedas`}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       </motion.div>
@@ -889,7 +1202,7 @@ export function PerfilView() {
          <div className="flex flex-col items-center lg:items-start text-center lg:text-left gap-4 flex-1">
             <div className="flex flex-col gap-1">
               <span className="text-[10px] uppercase font-black text-gaming-gold tracking-[0.4em]">Guerreiro de Elite</span>
-              <h2 className="text-3xl md:text-5xl font-display font-black uppercase italic tracking-tighter">{myMember?.name || 'Recruta'}</h2>
+              <h2 className={`text-3xl md:text-5xl font-display font-black uppercase italic tracking-tighter ${getNicknameColorClass(myMember?.nicknameColor)}`}>{myMember?.name || 'Recruta'}</h2>
             </div>
 
             <button 
@@ -1063,18 +1376,18 @@ export function ConfiguracoesView() {
                </div>
 
               <div>
-                 <span className="text-[10px] uppercase font-black text-white/40 tracking-[0.3em] block mb-4">Esquema de Cores</span>
+                 <span className="text-[10px] uppercase font-black text-white/40 tracking-[0.3em] block mb-4">Esquema de Cores do Clã</span>
                  <div className="grid grid-cols-2 gap-2">
                     {[
-                       { id: 'dark', label: 'Sombrio' },
-                       { id: 'neon', label: 'Neon' },
-                       { id: 'gold', label: 'Dourado' },
-                       { id: 'classic', label: 'Clássico' }
+                       { id: 'dark', label: 'Lua de Sangue (Carmesim Sutil)' },
+                       { id: 'neon', label: 'Nevasca (Gélido Tundra)' },
+                       { id: 'gold', label: 'Ouro Rúnico (Alpha Supremo)' },
+                       { id: 'classic', label: 'Lobo de Prata (Monocromático)' }
                     ].map(t => (
                       <button 
                         key={t.id}
                         onClick={() => handleThemeChange(t.id as any)}
-                        className={`py-4 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${myMember?.appTheme === t.id ? 'bg-gaming-gold text-black border-gaming-gold shadow-[0_0_15px_rgba(251,191,36,0.3)]' : 'bg-white/5 border-white/10 text-white/40 hover:text-white'}`}
+                        className={`py-4 px-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${myMember?.appTheme === t.id ? 'bg-gaming-gold text-black border-gaming-gold shadow-[0_0_15px_rgba(197,160,89,0.3)]' : 'bg-white/5 border-white/10 text-white/40 hover:text-white'}`}
                       >
                         {t.label}
                       </button>

@@ -33,6 +33,10 @@ interface Member {
   updateRewardClaimed?: boolean;
   profileBg?: string;
   profileBorder?: string;
+  title?: string;
+  unlockedTitles?: string[];
+  nicknameColor?: string;
+  unlockedColors?: string[];
 }
 
 interface TheftReport {
