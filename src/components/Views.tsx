@@ -38,21 +38,27 @@ import {
   MessageSquareWarning,
   Image as ImageIcon,
   ArrowLeft,
+  Bell,
+  Megaphone,
+  Activity,
   ChevronUp,
   ChevronDown,
   X
 } from 'lucide-react';
 import { useClan } from '../context/ClanContext';
+import { SafeAvatar } from './SafeAvatar';
 
 // --- GUIA VIEW ---
 export function GuiaView() {
-  const { isEcoMode, myMember, clan, updateClanGuideImage, reportTheft } = useClan();
+  const { isEcoMode, myMember, clan, updateClanGuideImage, updateClanGuerraDia1Image, reportTheft } = useClan();
   const [selectedGuide, setSelectedGuide] = useState<string | null>(null);
   const [showTheftReported, setShowTheftReported] = useState(false);
-  const [activeSubTab, setActiveSubTab] = useState<'guias' | 'avisos'>('guias');
+  const [activeSubTab, setActiveSubTab] = useState<'guias' | 'guerra' | 'avisos'>('guerra');
+  const [guerraDay, setGuerraDay] = useState<string>('dia3');
 
   const isLeader = myMember?.role === 'leader';
   const displayImage = clan?.guideImagePost1 || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070';
+  const guerraDia1Image = clan?.guideImageGuerraDia1 || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070';
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!isLeader) return;
@@ -68,92 +74,106 @@ export function GuiaView() {
     reader.readAsDataURL(file);
   };
 
+  const handleGuerraDia1ImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isLeader) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        updateClanGuerraDia1Image(event.target.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   if (selectedGuide === 'evoluir') {
     return (
-      <div className="flex flex-col gap-8 p-4 md:p-8 max-w-4xl mx-auto w-full pb-20">
+      <div className="flex flex-col gap-5 p-3 sm:p-5 md:p-8 max-w-4xl mx-auto w-full pb-16">
         <button 
           onClick={() => setSelectedGuide(null)}
           className="flex items-center gap-2 text-gaming-gold font-black uppercase text-[10px] tracking-widest hover:translate-x-[-4px] transition-transform w-fit"
         >
-          <ArrowLeft size={16} /> Voltar ao Guia
+          <ArrowLeft size={14} /> Voltar ao Guia
         </button>
 
-        <div className="bg-gaming-card/40 border border-gaming-border rounded-[2.5rem] p-8 md:p-12 flex flex-col gap-8 shadow-2xl relative overflow-hidden">
+        <div className="bg-gaming-card/40 border border-gaming-border rounded-2xl p-5 md:p-8 flex flex-col gap-6 shadow-2xl relative overflow-hidden">
           {!isEcoMode && (
-            <div className="absolute top-0 right-0 p-8 opacity-5">
-              <Zap size={120} />
+            <div className="absolute top-0 right-0 p-4 opacity-5">
+              <Zap size={80} />
             </div>
           )}
 
-          <div className="flex flex-col gap-2">
-            <h2 className="text-3xl md:text-5xl font-display font-black uppercase italic tracking-tighter">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-display font-black uppercase italic tracking-tighter">
               Como Evoluir <span className="text-gaming-gold">Rápido no Jogo</span>
             </h2>
           </div>
 
           {/* Post Tabs Selection */}
-          <div className="flex gap-4 border-b border-white/5 pb-4 overflow-x-auto custom-scrollbar">
-             <button className="px-6 py-2 bg-gaming-gold text-black rounded-full font-black uppercase text-[10px] tracking-[0.2em] whitespace-nowrap">Post #1: Missões</button>
-             <button className="px-6 py-2 bg-white/5 border border-white/10 text-white/40 rounded-full font-black uppercase text-[10px] tracking-[0.2em] whitespace-nowrap cursor-not-allowed">Post #2: Em Breve</button>
+          <div className="flex gap-2 sm:gap-4 border-b border-white/5 pb-3 overflow-x-auto custom-scrollbar">
+             <button className="px-4 py-1.5 bg-gaming-gold text-black rounded-full font-black uppercase text-[9px] sm:text-[10px] tracking-[0.2em] whitespace-nowrap">Post #1: Missões</button>
+             <button className="px-4 py-1.5 bg-white/5 border border-white/10 text-white/40 rounded-full font-black uppercase text-[9px] sm:text-[10px] tracking-[0.2em] whitespace-nowrap cursor-not-allowed">Post #2: Em Breve</button>
           </div>
 
-          <div className="flex flex-col gap-10">
+          <div className="flex flex-col gap-6 sm:gap-8">
              {/* Post 1 Content */}
-             <div className="flex flex-col gap-8">
-                <div className="flex flex-col gap-4">
-                   <h4 className="font-display font-black uppercase text-2xl text-gaming-gold italic flex items-center gap-3">
-                      <Zap size={24} fill="currentColor" /> 
+             <div className="flex flex-col gap-5 sm:gap-6">
+                <div className="flex flex-col gap-2">
+                   <h4 className="font-display font-black uppercase text-base sm:text-lg text-gaming-gold italic flex items-center gap-2">
+                      <Zap className="w-5 h-5" fill="currentColor" /> 
                       Post 1: Missões Diárias
                    </h4>
-                   <p className="text-base text-white/80 font-bold uppercase italic leading-relaxed tracking-wide">
+                   <p className="text-xs sm:text-sm text-white/80 font-bold uppercase italic leading-relaxed tracking-wide">
                       A interação mais importante ao logar. É através dela que você garante itens cruciais para o seu desenvolvimento acelerado.
                    </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <div className="bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-gaming-gold/20 transition-all">
-                      <span className="text-gaming-gold font-black text-[10px] uppercase tracking-widest block mb-2">⚡ Aceleradores de Construção</span>
-                      <p className="text-xs text-white/40 uppercase font-bold italic leading-relaxed">Fundamental para garantir que suas melhorias de base sejam concluídas em tempo recorde.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                   <div className="bg-white/5 p-4 rounded-xl border border-white/5 hover:border-gaming-gold/20 transition-all">
+                      <span className="text-gaming-gold font-black text-[9px] sm:text-[10px] uppercase tracking-widest block mb-1">⚡ Aceleradores de Construção</span>
+                      <p className="text-[10px] sm:text-xs text-white/40 uppercase font-bold italic leading-relaxed">Fundamental para garantir que suas melhorias de base sejam concluídas em tempo recorde.</p>
                    </div>
-                   <div className="bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-gaming-gold/20 transition-all">
-                      <span className="text-gaming-gold font-black text-[10px] uppercase tracking-widest block mb-2">🐀 Isca de Rato</span>
-                      <p className="text-xs text-white/40 uppercase font-bold italic leading-relaxed">Item vital para o evento "Caça ao Rato". Será melhor explicado no quadro de missões antes da Raid.</p>
+                   <div className="bg-white/5 p-4 rounded-xl border border-white/5 hover:border-gaming-gold/20 transition-all">
+                      <span className="text-gaming-gold font-black text-[9px] sm:text-[10px] uppercase tracking-widest block mb-1">🐀 Isca de Rato</span>
+                      <p className="text-[10px] sm:text-xs text-white/40 uppercase font-bold italic leading-relaxed">Item vital para o evento "Caça ao Rato". Será melhor explicado no quadro de missões antes da Raid.</p>
                    </div>
-                   <div className="bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-gaming-gold/20 transition-all">
-                      <span className="text-gaming-gold font-black text-[10px] uppercase tracking-widest block mb-2">🐦 Essência de Corvo</span>
-                      <p className="text-xs text-white/40 uppercase font-bold italic leading-relaxed">Recurso necessário para realizar o upgrade do Corvo na Cabana do Corvo.</p>
+                   <div className="bg-white/5 p-4 rounded-xl border border-white/5 hover:border-gaming-gold/20 transition-all">
+                      <span className="text-gaming-gold font-black text-[9px] sm:text-[10px] uppercase tracking-widest block mb-1">🐦 Essência de Corvo</span>
+                      <p className="text-[10px] sm:text-xs text-white/40 uppercase font-bold italic leading-relaxed">Recurso necessário para realizar o upgrade do Corvo na Cabana do Corvo.</p>
                    </div>
-                   <div className="bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-gaming-gold/20 transition-all">
-                      <span className="text-gaming-gold font-black text-[10px] uppercase tracking-widest block mb-2">💎 Diamantes</span>
-                      <p className="text-xs text-white/40 uppercase font-bold italic leading-relaxed">Recurso final necessário para recursos avançados. Não gaste à toa no jogo!</p>
+                   <div className="bg-white/5 p-4 rounded-xl border border-white/5 hover:border-gaming-gold/20 transition-all">
+                      <span className="text-gaming-gold font-black text-[9px] sm:text-[10px] uppercase tracking-widest block mb-1">💎 Diamantes</span>
+                      <p className="text-[10px] sm:text-xs text-white/40 uppercase font-bold italic leading-relaxed">Recurso final necessário para recursos avançados. Não gaste à toa no jogo!</p>
                    </div>
                 </div>
 
-                <div className="p-8 bg-red-500/10 border border-red-500/20 rounded-3xl relative overflow-hidden">
-                   <div className="absolute top-0 right-0 p-6 opacity-10">
-                      <AlertTriangle size={64} />
+                <div className="p-4 sm:p-5 md:p-6 bg-red-500/10 border border-red-500/20 rounded-2xl relative overflow-hidden">
+                   <div className="absolute top-0 right-0 p-3 opacity-10">
+                      <AlertTriangle size={48} />
                    </div>
-                   <div className="flex items-center gap-2 mb-4">
-                      <ShieldCheck size={20} className="text-red-500" />
-                      <span className="text-[12px] text-red-500 font-black uppercase tracking-[0.3em]">RECOMENDAÇÃO DO LÍDER</span>
+                   <div className="flex items-center gap-1.5 mb-2">
+                      <ShieldCheck size={16} className="text-red-500" />
+                      <span className="text-[10px] sm:text-[11px] text-red-500 font-black uppercase tracking-[0.3em]">RECOMENDAÇÃO DO LÍDER</span>
                    </div>
-                   <p className="text-sm text-white/60 font-bold uppercase italic leading-relaxed">
+                   <p className="text-xs sm:text-sm text-white/60 font-bold uppercase italic leading-relaxed">
                       "Mantenha o foco em acumular diamantes. Eles serão seu maior trunfo para dominar recursos em fases mais avançadas da guerra."
                    </p>
                 </div>
 
                 {/* Single Visual Support Image at the bottom */}
-                <div className="flex flex-col gap-4 mt-4">
+                <div className="flex flex-col gap-2 mt-2">
                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] uppercase font-black text-white/30 tracking-[0.3em]">Referência Visual: Menu de Missões</span>
+                      <span className="text-[9px] sm:text-[10px] uppercase font-black text-white/30 tracking-[0.3em]">Referência Visual: Menu de Missões</span>
                       {isLeader && <span className="text-[8px] text-gaming-gold font-black uppercase italic">Toque na imagem para alterar permanentemente</span>}
                    </div>
-                   <div className="aspect-video md:h-[400px] rounded-[2.5rem] border border-white/10 overflow-hidden bg-black/40 group relative">
+                   <div className="aspect-video md:h-[300px] rounded-2xl border border-white/10 overflow-hidden bg-black/40 group relative">
                       <img src={displayImage} alt="Guia de Missões" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" />
                       {isLeader && (
                         <label className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer gap-4">
-                           <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center border border-white/10 group-hover:scale-110 transition-transform">
-                              <ImageIcon size={32} className="text-gaming-gold" />
+                           <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center border border-white/10 group-hover:scale-110 transition-transform">
+                              <ImageIcon size={24} className="text-gaming-gold" />
                            </div>
                            <div className="text-center">
                               <span className="text-xs font-black uppercase tracking-[0.2em] text-white block">Substituir Imagem</span>
@@ -172,182 +192,715 @@ export function GuiaView() {
   }
 
   return (
-    <div className="flex flex-col gap-8 p-4 md:p-8 max-w-6xl mx-auto w-full pb-20">
+    <div className="flex flex-col gap-5 sm:gap-6 p-3 sm:p-5 md:p-8 max-w-6xl mx-auto w-full pb-16">
       <AnimatePresence>
         {showTheftReported && (
           <motion.div 
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
-            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[200] px-8 py-4 bg-green-500 text-black rounded-full font-black uppercase text-xs tracking-widest shadow-[0_0_50px_rgba(34,197,94,0.3)] flex items-center gap-3"
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 bg-green-500 text-black rounded-full font-black uppercase text-[10px] tracking-widest shadow-[0_0_50px_rgba(34,197,94,0.3)] flex items-center gap-2"
           >
-            <CheckCircle2 size={18} /> Denúncia Enviada aos Líderes
+            <CheckCircle2 size={16} /> Denúncia Enviada aos Líderes
           </motion.div>
         )}
       </AnimatePresence>
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex flex-col">
-           <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-gaming-gold/20 rounded-lg text-gaming-gold border border-gaming-gold/30">
-                 <BookOpen size={16} />
+           <div className="flex items-center gap-2 mb-1">
+              <div className="p-1.5 bg-gaming-gold/20 rounded-lg text-gaming-gold border border-gaming-gold/30">
+                 <BookOpen size={14} />
               </div>
-              <span className="text-[10px] uppercase font-black text-gaming-gold tracking-[0.4em]">Codex da Aliança</span>
+              <span className="text-[9px] uppercase font-black text-gaming-gold tracking-[0.4em]">Codex da Aliança</span>
            </div>
-           <h2 className="text-4xl md:text-6xl font-display font-black uppercase italic tracking-tighter leading-none">
+           <h2 className="text-2xl sm:text-3xl md:text-5xl font-display font-black uppercase italic tracking-tighter leading-none">
              Guia & <span className="text-gaming-gold">Dicas Estratégicas</span>
            </h2>
         </div>
-        <div className="flex items-center gap-4 bg-white/5 border border-white/10 px-5 py-3 rounded-2xl backdrop-blur-md">
+        <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2 rounded-xl backdrop-blur-md">
            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
-           <span className="text-[10px] font-black uppercase tracking-widest text-white/40">Manual Atualizado v2.5</span>
+           <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Manual Atualizado v2.5</span>
         </div>
       </div>
 
       {/* Guia Tabs Swiper */}
-      <div className="flex gap-4 p-1 bg-white/5 border border-white/10 rounded-2xl w-fit">
+      <div className="flex gap-2 p-1 bg-white/5 border border-white/10 rounded-xl w-fit overflow-x-auto max-w-full custom-scrollbar">
         <button 
           onClick={() => setActiveSubTab('guias')}
-          className={`px-8 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeSubTab === 'guias' ? 'bg-gaming-gold text-black shadow-[0_0_20px_rgba(251,191,36,0.2)]' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+          className={`px-4 sm:px-5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeSubTab === 'guias' ? 'bg-gaming-gold text-black shadow-[0_0_20px_rgba(251,191,36,0.2)]' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
         >
           Guias Oficiais
         </button>
         <button 
+          onClick={() => setActiveSubTab('guerra')}
+          className={`px-4 sm:px-5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeSubTab === 'guerra' ? 'bg-gaming-gold text-black shadow-[0_0_20px_rgba(251,191,36,0.2)]' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+        >
+          Guerra Sv (5 Dias) 🔥
+        </button>
+        <button 
           onClick={() => setActiveSubTab('avisos')}
-          className={`px-8 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all relative ${activeSubTab === 'avisos' ? 'bg-gaming-gold text-black shadow-[0_0_20px_rgba(251,191,36,0.2)]' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+          className={`px-4 sm:px-5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeSubTab === 'avisos' ? 'bg-gaming-gold text-black shadow-[0_0_20px_rgba(251,191,36,0.2)]' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
         >
           Avisos
-          <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-600 rounded-full animate-ping" />
         </button>
       </div>
 
       {activeSubTab === 'avisos' ? (
         <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-[#0a0a0a] border-2 border-red-600/20 rounded-[2.5rem] p-8 md:p-12 relative overflow-hidden shadow-[0_0_50px_rgba(220,38,38,0.1)]"
+          className="bg-gaming-card/20 border border-white/5 rounded-2xl p-4 sm:p-6 flex flex-col gap-5 w-full"
         >
-          {/* Background pattern */}
-          <div className="absolute inset-0 opacity-5 pointer-events-none">
-             <Skull size={400} className="absolute -bottom-20 -right-20 text-red-600" />
+          {/* Header */}
+          <div className="flex flex-col gap-1 p-4 bg-gaming-card/40 border border-white/10 rounded-2xl relative overflow-hidden">
+            {!isEcoMode && (
+              <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                <Bell size={100} className="text-gaming-gold" />
+              </div>
+            )}
+            <span className="text-gaming-gold font-black uppercase text-[9px] tracking-[0.2em] flex items-center gap-1.5">
+              <Megaphone size={12} /> MURAL DE ANÚNCIOS DO CLÃ
+            </span>
+            <h3 className="text-xl sm:text-2xl font-display font-black uppercase italic tracking-tighter text-white">
+              Avisos & Notificações
+            </h3>
+            <p className="text-xs text-white/50 font-bold uppercase italic leading-relaxed">
+              Fique por dentro das últimas estratégias, atualizações e comunicados oficiais.
+            </p>
           </div>
 
-          <div className="relative flex flex-col gap-8">
-            <div className="flex flex-col gap-3">
-              <span className="text-red-500 font-black uppercase text-[10px] tracking-[0.4em] flex items-center gap-2">
-                <AlertTriangle size={14} /> ALERTA DE MOBILIZAÇÃO
+          {/* Announcements List */}
+          <div className="flex flex-col gap-4">
+            {/* Aviso 1 */}
+            <div className="p-4 bg-gaming-gold/5 border border-gaming-gold/20 rounded-xl relative overflow-hidden flex flex-col sm:flex-row gap-4 items-start">
+              <div className="w-10 h-10 bg-gaming-gold/10 border border-gaming-gold/20 rounded-xl flex items-center justify-center text-gaming-gold shrink-0">
+                <Compass size={20} />
+              </div>
+              <div className="flex flex-col gap-1.5 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="px-2 py-0.5 bg-gaming-gold text-black text-[7px] font-black uppercase rounded">NOVO GUIA</span>
+                  <span className="text-[10px] text-white/40 uppercase font-bold tracking-wider">Publicado hoje</span>
+                </div>
+                <h4 className="text-sm font-display font-black uppercase text-white tracking-tight">Guia da Guerra de Servidores Disponível!</h4>
+                <p className="text-[11px] sm:text-xs text-white/70 font-bold uppercase italic leading-relaxed">
+                  O planejamento tático completo de 5 dias para o evento <span className="text-gaming-gold">Last Asylum: Plague</span> já está operacional! 
+                  Selecione a aba <strong className="text-gaming-gold">"Guerra Sv (5 Dias) 🔥"</strong> para conferir as tarefas obrigatórias dia a dia. 
+                  Hoje estamos no <strong className="text-gaming-gold">Dia 3 (Pesquisa & Equipamentos)</strong>. Use seus recursos com sabedoria!
+                </p>
+              </div>
+            </div>
+
+            {/* Aviso 2 */}
+            <div className="p-4 bg-white/5 border border-white/5 hover:border-white/10 rounded-xl flex flex-col sm:flex-row gap-4 items-start transition-all">
+              <div className="w-10 h-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-white/60 shrink-0">
+                <CheckCircle2 size={20} />
+              </div>
+              <div className="flex flex-col gap-1.5 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="px-2 py-0.5 bg-white/10 text-white/60 text-[7px] font-black uppercase rounded">SISTEMA</span>
+                  <span className="text-[10px] text-white/40 uppercase font-bold tracking-wider">Recentemente</span>
+                </div>
+                <h4 className="text-sm font-display font-black uppercase text-white tracking-tight">Otimizações e Modo Econômico</h4>
+                <p className="text-[11px] sm:text-xs text-white/60 font-bold uppercase italic leading-relaxed">
+                  Implementamos o componente de segurança <span className="text-gaming-gold">SafeAvatar</span> em todo o aplicativo. 
+                  Se você estiver usando dados móveis ou jogando em locais com bateria baixa, ative o <strong className="text-gaming-gold">Modo Eco</strong> nas Configurações para reduzir efeitos visuais, ocultar avatares pesados e reproduzir GIFs de forma estática.
+                </p>
+              </div>
+            </div>
+
+            {/* Aviso 3 */}
+            <div className="p-4 bg-white/[0.02]/5 border border-white/5 hover:border-white/10 rounded-xl flex flex-col sm:flex-row gap-4 items-start transition-all">
+              <div className="w-10 h-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-white/45 shrink-0">
+                <Activity size={20} />
+              </div>
+              <div className="flex flex-col gap-1.5 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="px-2 py-0.5 bg-white/10 text-white/40 text-[7px] font-black uppercase rounded">GERAL</span>
+                  <span className="text-[10px] text-white/40 uppercase font-bold tracking-wider">Silencioso</span>
+                </div>
+                <h4 className="text-sm font-display font-black uppercase text-white/70 tracking-tight">Status da Mobilização</h4>
+                <p className="text-[11px] sm:text-xs text-white/50 font-bold uppercase italic leading-relaxed">
+                  Não existem alertas de bombardeamento, mobilização hostil imprevista ou saques em massa no momento. Mantenham as doações diárias ativas para garantir bônus de combate coletivos para todo o clã!
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      ) : activeSubTab === 'guerra' ? (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col gap-5 w-full bg-gaming-card/20 border border-white/5 rounded-2xl p-4 sm:p-6"
+        >
+          {/* Header strategic */}
+          <div className="flex flex-col gap-1.5 p-4 bg-gaming-card/40 border border-white/10 rounded-2xl relative overflow-hidden">
+            {!isEcoMode && (
+              <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                <Skull size={100} className="text-gaming-gold" />
+              </div>
+            )}
+            <div className="flex items-center justify-between">
+              <span className="text-gaming-gold font-black uppercase text-[9px] tracking-[0.2em] flex items-center gap-1.5">
+                <Star size={12} fill="currentColor" /> LAST ASYLUM: PLAGUE
               </span>
-              <h3 className="text-4xl md:text-6xl font-display font-black uppercase italic tracking-tighter text-white">
-                GUERRA ENTRA <span className="text-red-600">SERVIDORES</span>
-              </h3>
+              <span className="px-2.5 py-0.5 bg-gaming-gold/10 border border-gaming-gold/20 rounded-full text-[8px] font-black uppercase tracking-widest text-gaming-gold animate-pulse">
+                GUIA OFICIAL
+              </span>
             </div>
-
-            <div className="p-8 bg-red-600/5 border border-red-600/20 rounded-3xl">
-              <p className="text-lg text-white/80 font-bold uppercase italic leading-relaxed">
-                ESTAMOS PREPARANDO UM GUIA COMPLETO PARA DOMINAR A LUTA DE GUERRA ENTRE SERVIDORES. 
-                SAIBA EXATAMENTE QUAIS MISSÕES FAZER POR DIA PARA DERROTAR QUALQUER OUTRO REINO.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-6 p-6 bg-white/5 border border-white/10 rounded-2xl">
-              <div className="w-16 h-16 bg-gaming-gold/20 rounded-full flex items-center justify-center text-gaming-gold animate-pulse">
-                <Clock size={32} />
-              </div>
-              <div>
-                <h4 className="font-display font-black uppercase text-xl text-gaming-gold italic">LANÇAMENTO IMINENTE</h4>
-                <p className="text-sm text-white/40 font-bold uppercase italic">Será entregue completo amanhã de manhã (v6.0 ALPHA).</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-40 grayscale pointer-events-none">
-              <div className="p-6 border border-white/10 rounded-2xl bg-white/5">
-                <span className="text-[10px] font-black uppercase text-red-600 tracking-widest block mb-2">🔒 MISSÃO DIÁRIA</span>
-                <p className="text-xs font-bold uppercase italic text-white/20">Aguardando dados estratégicos...</p>
-              </div>
-              <div className="p-6 border border-white/10 rounded-2xl bg-white/5">
-                <span className="text-[10px] font-black uppercase text-red-600 tracking-widest block mb-2">🔒 PONTOS DE ATAQUE</span>
-                <p className="text-xs font-bold uppercase italic text-white/20">Aguardando dados estratégicos...</p>
-              </div>
-              <div className="p-6 border border-white/10 rounded-2xl bg-white/5">
-                <span className="text-[10px] font-black uppercase text-red-600 tracking-widest block mb-2">🔒 ESTRATÉGIA SERVER</span>
-                <p className="text-xs font-bold uppercase italic text-white/20">Aguardando dados estratégicos...</p>
-              </div>
+            <h3 className="text-xl sm:text-2xl font-display font-black uppercase italic tracking-tighter text-white">
+              Guerra de Servidores <span className="text-gaming-gold">(5 Dias)</span>
+            </h3>
+            <p className="text-xs text-white/50 font-bold uppercase italic leading-relaxed">
+              Maximizar pontos do evento gastando o mínimo possível de recursos.
+            </p>
+            <div className="flex items-center gap-2 p-2.5 bg-red-500/10 border border-red-500/20 rounded-xl mt-1">
+              <span className="text-[10px] md:text-xs text-red-400 font-extrabold uppercase italic">
+                ➡️ Regra de Ouro: Guardar recursos e usar somente no dia correto.
+              </span>
             </div>
           </div>
+
+          {/* Days Interactive Pills - Responsive Horizontal Scroller */}
+          <div className="flex flex-col gap-2">
+            <span className="text-[9px] uppercase font-black text-white/30 tracking-widest">Cronologia do Evento (Selecione o Dia abaixo):</span>
+            <div className="flex gap-2 pb-2 overflow-x-auto max-w-full custom-scrollbar scrollbar-thin scroll-smooth pr-2">
+              {[
+                { id: 'prep', label: '🛡️ Geral & Prep' },
+                { id: 'dia1', label: '✅ Dia 1 (Fin.)' },
+                { id: 'dia2', label: '✅ Dia 2 (Fin.)' },
+                { id: 'dia3', label: '🔥 Dia 3 (Hoje)' },
+                { id: 'dia4', label: '⚡ Dia 4' },
+                { id: 'dia5', label: '💪 Dia 5' },
+                { id: 'dia6', label: '💀 Dia 6' },
+                { id: 'f2p', label: '💎 Dicas F2P' }
+              ].map((tab) => {
+                const isActive = guerraDay === tab.id;
+                const isToday = tab.id === 'dia3';
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setGuerraDay(tab.id)}
+                    className={`px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider whitespace-nowrap transition-all border flex items-center gap-1.5 focus:outline-none min-h-[44px] ${
+                      isActive 
+                        ? 'bg-gaming-gold border-gaming-gold text-black shadow-[0_0_15px_rgba(251,191,36,0.25)] font-black' 
+                        : isToday 
+                          ? 'bg-gaming-gold/10 hover:bg-gaming-gold/20 border-gaming-gold/30 text-gaming-gold animate-pulse'
+                          : 'bg-white/5 hover:bg-white/10 active:bg-white/15 border-white/5 text-white/60'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Content panel powered by active tab */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={guerraDay}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.15 }}
+              className="bg-black/20 border border-white/5 p-4 sm:p-5 rounded-2xl"
+            >
+              {guerraDay === 'prep' && (
+                <div className="flex flex-col gap-4">
+                  {/* General Rules */}
+                  <div className="bg-[#120a0a] border border-red-500/20 p-4 rounded-xl flex flex-col gap-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <AlertTriangle size={16} className="text-red-500" />
+                      <span className="text-[10px] text-red-500 font-black uppercase tracking-[0.2em]">REGRAS GERAIS: NÃO USE FORA DO DIA</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-white/75 uppercase text-[9px] font-black italic">
+                      <div className="p-2 bg-white/5 rounded-lg border border-white/5 flex items-center gap-1.5">
+                        <span className="text-red-500 font-bold">❌</span> Aceleradores
+                      </div>
+                      <div className="p-2 bg-white/5 rounded-lg border border-white/5 flex items-center gap-1.5">
+                        <span className="text-red-500 font-bold">❌</span> Fragmentos de Herói
+                      </div>
+                      <div className="p-2 bg-white/5 rounded-lg border border-white/5 flex items-center gap-1.5">
+                        <span className="text-red-500 font-bold">❌</span> Pergaminhos
+                      </div>
+                      <div className="p-2 bg-white/5 rounded-lg border border-white/5 flex items-center gap-1.5">
+                        <span className="text-red-500 font-bold">❌</span> Antitoxina
+                      </div>
+                      <div className="p-2 bg-white/5 rounded-lg border border-white/5 flex items-center gap-1.5">
+                        <span className="text-red-500 font-bold">❌</span> Tickets Recrutamento
+                      </div>
+                      <div className="p-2 bg-white/5 rounded-lg border border-white/5 flex items-center gap-1.5">
+                        <span className="text-red-500 font-bold">❌</span> Missões Falcão
+                      </div>
+                      <div className="p-2 bg-white/5 rounded-lg border border-white/5 flex items-center gap-1.5">
+                        <span className="text-red-500 font-bold">❌</span> Operações Secretas
+                      </div>
+                      <div className="p-2 bg-white/5 rounded-lg border border-white/5 flex items-center gap-1.5">
+                        <span className="text-red-500 font-bold">❌</span> Baús de Equip.
+                      </div>
+                      <div className="p-2 bg-white/5 rounded-lg border border-white/5 flex items-center gap-1.5">
+                        <span className="text-red-500 font-bold">❌</span> Aceleradores Cura
+                      </div>
+                      <div className="p-2 bg-white/5 rounded-lg border border-white/5 flex items-center gap-1.5">
+                        <span className="text-red-500 font-bold">❌</span> Boosts Treino
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Preparation */}
+                  <div className="bg-white/5 border border-white/10 p-4 rounded-xl flex flex-col gap-4">
+                    <div className="flex items-center gap-2">
+                      <Compass size={16} className="text-gaming-gold" />
+                      <span className="text-[10px] text-gaming-gold font-black uppercase tracking-[0.2em]">PREPARAÇÃO ANTES DO EVENTO</span>
+                    </div>
+                    
+                    <div className="flex flex-col gap-3">
+                      <div className="border-l-2 border-gaming-gold pl-3">
+                        <h4 className="text-[10px] font-black uppercase tracking-wider text-gaming-gold">Construção</h4>
+                        <p className="text-[10px] text-white/60 uppercase font-bold tracking-wide leading-relaxed mt-0.5">• Guarde speedups<br />• Deixe builds quase prontas</p>
+                      </div>
+
+                      <div className="border-l-2 border-blue-500 pl-3">
+                        <h4 className="text-[10px] font-black uppercase tracking-wider text-blue-400">Pesquisa</h4>
+                        <p className="text-[10px] text-white/60 uppercase font-bold tracking-wide leading-relaxed mt-0.5">• Guarde speedups & pergaminhos<br />• Segure tecnologias in 95%</p>
+                      </div>
+
+                      <div className="border-l-2 border-purple-500 pl-3">
+                        <h4 className="text-[10px] font-black uppercase tracking-wider text-purple-400">Heróis</h4>
+                        <p className="text-[10px] text-white/60 uppercase font-bold tracking-wide leading-relaxed mt-0.5">• Fragmentos UR/SSR/SR<br />• Insígnias de habilidade & tickets premium</p>
+                      </div>
+
+                      <div className="border-l-2 border-green-500 pl-3">
+                        <h4 className="text-[10px] font-black uppercase tracking-wider text-green-400">Equipamentos</h4>
+                        <p className="text-[10px] text-white/60 uppercase font-bold tracking-wide leading-relaxed mt-0.5">• Guarde Baús Corvo Nv3/Nv4<br />• Segure Missões Falcão</p>
+                      </div>
+
+                      <div className="border-l-2 border-red-500 pl-3">
+                        <h4 className="text-[10px] font-black uppercase tracking-wider text-red-400">PvP</h4>
+                        <p className="text-[10px] text-white/60 uppercase font-bold tracking-wide leading-relaxed mt-0.5">• Speedups de cura<br />• Tropas fracas para sacrifício</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {guerraDay === 'dia1' && (
+                <div className="flex flex-col gap-5">
+                  <div className="bg-[#0b0f0b] border border-green-500/20 p-5 rounded-xl flex flex-col items-center justify-center text-center py-6 gap-2">
+                    <div className="w-10 h-10 bg-green-500/10 border border-green-500/30 rounded-full flex items-center justify-center text-green-500 shadow-[0_0_20px_rgba(34,197,94,0.15)]">
+                      <CheckCircle2 size={24} />
+                    </div>
+                    <h4 className="text-sm font-display font-black uppercase italic tracking-tighter text-white">DIA 1 CONCLUÍDO</h4>
+                    <p className="text-[10px] uppercase font-bold text-white/40 tracking-widest max-w-sm leading-relaxed">
+                      O primeiro dia de qualificatórias já foi finalizado. Siga para o dia correspondente ou examine a referência tática abaixo.
+                    </p>
+                  </div>
+
+                  {/* Customizable Visual Reference for Day 1 */}
+                  <div className="bg-white/5 border border-white/10 p-4 rounded-xl flex flex-col gap-4">
+                    <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                      <div className="flex items-center gap-2">
+                        <ImageIcon size={16} className="text-gaming-gold" />
+                        <h4 className="font-display font-black uppercase text-xs text-white italic">Referência Visual: Missões Diárias (Dia 1)</h4>
+                      </div>
+                      {isLeader ? (
+                        <span className="px-2 py-0.5 bg-gaming-gold text-black text-[6px] font-black uppercase rounded animate-pulse">EDITÁVEL PELO LÍDER</span>
+                      ) : (
+                        <span className="px-2 py-0.5 bg-white/5 border border-white/10 text-white/40 text-[6px] font-black uppercase rounded">FIXO / SÓ LEITURA</span>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <p className="text-[10px] text-white/60 font-bold uppercase italic leading-relaxed">
+                        Examine a foto personalizada abaixo com as instruções diretas enviadas pela liderança para o Dia 1.
+                      </p>
+                      
+                      <div className="aspect-video md:h-[300px] rounded-xl border border-white/10 overflow-hidden bg-black/40 group relative">
+                        <img 
+                          src={guerraDia1Image} 
+                          alt="Diretriz Visual Dia 1" 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" 
+                        />
+                        {isLeader && (
+                          <label className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer gap-2 p-4">
+                            <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center border border-white/10 group-hover:scale-110 transition-transform">
+                              <ImageIcon size={20} className="text-gaming-gold" />
+                            </div>
+                            <div className="text-center">
+                              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white block">Substituir Imagem do Dia 1</span>
+                              <span className="text-[8px] font-bold text-white/40 uppercase">Toque para selecionar foto</span>
+                            </div>
+                            <input 
+                              type="file" 
+                              className="hidden" 
+                              accept="image/*" 
+                              onChange={handleGuerraDia1ImageUpload} 
+                            />
+                          </label>
+                        )}
+                      </div>
+                      
+                      {isLeader && (
+                        <p className="text-[8px] text-gaming-gold font-bold uppercase italic text-center">
+                          * Como líder, as alterações feitas aqui são sincronizadas instantaneamente para todos os membros do clã.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {guerraDay === 'dia2' && (
+                <div className="flex flex-col gap-4">
+                  <div className="bg-[#0b120b] border border-green-500/20 p-3 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 size={14} className="text-green-500" />
+                      <span className="text-[9px] text-green-500 font-black uppercase tracking-widest">DIA CONCLUÍDO COM SUCESSO</span>
+                    </div>
+                    <span className="text-[8px] font-bold text-white/30 uppercase">HISTÓRICO</span>
+                  </div>
+
+                  <div className="bg-white/5 border border-white/10 p-4 rounded-xl flex flex-col gap-4">
+                    <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                      <div className="flex items-center gap-2">
+                        <Skull size={16} className="text-red-500" />
+                        <h4 className="font-display font-black uppercase text-xs sm:text-sm text-white italic">DIA 2 — OPERAÇÕES SECRETAS</h4>
+                      </div>
+                      <span className="px-2 py-0.5 bg-red-500/20 text-red-400 text-[6px] font-black uppercase rounded">FOGO MÁXIMO</span>
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div className="p-3 bg-black/40 border border-white/5 rounded-xl">
+                          <span className="text-[8px] text-white/40 uppercase font-black tracking-widest block">Operação Secreta UR</span>
+                          <span className="text-[11px] text-gaming-gold font-extrabold uppercase">+78.750 pontos</span>
+                        </div>
+                        <div className="p-3 bg-black/40 border border-white/5 rounded-xl">
+                          <span className="text-[8px] text-white/40 uppercase font-black tracking-widest block">Caravana UR</span>
+                          <span className="text-[11px] text-gaming-gold font-extrabold uppercase">+105.000 pontos</span>
+                        </div>
+                      </div>
+
+                      <div className="text-[10px] text-white/60 tracking-wide font-bold uppercase italic leading-relaxed flex flex-col gap-1.5 border-t border-white/5 pt-2">
+                        <span className="text-gaming-gold font-black">📝 Estratégia</span>
+                        <span>• Guarde tentativas UR. Atualize até aparecer missão UR.</span>
+                        <span>• Use diamantes somente se necessário.</span>
+                      </div>
+
+                      <div className="text-[10px] text-white/60 tracking-wide font-bold uppercase italic leading-relaxed flex flex-col gap-1.5 border-t border-white/5 pt-2">
+                        <span className="text-blue-400 font-black">🔨 Construção</span>
+                        <span>• Use speedups pequenos e upgrades baratos.</span>
+                      </div>
+
+                      <div className="text-[10px] text-white/60 tracking-wide font-bold uppercase italic leading-relaxed flex flex-col gap-1.5 border-t border-white/5 pt-2">
+                        <span className="text-purple-400 font-black">🎟️ Recrutamento</span>
+                        <span>• Apenas use tickets básicos/grátis.</span>
+                        <span className="text-red-500 font-black">❌ NÃO usar recrutamento premium.</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {guerraDay === 'dia3' && (
+                <div className="flex flex-col gap-4">
+                  <div className="bg-gaming-gold/10 border border-gaming-gold/30 p-3 rounded-xl flex items-center justify-between shadow-[0_0_20px_rgba(251,191,36,0.05)]">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-gaming-gold animate-ping" />
+                      <span className="text-[9px] text-gaming-gold font-black uppercase tracking-widest">OBRIGATÓRIO HOJE — DIA 3</span>
+                    </div>
+                    <span className="text-[8px] font-black text-black bg-gaming-gold px-1.5 py-0.5 rounded uppercase">ATIVO</span>
+                  </div>
+
+                  <div className="bg-gaming-card border border-gaming-gold/35 p-4 rounded-xl flex flex-col gap-4 shadow-xl">
+                    <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                      <div className="flex items-center gap-2">
+                        <Zap size={16} fill="currentColor" className="text-gaming-gold animate-bounce" />
+                        <h4 className="font-display font-black uppercase text-xs sm:text-sm text-white italic">DIA 3 — PESQUISA & EQUIPAMENTOS</h4>
+                      </div>
+                      <span className="px-2 py-0.5 bg-gaming-gold text-black text-[7px] font-black uppercase rounded">FOGO LIVRE</span>
+                    </div>
+
+                    <div className="flex flex-col gap-3.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div className="p-3 bg-white/5 border border-white/5 rounded-xl">
+                          <span className="text-[8px] text-white/40 uppercase font-black tracking-widest block">Missão Falcão</span>
+                          <span className="text-xs text-gaming-gold font-black uppercase">+13.500 pontos</span>
+                          <span className="block text-[8px] text-red-400 uppercase font-bold mt-1">Sempre complete hoje!</span>
+                        </div>
+                        <div className="p-3 bg-white/5 border border-white/5 rounded-xl">
+                          <span className="text-[8px] text-white/40 uppercase font-black tracking-widest block">Baús Corvo</span>
+                          <span className="text-xs text-gaming-gold font-black uppercase">Mais nível = Mais ganho</span>
+                          <span className="block text-[8px] text-green-400 uppercase font-bold mt-1">✅ Guarde TODOS os Nv3/Nv4 para hoje!</span>
+                        </div>
+                      </div>
+
+                      <div className="text-[10px] text-white/80 tracking-wide font-black uppercase italic leading-relaxed flex flex-col gap-1.5 border-t border-white/5 pt-2">
+                        <span className="text-gaming-gold font-black flex items-center gap-1">🔬 Pesquisa & Speedups</span>
+                        <span>• Finalize tecnologias quase prontas imediatamente.</span>
+                        <span>• Use de forma agressiva speedups e pergaminhos para estourar a pontuação.</span>
+                      </div>
+
+                      <div className="bg-white/[0.02] border border-white/10 p-3 rounded-lg">
+                        <span className="text-[8px] text-white/40 uppercase font-black tracking-widest block mb-1.5">🎓 Melhores Tecnologias Para Focar</span>
+                        <div className="grid grid-cols-2 gap-2 text-[9px] font-black uppercase tracking-wider text-gaming-gold">
+                          <div className="flex items-center gap-1"><CheckCircle2 size={10} className="text-green-500" /> Ataque de Tropas</div>
+                          <div className="flex items-center gap-1"><CheckCircle2 size={10} className="text-green-500" /> HP de Tropas</div>
+                          <div className="flex items-center gap-1"><CheckCircle2 size={10} className="text-green-500" /> Vel. de Construção</div>
+                          <div className="flex items-center gap-1"><CheckCircle2 size={10} className="text-green-500" /> Vel. de Pesquisa</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {guerraDay === 'dia4' && (
+                <div className="flex flex-col gap-4">
+                  <div className="bg-white/5 border border-white/5 p-3 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Clock size={14} className="text-white/40" />
+                      <span className="text-[9px] text-white/40 font-black uppercase tracking-widest">AGENDADO — SÓ ABRA NO DIA</span>
+                    </div>
+                    <span className="text-[8px] font-bold text-white/30 uppercase">DIA 4</span>
+                  </div>
+
+                  <div className="bg-white/5 border border-white/10 p-4 rounded-xl flex flex-col gap-4">
+                    <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                      <div className="flex items-center gap-2">
+                        <Crown size={16} className="text-purple-400" />
+                        <h4 className="font-display font-black uppercase text-xs sm:text-sm text-white italic">DIA 4 — HERÓIS</h4>
+                      </div>
+                      <span className="px-2 py-0.5 bg-red-600/20 text-red-500 text-[6px] font-black uppercase rounded animate-pulse">REQUISITO CRÍTICO</span>
+                    </div>
+
+                    <div className="flex flex-col gap-3.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <div className="p-3 bg-black/40 border border-white/5 rounded-xl text-center">
+                          <span className="text-[8px] text-white/30 uppercase font-black block">Recrutamento</span>
+                          <span className="text-[11px] text-gaming-gold font-extrabold uppercase">+2025 pontos</span>
+                        </div>
+                        <div className="p-3 bg-black/40 border border-white/5 rounded-xl text-center">
+                          <span className="text-[8px] text-white/30 uppercase font-black block">Fragmentos UR</span>
+                          <span className="text-[11px] text-gaming-gold font-extrabold uppercase">+10.500 pontos</span>
+                        </div>
+                        <div className="p-3 bg-black/40 border border-white/5 rounded-xl text-center">
+                          <span className="text-[8px] text-white/30 uppercase font-black block">SSR / SR</span>
+                          <span className="text-[10px] text-gaming-gold font-extrabold uppercase">SSR +3675 | SR +1050</span>
+                        </div>
+                      </div>
+
+                      <div className="p-3 bg-red-600/10 border border-red-600/20 rounded-xl">
+                        <span className="text-[8px] text-red-400 font-black uppercase block mb-1">🚨 AVISO EXTREMAMENTE IMPORTANTE</span>
+                        <p className="text-[10px] text-white/80 font-bold uppercase italic leading-relaxed">
+                          ❌ NUNCA use fragmentos UR fora desse dia. Deixe tudo acumulado para usar 100% amanhã.
+                        </p>
+                      </div>
+
+                      <div className="text-[10px] text-white/60 tracking-wide font-bold uppercase italic leading-relaxed flex flex-col gap-1.5 border-t border-white/5 pt-2">
+                        <span className="text-purple-400 font-black">⚡ Insígnias de Habilidade</span>
+                        <span>• Use todas as insígnias estocadas para evoluir heróis neste dia.</span>
+                      </div>
+
+                      <div className="text-[10px] text-white/60 tracking-wide font-bold uppercase italic leading-relaxed flex flex-col gap-1.5 border-t border-white/5 pt-2">
+                        <span className="text-green-400 font-black">🧪 Antitoxina</span>
+                        <span>• Use estritamente 660 unidades de antitoxina para fechar metas de dia 4.</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {guerraDay === 'dia5' && (
+                <div className="flex flex-col gap-4">
+                  <div className="bg-white/5 border border-white/5 p-3 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Clock size={14} className="text-white/40" />
+                      <span className="text-[9px] text-white/40 font-black uppercase tracking-widest">AGENDADO — SÓ ABRA NO DIA</span>
+                    </div>
+                    <span className="text-[8px] font-bold text-white/30 uppercase">DIA 5</span>
+                  </div>
+
+                  <div className="bg-white/5 border border-white/10 p-4 rounded-xl flex flex-col gap-4">
+                    <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                      <div className="flex items-center gap-2">
+                        <Sword size={16} className="text-blue-400" />
+                        <h4 className="font-display font-black uppercase text-xs sm:text-sm text-white italic">DIA 5 — TREINAMENTO DE TROPAS</h4>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3.5">
+                      <div className="p-3 bg-black/40 border border-white/5 rounded-xl">
+                        <span className="text-[8px] text-white/40 uppercase font-black block">Missão Falcão</span>
+                        <span className="text-xs text-gaming-gold font-extrabold uppercase flex items-center justify-center">Sempre completar</span>
+                      </div>
+
+                      <div className="text-[10px] text-white/60 tracking-wide font-bold uppercase italic leading-relaxed flex flex-col gap-1.5 border-t border-white/5 pt-2">
+                        <span className="text-blue-400 font-black">🚀 Estratégia Recomendada</span>
+                        <span>• Faça treinamentos de tropas longas e pesadas à noite.</span>
+                        <span>• Conclua todas as filas ativas usando speedups no dia 5.</span>
+                        <span className="text-gaming-gold font-extrabold">✔️ Melhor: Treinar prioritariamente tropas de tier alto.</span>
+                      </div>
+
+                      <div className="text-[10px] text-white/60 tracking-wide font-bold uppercase italic leading-relaxed flex flex-col gap-1.5 border-t border-white/5 pt-2">
+                        <span className="text-white/40 font-black">🔨 Construção e Pesquisa</span>
+                        <span>• Utilize apenas sobras pequenas de recursos para as construções.</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {guerraDay === 'dia6' && (
+                <div className="flex flex-col gap-4">
+                  <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Skull size={14} className="text-red-500 animate-pulse" />
+                      <span className="text-[9px] text-red-500 font-black uppercase tracking-widest">GUERRA TOTAL ATIVA</span>
+                    </div>
+                    <span className="text-[8px] font-bold text-white/30 uppercase">DIA 6</span>
+                  </div>
+
+                  <div className="bg-red-950/20 border border-red-500/30 p-4 rounded-xl flex flex-col gap-4">
+                    <div className="flex items-center justify-between border-b border-red-500/20 pb-2">
+                      <div className="flex items-center gap-2">
+                        <Skull size={16} className="text-red-500 animate-pulse" />
+                        <h4 className="font-display font-black uppercase text-xs sm:text-sm text-red-500 italic">DIA 6 — PvP / COMBATE DE SERVIDORES</h4>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3.5">
+                      <div className="p-3 bg-black/60 border border-white/5 rounded-xl">
+                        <span className="text-[8px] text-white/40 uppercase font-black block">Operações Secretas UR</span>
+                        <span className="text-xs text-gaming-gold font-extrabold uppercase">Guarde uma leva de Operações UR extra para usar hoje!</span>
+                      </div>
+
+                      <div className="text-[10px] text-white/80 tracking-wide font-bold uppercase italic leading-relaxed flex flex-col gap-1.5 border-t border-red-500/10 pt-2">
+                        <span className="text-red-500 font-extrabold">🔥 Combates de Servidores</span>
+                        <span>• O evento de hoje gera recompensas por abates/óbitos (MORTES).</span>
+                        <span className="text-red-400 font-black">❌ NÃO SACRIFIQUE TROPAS FORTES DE TIER ALTO.</span>
+                        <span>✅ Em vez disso, use tropas fracas descartáveis de tier baixo para sacrifício.</span>
+                      </div>
+
+                      <div className="text-[10px] text-white/80 tracking-wide font-bold uppercase italic leading-relaxed flex flex-col gap-1.5 border-t border-red-500/10 pt-2">
+                        <span className="text-green-400 font-black">🩹 Saúde Base</span>
+                        <span>• Use todos os seus aceleradores de cura estocados sem dó nem piedade.</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {guerraDay === 'f2p' && (
+                <div className="flex flex-col gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="bg-red-500/5 border border-red-500/10 p-3.5 rounded-xl flex flex-col gap-2">
+                      <span className="text-red-400 text-[9px] font-black uppercase tracking-widest block">❌ NUNCA FAÇA ISSO (F2P)</span>
+                      <p className="text-[10px] text-white/60 font-black uppercase leading-relaxed italic">• Gastar diamantes aleatoriamente.<br />• Abrir baús fora do dia correto.<br />• Gastar fragmentos de heróis cedo.</p>
+                    </div>
+
+                    <div className="bg-green-500/5 border border-green-500/10 p-3.5 rounded-xl flex flex-col gap-2">
+                      <span className="text-green-400 text-[9px] font-black uppercase tracking-widest block">✅ SEMPRE FAÇA ISSO (F2P)</span>
+                      <p className="text-[10px] text-white/60 font-black uppercase leading-relaxed italic">• Acumular o máximo de recursos.<br />• Priorizar estritamente os objetivos UR.<br />• Sincronizar gastos com o dia correto do evento.</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-white/5 border border-white/10 p-4 rounded-xl flex flex-col gap-3">
+                    <span className="text-gaming-gold text-[9px] font-black uppercase tracking-widest block mb-1">⭐ ATIVIDADES DE IMPORTÂNCIA SUPREMA (PONTOS)</span>
+                    <div className="flex flex-col gap-2">
+                      {[
+                        { rank: '🥇', label: 'Caravana UR' },
+                        { rank: '🥈', label: 'Operações Secretas UR' },
+                        { rank: '🥉', label: 'Fragmentos UR de Heróis' },
+                        { rank: '🏅', label: 'Baús de Corvo Nível 4' },
+                        { rank: '🏅', label: 'Missões Falcão Diárias' }
+                      ].map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-3 p-2 bg-black/40 rounded-lg border border-white/5">
+                          <span className="text-sm">{item.rank}</span>
+                          <span className="text-[9px] font-black uppercase tracking-wider text-white">{item.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
         </motion.div>
       ) : (
         <>
       {/* Main Feature: Breaking News Portal */}
       <div 
         onClick={() => setSelectedGuide('evoluir')}
-        className="relative group overflow-hidden rounded-[2.5rem] bg-gaming-card border border-white/10 h-[300px] md:h-[450px] cursor-pointer"
+        className="relative group overflow-hidden rounded-2xl bg-gaming-card border border-white/10 h-[200px] sm:h-[260px] md:h-[350px] cursor-pointer"
       >
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1599394022918-6c276a570aba?q=80&w=2070')] bg-cover bg-center transition-transform duration-1000 group-hover:scale-110 opacity-50 grayscale group-hover:grayscale-0" />
         <div className="absolute inset-0 bg-linear-to-t from-black via-black/40 to-transparent" />
         
-        <div className="absolute top-0 right-0 p-8">
-           <div className="px-4 py-2 bg-gaming-gold text-black text-[10px] font-black uppercase tracking-[0.2em] rounded-full shadow-2xl animate-bounce">
+        <div className="absolute top-0 right-0 p-4">
+           <div className="px-3 py-1 bg-gaming-gold text-black text-[9px] font-black uppercase tracking-[0.2em] rounded-full shadow-2xl animate-bounce">
               🔥 TOP DICA
            </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 p-8 md:p-12 flex flex-col gap-4">
-           <div className="flex gap-3">
-              <span className="px-3 py-1 bg-red-600 text-white text-[8px] font-black uppercase tracking-widest rounded-full">Destaque</span>
-              <span className="px-3 py-1 bg-white/10 text-white/60 text-[8px] font-black uppercase tracking-widest rounded-full border border-white/10 backdrop-blur-md">Iniciante</span>
+        <div className="absolute bottom-0 left-0 p-4 sm:p-6 md:p-8 flex flex-col gap-2 sm:gap-3">
+           <div className="flex gap-2">
+              <span className="px-2 py-0.5 bg-red-600 text-white text-[7px] font-black uppercase tracking-widest rounded-full">Destaque</span>
+              <span className="px-2 py-0.5 bg-white/10 text-white/60 text-[7px] font-black uppercase tracking-widest rounded-full border border-white/10 backdrop-blur-md">Iniciante</span>
            </div>
-           <h3 className="text-3xl md:text-6xl font-display font-black uppercase italic tracking-tighter leading-none max-w-2xl">
+           <h3 className="text-xl sm:text-2xl md:text-4xl font-display font-black uppercase italic tracking-tighter leading-none max-w-2xl">
               COMO EVOLUIR <span className="text-gaming-gold">RECORDISTA!</span>
            </h3>
-           <p className="text-xs md:text-lg text-white/80 font-bold uppercase italic max-w-xl leading-relaxed">
+           <p className="text-[10px] sm:text-xs md:text-base text-white/80 font-bold uppercase italic max-w-xl leading-relaxed">
               Descubra o ciclo perfeito de missões diárias e o uso inteligente de diamantes para dominar o servidor em tempo recorde.
            </p>
-           <div className="flex items-center gap-4 mt-4">
-              <div className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-xl font-black uppercase text-[10px] tracking-widest group-hover:bg-gaming-gold transition-colors">
-                 Abrir Guia <ChevronRight size={16} />
+           <div className="flex items-center gap-4 mt-2">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white text-black rounded-lg font-black uppercase text-[9px] tracking-widest group-hover:bg-gaming-gold transition-colors">
+                 Abrir Guia <ChevronRight size={12} />
               </div>
            </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Guide Item 1: Táticas de Batalha */}
         <motion.div 
-          whileHover={{ y: -5 }}
-          className="relative group overflow-hidden bg-gaming-card/30 backdrop-blur-md border border-white/5 rounded-[3rem] p-10 flex flex-col gap-8 transition-all cursor-not-allowed shadow-2xl"
+          whileHover={{ y: -3 }}
+          className="relative group overflow-hidden bg-gaming-card/30 backdrop-blur-md border border-white/5 rounded-2xl p-5 md:p-8 flex flex-col gap-6 transition-all cursor-not-allowed shadow-2xl pb-16 md:pb-20"
         >
            <div className="absolute top-0 left-0 w-full h-[2px] bg-linear-to-r from-transparent via-blue-500/40 to-transparent" />
            
-           <div className="absolute top-6 right-8">
-              <div className="flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full">
-                <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse" />
-                <span className="text-[7px] font-black uppercase tracking-widest text-blue-400">Desenvolvimento</span>
+           <div className="absolute top-4 right-5">
+              <div className="flex items-center gap-1.5 px-2.5 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded-full">
+                <span className="w-1 h-1 bg-blue-500 rounded-full animate-pulse" />
+                <span className="text-[6px] sm:text-[7px] font-black uppercase tracking-widest text-blue-400">Desenvolvimento</span>
               </div>
            </div>
            
-           <div className="w-20 h-20 bg-linear-to-br from-blue-600/30 to-blue-900/10 rounded-[2rem] flex items-center justify-center text-blue-400 group-hover:scale-110 group-hover:rotate-6 transition-all border border-blue-500/30 shadow-[0_0_40px_rgba(59,130,246,0.15)] relative overflow-hidden">
+           <div className="w-12 h-12 md:w-16 md:h-16 bg-linear-to-br from-blue-600/30 to-blue-900/10 rounded-xl md:rounded-2xl flex items-center justify-center text-blue-400 group-hover:scale-110 group-hover:rotate-6 transition-all border border-blue-500/30 shadow-[0_0_40px_rgba(59,130,246,0.15)] relative overflow-hidden flex-shrink-0">
               <div className="absolute inset-0 bg-linear-to-t from-blue-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <Sword size={40} className="relative z-10" />
+              <Sword className="w-6 h-6 md:w-8 md:h-8 relative z-10" />
            </div>
            
            <div className="relative z-10">
-              <h4 className="font-display font-black uppercase text-3xl mb-3 italic text-white group-hover:text-blue-300 transition-colors tracking-tighter">Táticas de <br /><span className="text-blue-500">Batalha ⚔️</span></h4>
-              <p className="text-xs text-white/40 uppercase font-bold leading-relaxed italic group-hover:text-white/60 transition-colors">
+              <h4 className="font-display font-black uppercase text-xl md:text-2xl mb-1.5 italic text-white group-hover:text-blue-300 transition-colors tracking-tighter leading-snug">Táticas de <br /><span className="text-blue-500">Batalha ⚔️</span></h4>
+              <p className="text-[10px] text-white/40 uppercase font-bold leading-relaxed italic group-hover:text-white/60 transition-colors">
                 Estratégias avançadas de mobilização rápida e contra-ataque cirúrgico para suprimir defesas inimigas.
               </p>
            </div>
            
-           <div className="mt-auto pt-8 border-t border-white/5 flex items-center justify-between">
-              <div className="flex items-center text-blue-400/30 text-[9px] font-black uppercase tracking-[0.2em] gap-2">
-                 Protocolos Militares <ChevronRight size={14} />
+           <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
+              <div className="flex items-center text-blue-400/30 text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] gap-1.5">
+                 Protocolos Militares <ChevronRight size={12} />
               </div>
-              <div className="w-10 h-10 rounded-2xl border border-white/5 bg-white/[0.02] flex items-center justify-center text-white/10 group-hover:text-blue-500/40 transition-colors">
-                <Zap size={18} />
+              <div className="w-8 h-8 rounded-xl border border-white/5 bg-white/[0.02] flex items-center justify-center text-white/10 group-hover:text-blue-500/40 transition-colors">
+                <Zap size={14} />
               </div>
            </div>
 
            {/* Stylized progress track */}
-           <div className="absolute bottom-6 left-10 right-10 flex flex-col gap-2">
-              <div className="h-[3px] bg-white/5 rounded-full overflow-hidden">
+           <div className="absolute bottom-4 left-5 right-5 flex flex-col gap-1">
+              <div className="h-[2px] bg-white/5 rounded-full overflow-hidden">
                 <motion.div 
                   initial={{ width: 0 }}
                   animate={{ width: '45%' }}
@@ -359,42 +912,42 @@ export function GuiaView() {
 
         {/* Guide Item 2: Farm de Diamantes */}
         <motion.div 
-          whileHover={{ y: -5 }}
-          className="relative group overflow-hidden bg-gaming-card/30 backdrop-blur-md border border-white/5 rounded-[3rem] p-10 flex flex-col gap-8 transition-all cursor-not-allowed shadow-2xl"
+          whileHover={{ y: -3 }}
+          className="relative group overflow-hidden bg-gaming-card/30 backdrop-blur-md border border-white/5 rounded-2xl p-5 md:p-8 flex flex-col gap-6 transition-all cursor-not-allowed shadow-2xl pb-16 md:pb-20"
         >
            <div className="absolute top-0 left-0 w-full h-[2px] bg-linear-to-r from-transparent via-gaming-gold/40 to-transparent" />
 
-           <div className="absolute top-6 right-8">
-              <div className="flex items-center gap-2 px-3 py-1 bg-gaming-gold/10 border border-gaming-gold/20 rounded-full">
-                <span className="w-1.5 h-1.5 bg-gaming-gold rounded-full animate-pulse" />
-                <span className="text-[7px] font-black uppercase tracking-widest text-gaming-gold">Desenvolvimento</span>
+           <div className="absolute top-4 right-5">
+              <div className="flex items-center gap-1.5 px-2.5 py-0.5 bg-gaming-gold/10 border border-gaming-gold/20 rounded-full">
+                <span className="w-1 h-1 bg-gaming-gold rounded-full animate-pulse" />
+                <span className="text-[6px] sm:text-[7px] font-black uppercase tracking-widest text-gaming-gold">Desenvolvimento</span>
               </div>
            </div>
 
-           <div className="w-20 h-20 bg-linear-to-br from-gaming-gold/30 to-gaming-gold/10 rounded-[2rem] flex items-center justify-center text-gaming-gold group-hover:scale-110 group-hover:-rotate-6 transition-all border border-gaming-gold/30 shadow-[0_0_40px_rgba(251,191,36,0.15)] relative overflow-hidden">
+           <div className="w-12 h-12 md:w-16 md:h-16 bg-linear-to-br from-gaming-gold/30 to-gaming-gold/10 rounded-xl md:rounded-2xl flex items-center justify-center text-gaming-gold group-hover:scale-110 group-hover:-rotate-6 transition-all border border-gaming-gold/30 shadow-[0_0_40px_rgba(251,191,36,0.15)] relative overflow-hidden flex-shrink-0">
               <div className="absolute inset-0 bg-linear-to-t from-gaming-gold/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <Gem size={40} className="relative z-10" />
+              <Gem className="w-6 h-6 md:w-8 md:h-8 relative z-10" />
            </div>
 
            <div className="relative z-10">
-              <h4 className="font-display font-black uppercase text-3xl mb-3 italic text-white group-hover:text-gaming-gold transition-colors tracking-tighter">Farm de <br /><span className="text-gaming-gold">Diamantes 💎</span></h4>
-              <p className="text-xs text-white/40 uppercase font-bold leading-relaxed italic group-hover:text-white/60 transition-colors">
+              <h4 className="font-display font-black uppercase text-xl md:text-2xl mb-1.5 italic text-white group-hover:text-gaming-gold transition-colors tracking-tighter leading-snug">Farm de <br /><span className="text-gaming-gold">Diamantes 💎</span></h4>
+              <p className="text-[10px] text-white/40 uppercase font-bold leading-relaxed italic group-hover:text-white/60 transition-colors">
                 Metodologias de extração máxima de recursos e otimização de rotas para acumular riqueza lendária.
               </p>
            </div>
 
-           <div className="mt-auto pt-8 border-t border-white/5 flex items-center justify-between">
-              <div className="flex items-center text-gaming-gold/30 text-[9px] font-black uppercase tracking-[0.2em] gap-2">
-                 Tesouro da Aliança <ChevronRight size={14} />
+           <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
+              <div className="flex items-center text-gaming-gold/30 text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] gap-1.5">
+                 Tesouro da Aliança <ChevronRight size={12} />
               </div>
-              <div className="w-10 h-10 rounded-2xl border border-white/5 bg-white/[0.02] flex items-center justify-center text-white/10 group-hover:text-gaming-gold/40 transition-colors">
-                <Trophy size={18} />
+              <div className="w-8 h-8 rounded-xl border border-white/5 bg-white/[0.02] flex items-center justify-center text-white/10 group-hover:text-gaming-gold/40 transition-colors">
+                <Trophy size={14} />
               </div>
            </div>
 
            {/* Stylized progress track */}
-           <div className="absolute bottom-6 left-10 right-10 flex flex-col gap-2">
-              <div className="h-[3px] bg-white/5 rounded-full overflow-hidden">
+           <div className="absolute bottom-4 left-5 right-5 flex flex-col gap-1">
+              <div className="h-[2px] bg-white/5 rounded-full overflow-hidden">
                 <motion.div 
                   initial={{ width: 0 }}
                   animate={{ width: '60%' }}
@@ -406,42 +959,42 @@ export function GuiaView() {
 
         {/* Guide Item 3: Defesa de Base */}
         <motion.div 
-          whileHover={{ y: -5 }}
-          className="relative group overflow-hidden bg-gaming-card/30 backdrop-blur-md border border-white/5 rounded-[3rem] p-10 flex flex-col gap-8 transition-all cursor-not-allowed shadow-2xl"
+          whileHover={{ y: -3 }}
+          className="relative group overflow-hidden bg-gaming-card/30 backdrop-blur-md border border-white/5 rounded-2xl p-5 md:p-8 flex flex-col gap-6 transition-all cursor-not-allowed shadow-2xl pb-16 md:pb-20"
         >
            <div className="absolute top-0 left-0 w-full h-[2px] bg-linear-to-r from-transparent via-green-500/40 to-transparent" />
 
-           <div className="absolute top-6 right-8">
-              <div className="flex items-center gap-2 px-3 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
-                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                <span className="text-[7px] font-black uppercase tracking-widest text-green-400">Desenvolvimento</span>
+           <div className="absolute top-4 right-5">
+              <div className="flex items-center gap-1.5 px-2.5 py-0.5 bg-green-500/10 border border-green-500/20 rounded-full">
+                <span className="w-1 h-1 bg-green-500 rounded-full animate-pulse" />
+                <span className="text-[6px] sm:text-[7px] font-black uppercase tracking-widest text-green-400">Desenvolvimento</span>
               </div>
            </div>
 
-           <div className="w-20 h-20 bg-linear-to-br from-green-600/30 to-green-900/10 rounded-[2rem] flex items-center justify-center text-green-400 group-hover:scale-110 group-hover:rotate-12 transition-all border border-green-500/30 shadow-[0_0_40px_rgba(34,197,94,0.15)] relative overflow-hidden">
+           <div className="w-12 h-12 md:w-16 md:h-16 bg-linear-to-br from-green-600/30 to-green-900/10 rounded-xl md:rounded-2xl flex items-center justify-center text-green-400 group-hover:scale-110 group-hover:rotate-12 transition-all border border-green-500/30 shadow-[0_0_40px_rgba(34,197,94,0.15)] relative overflow-hidden flex-shrink-0">
               <div className="absolute inset-0 bg-linear-to-t from-green-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-              <Shield size={40} className="relative z-10" />
+              <Shield className="w-6 h-6 md:w-8 md:h-8 relative z-10" />
            </div>
 
            <div className="relative z-10">
-              <h4 className="font-display font-black uppercase text-3xl mb-3 italic text-white group-hover:text-green-300 transition-colors tracking-tighter">Defesa <br /><span className="text-green-500">de Base 🛡️</span></h4>
-              <p className="text-xs text-white/40 uppercase font-bold leading-relaxed italic group-hover:text-white/60 transition-colors">
+              <h4 className="font-display font-black uppercase text-xl md:text-2xl mb-1.5 italic text-white group-hover:text-green-300 transition-colors tracking-tighter leading-snug">Defesa <br /><span className="text-green-500">de Base 🛡️</span></h4>
+              <p className="text-[10px] text-white/40 uppercase font-bold leading-relaxed italic group-hover:text-white/60 transition-colors">
                 Fortificações impenetráveis e sistemas de alerta precoce para neutralizar invasões noturnas.
               </p>
            </div>
 
-           <div className="mt-auto pt-8 border-t border-white/5 flex items-center justify-between">
-              <div className="flex items-center text-green-400/30 text-[9px] font-black uppercase tracking-[0.2em] gap-2">
-                 Arquitetura Defensiva <ChevronRight size={14} />
+           <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
+              <div className="flex items-center text-green-400/30 text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] gap-1.5">
+                 Arquitetura Defensiva <ChevronRight size={12} />
               </div>
-              <div className="w-10 h-10 rounded-2xl border border-white/5 bg-white/[0.02] flex items-center justify-center text-white/10 group-hover:text-green-500/40 transition-colors">
-                <ShieldAlert size={18} />
+              <div className="w-8 h-8 rounded-xl border border-white/5 bg-white/[0.02] flex items-center justify-center text-white/10 group-hover:text-green-500/40 transition-colors">
+                <ShieldAlert size={14} />
               </div>
            </div>
 
            {/* Stylized progress track */}
-           <div className="absolute bottom-6 left-10 right-10 flex flex-col gap-2">
-              <div className="h-[3px] bg-white/5 rounded-full overflow-hidden">
+           <div className="absolute bottom-4 left-5 right-5 flex flex-col gap-1">
+              <div className="h-[2px] bg-white/5 rounded-full overflow-hidden">
                 <motion.div 
                   initial={{ width: 0 }}
                   animate={{ width: '30%' }}
@@ -453,28 +1006,28 @@ export function GuiaView() {
 
         {/* Rules & Warnings Section */}
         <div className="lg:col-span-3">
-           <div className="bg-linear-to-r from-red-950/20 to-transparent border border-red-500/20 rounded-[2.5rem] p-8 md:p-12 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-12 opacity-5 rotate-12">
-                 <AlertTriangle size={150} />
+           <div className="bg-linear-to-r from-red-950/20 to-transparent border border-red-500/20 rounded-2xl p-5 md:p-8 flex flex-col md:flex-row items-center gap-5 md:gap-8 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-8 opacity-5 rotate-12">
+                 <AlertTriangle size={100} />
               </div>
               
-              <div className="flex-shrink-0 w-24 h-24 bg-red-500/20 rounded-full flex items-center justify-center text-red-500 border border-red-500/30 shadow-[0_0_30px_rgba(239,68,68,0.2)]">
-                 <ShieldCheck size={48} />
+              <div className="flex-shrink-0 w-16 h-16 md:w-20 md:h-20 bg-red-500/20 rounded-full flex items-center justify-center text-red-500 border border-red-500/30 shadow-[0_0_30px_rgba(239,68,68,0.2)]">
+                 <ShieldCheck className="w-8 h-8 md:w-10 md:h-10" />
               </div>
               
               <div className="flex-1 text-center md:text-left">
-                 <h4 className="font-display font-black uppercase text-2xl mb-3 text-red-500 italic flex items-center justify-center md:justify-start gap-3">
+                 <h4 className="font-display font-black uppercase text-lg sm:text-xl md:text-2xl mb-1 text-red-500 italic flex items-center justify-center md:justify-start gap-2">
                     Código de Honra: Caravanas 🚨
                  </h4>
-                 <p className="text-sm md:text-base text-white/60 font-bold uppercase leading-relaxed italic mb-6">
+                 <p className="text-xs sm:text-sm text-white/60 font-bold uppercase leading-relaxed italic mb-4">
                     "É terminantemente PROIBIDO roubar caravanas e caixotes de jogadores do nosso próprio servidor. Isso gera retaliação severa e banimento imediato da aliança."
                  </p>
-                 <div className="flex flex-wrap gap-4 justify-center md:justify-start">
-                    <div className="flex items-center gap-3 px-4 py-2 bg-black/40 rounded-xl border border-white/5 text-[9px] font-black uppercase tracking-widest">
-                       <CheckCircle2 size={14} className="text-green-500" /> Respeite Aliados
+                 <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-black/40 rounded-lg border border-white/5 text-[8px] font-black uppercase tracking-widest">
+                       <CheckCircle2 size={12} className="text-green-500" /> Respeite Aliados
                     </div>
-                    <div className="flex items-center gap-3 px-4 py-2 bg-black/40 rounded-xl border border-white/5 text-[9px] font-black uppercase tracking-widest text-red-400">
-                       <AlertTriangle size={14} /> Multa de 50 Moedas
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-black/40 rounded-lg border border-white/5 text-[8px] font-black uppercase tracking-widest text-red-400">
+                       <AlertTriangle size={12} /> Multa de 50 Moedas
                     </div>
                     <button 
                       onClick={async () => {
@@ -482,9 +1035,9 @@ export function GuiaView() {
                         setShowTheftReported(true);
                         setTimeout(() => setShowTheftReported(false), 5000);
                       }}
-                      className="flex items-center gap-3 px-6 py-2 bg-red-500 text-black rounded-xl hover:bg-white transition-all font-black uppercase text-[9px] tracking-widest"
+                      className="flex items-center gap-2 px-4 py-1.5 bg-red-500 text-black rounded-lg hover:bg-white transition-all font-black uppercase text-[8px] tracking-widest"
                     >
-                       <MessageSquareWarning size={14} /> Denunciar Furto
+                       <MessageSquareWarning size={12} /> Denunciar Furto
                     </button>
                  </div>
               </div>
@@ -734,6 +1287,18 @@ export function PerfilView() {
   };
 
   const getNicknameColorClass = (colorId?: string) => {
+    if (isEcoMode) {
+      switch (colorId) {
+        case 'color_gold': return 'text-[#c5a059] font-bold';
+        case 'color_red': return 'text-[#b25d62] font-semibold';
+        case 'color_cyan': return 'text-[#93c5fd] font-semibold';
+        case 'color_pink': return 'text-[#c084fc] font-semibold';
+        case 'color_emerald': return 'text-[#a7f3d0] font-semibold';
+        case 'color_purple': return 'text-[#c0a9df] font-semibold';
+        case 'color_rgb': return 'text-gaming-gold font-extrabold';
+        default: return 'text-white';
+      }
+    }
     switch (colorId) {
       case 'color_gold': return 'text-[#c5a059] font-bold drop-shadow-[0_0_8px_rgba(197,160,89,0.4)]';
       case 'color_red': return 'text-[#b25d62] font-semibold drop-shadow-[0_0_8px_rgba(178,93,98,0.3)]';
@@ -781,32 +1346,59 @@ export function PerfilView() {
     if (!file) return;
 
     if (file.size > 10 * 1024 * 1024) {
-      alert("O arquivo é muito grande (Máximo de 10MB). Para imagens normais ou GIFs menores, selecione um arquivo menor.");
+      alert("O arquivo é muito grande (Máximo de 10MB).");
       return;
-    }
-
-    const isGif = file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif');
-    if (isGif) {
-      const currentLevel = myMember?.level || 0;
-      if (currentLevel < 2) {
-        alert("Acesso Bloqueado! Você precisa ser Nível 2 ou superior para usar GIFs animados. Continue completando missões da alcatéia!");
-        return;
-      }
     }
 
     try {
       const { ref: storageRef, uploadBytes, getDownloadURL } = await import('firebase/storage');
       const { storage } = await import('../lib/firebase');
 
+      let fileToUpload: Blob | File = file;
+      let mimeType = file.type || 'image/jpeg';
+
+      if (file.type === 'image/gif') {
+        // É um GIF
+        mimeType = 'image/gif';
+      } else {
+        // É uma foto estática comum, vamos comprimi-la drasticamente no cliente para economizar rede e bateria
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (event) => resolve(event.target?.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+        // Comprime redimensionando para máximo de 200x200 com 70% de qualidade
+        const compressedDataUrl = await compressImage(dataUrl, 200, 200);
+        
+        // Converte o dataURL de volta para um Blob para upload ultra-rápido no Firebase Storage
+        const arr = compressedDataUrl.split(',');
+        const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+          u8arr[n] = bstr.charCodeAt(n);
+        }
+        fileToUpload = new Blob([u8arr], { type: mime });
+        mimeType = mime;
+      }
+
       const fileRef = storageRef(storage, `avatars/${user?.uid || 'unknown'}/${Date.now()}_${file.name}`);
-      const snapshot = await uploadBytes(fileRef, file);
+      
+      // Configurar metadados do tipo de arquivo para garantir que os navegadores carreguem e reproduzam como imagem e GIF corretos
+      const metadata = { contentType: mimeType };
+      const snapshot = await uploadBytes(fileRef, fileToUpload, metadata);
       const downloadUrl = await getDownloadURL(snapshot.ref);
 
       await updateMemberData({ avatarUrl: downloadUrl });
       setAvatarModalOpen(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to upload/update avatar to Firebase Storage in Views:', err);
-      alert("Erro ao enviar a imagem para o servidor. Tente novamente.");
+      const errorMessage = err?.message || String(err);
+      const errorCode = err?.code || 'desconhecido';
+      alert(`Erro de upload: ${errorMessage} (Código: ${errorCode}). Verifique a conexão com a internet ou as permissões do Firebase Storage.`);
     }
   };
 
@@ -998,20 +1590,25 @@ export function PerfilView() {
 
                     <div className="mt-4 w-full">
                       <button 
+                        disabled={bgOption.id !== 'padrão'}
                         onClick={() => handleBuyBackground(bgOption)}
                         className={`w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                          isApplied 
-                            ? 'bg-green-500/10 text-green-500 border border-green-500/20 shadow-[0_0_10px_rgba(34,197,94,0.15)]' 
-                            : 'bg-white/5 border border-white/10 text-white hover:bg-white/10'
+                          bgOption.id !== 'padrão'
+                            ? 'bg-white/5 border border-white/5 text-white/30 cursor-not-allowed'
+                            : isApplied 
+                              ? 'bg-green-500/10 text-green-500 border border-green-500/20 shadow-[0_0_10px_rgba(34,197,94,0.15)]' 
+                              : 'bg-white/5 border border-white/10 text-white hover:bg-white/10'
                         }`}
                       >
-                        {purchaseStatus?.id === bgOption.id 
-                          ? purchaseStatus.message 
-                          : isApplied 
-                            ? 'Equipado' 
-                            : bgOption.price === 0 
-                              ? 'Equipar Grátis' 
-                              : `${bgOption.price} Moedas`}
+                        {bgOption.id !== 'padrão'
+                          ? 'Em Desenvolvimento'
+                          : purchaseStatus?.id === bgOption.id 
+                            ? purchaseStatus.message 
+                            : isApplied 
+                              ? 'Equipado' 
+                              : bgOption.price === 0 
+                                ? 'Equipar Grátis' 
+                                : `${bgOption.price} Moedas`}
                       </button>
                     </div>
                   </div>
@@ -1097,11 +1694,11 @@ export function PerfilView() {
              className={`w-32 h-32 md:w-40 md:h-40 rounded-full p-1 relative group bg-black/20 flex items-center justify-center cursor-pointer ${getBorderClasses(myMember?.profileBorder)}`}
            >
               {!isEcoMode && <div className={`absolute -inset-2 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-opacity ${myMember?.profileBorder === 'border_gold' ? 'bg-gaming-gold/20' : 'bg-gaming-gold/10'}`} />}
-              <img 
+              <SafeAvatar 
                 src={myMember?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.uid}`} 
                 alt="Avatar" 
                 className="w-full h-full rounded-full object-cover relative z-10"
-                referrerPolicy="no-referrer"
+                isEcoMode={isEcoMode}
               />
               <div 
                 className="absolute inset-0 z-20 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-gaming-gold gap-2 pointer-events-none rounded-full"
@@ -1138,7 +1735,7 @@ export function PerfilView() {
                    {/* Option 1: Standard Image */}
                    <button
                      onClick={() => {
-                       setUploadAcceptType('image/png, image/jpeg, image/jpg, image/webp');
+                       setUploadAcceptType('image/png, image/jpeg, image/jpg, image/webp, image/gif');
                        setAvatarModalOpen(false);
                        setTimeout(() => {
                          fileInputRef.current?.click();
@@ -1151,48 +1748,33 @@ export function PerfilView() {
                      </div>
                      <div className="flex flex-col gap-0.5">
                        <span className="text-xs font-black uppercase tracking-wider text-white">Foto Personalizada</span>
-                       <span className="text-[9px] text-white/40 uppercase font-black tracking-wide">PNG, JPG, JPEG ou WEBP</span>
+                       <span className="text-[9px] text-white/40 uppercase font-black tracking-wide">PNG, JPG, JPEG, WEBP ou GIF</span>
                      </div>
                    </button>
 
                    {/* Option 2: Animated GIF */}
-                   <button
-                     onClick={() => {
-                       const currentLevel = myMember?.level || 0;
-                       if (currentLevel < 2) {
-                         alert("Acesso Bloqueado! Você precisa ser Nível 2 ou superior para usar GIFs animados. Continue completando missões da aliança!");
-                         return;
-                       }
-                       setUploadAcceptType('image/gif');
-                       setAvatarModalOpen(false);
-                       setTimeout(() => {
-                         fileInputRef.current?.click();
-                       }, 150);
-                     }}
-                     className={`p-4 border rounded-2xl flex items-center gap-4 transition-all text-left group relative overflow-hidden ${
-                       (myMember?.level || 0) < 2
-                         ? 'bg-black/40 border-white/5 opacity-50 cursor-not-allowed'
-                         : 'bg-white/[0.02] hover:bg-white/[0.07] hover:border-gaming-gold/40 border-white/5'
-                     }`}
-                   >
-                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-display font-black text-xs ${
-                       (myMember?.level || 0) < 2 ? 'bg-red-500/10 text-red-500' : 'bg-purple-500/10 text-purple-400 group-hover:scale-105 transition-transform'
-                     }`}>
-                       GIF
-                     </div>
-                     <div className="flex flex-col gap-0.5">
-                       <div className="flex items-center gap-2 flex-wrap">
-                         <span className="text-xs font-black uppercase tracking-wider text-white">GIF Animado</span>
-                         {(myMember?.level || 0) < 2 && (
-                           <span className="text-[8px] bg-red-600/30 text-red-400 border border-red-600/40 px-2 py-0.5 rounded-md font-black uppercase tracking-tight animate-pulse text-right">
-                             BLOQUEADO (NV. 2)
-                           </span>
-                         )}
-                       </div>
-                       <span className="text-[9px] text-white/40 uppercase font-black tracking-wide">Formato GIF Animado</span>
-                     </div>
-                   </button>
-                 </div>
+                    <button
+                      onClick={() => {
+                        setUploadAcceptType('image/gif');
+                        setAvatarModalOpen(false);
+                        setTimeout(() => {
+                          fileInputRef.current?.click();
+                        }, 150);
+                      }}
+                      className="p-4 bg-white/[0.02] hover:bg-white/[0.07] hover:border-gaming-gold/40 border border-white/5 rounded-2xl flex items-center gap-4 transition-all text-left group relative overflow-hidden"
+                    >
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-display font-black text-xs bg-purple-500/10 text-purple-400 group-hover:scale-105 transition-transform">
+                        GIF
+                      </div>
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-black uppercase tracking-wider text-white">GIF Animado</span>
+                        </div>
+                        <span className="text-[9px] text-white/40 uppercase font-black tracking-wide">Formato GIF Animado</span>
+                      </div>
+                    </button>
+                  </div>
+
 
 
 
@@ -1362,27 +1944,6 @@ export function ConfiguracoesView() {
            
            <div className="space-y-4">
               <div>
-                  <span className="text-[8px] uppercase font-black text-white/40 tracking-widest block mb-2">Fundo do Perfil</span>
-                  <div className="grid grid-cols-2 gap-1.5">
-                     {[
-                       { id: 'padrão', label: 'Padrão', url: 'https://cdnb.artstation.com/p/assets/images/images/017/680/475/small/andrej-otepka-square-04-tmp04web.jpg?1556922748' },
-                       { id: 'cibernética', label: 'Cibernética', url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070' },
-                       { id: 'guerra', label: 'Guerra', url: 'https://images.unsplash.com/photo-1599394022918-6c276a570aba?q=80&w=2070' },
-                       { id: 'moderna', label: 'Moderna', url: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=2070' }
-                     ].map(art => (
-                       <button 
-                         key={art.id}
-                         onClick={() => updateMemberData({ profileBg: art.url })}
-                         className={`relative overflow-hidden group py-1.5 rounded-lg border text-[8px] font-black uppercase tracking-wider transition-all ${myMember?.profileBg === art.url || (!myMember?.profileBg && art.id === 'padrão') ? 'border-gaming-gold text-gaming-gold' : 'bg-white/5 border-white/10 text-white/40'}`}
-                       >
-                         <img src={art.url} className="absolute inset-0 w-full h-full object-cover opacity-5 group-hover:opacity-10 transition-opacity" alt="" />
-                         <span className="relative z-10">{art.label}</span>
-                       </button>
-                     ))}
-                  </div>
-               </div>
-
-              <div>
                  <span className="text-[8px] uppercase font-black text-white/40 tracking-widest block mb-2">Tema da Alcatéia</span>
                  <div className="grid grid-cols-2 gap-1.5">
                     {[
@@ -1526,59 +2087,59 @@ export function RewardsView() {
   ];
 
   return (
-    <div className="flex flex-col gap-8 p-4 md:p-8">
+    <div className="flex flex-col gap-5 sm:gap-6 p-3 sm:p-5 md:p-8">
         <div className={`flex flex-col md:flex-row md:items-end justify-between gap-4`}>
         <div>
-           <span className="text-[10px] uppercase font-black text-gaming-gold tracking-[0.4em] mb-1 block">Mercado Negro</span>
-           <h2 className="text-4xl font-display font-black uppercase italic tracking-tighter">
+           <span className="text-[9px] uppercase font-black text-gaming-gold tracking-[0.4em] mb-1 block">Mercado Negro</span>
+           <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-black uppercase italic tracking-tighter">
              Central de <span className="text-gaming-gold">Recompensas</span>
            </h2>
         </div>
-        <div className={`flex items-center gap-3 bg-white/5 border border-white/10 px-6 py-3 rounded-2xl ${isEcoMode ? '' : 'backdrop-blur-md'}`}>
-           <Gem size={20} className="text-gaming-gold" />
+        <div className={`flex items-center gap-2.5 bg-white/5 border border-white/10 px-4 py-2 rounded-xl ${isEcoMode ? '' : 'backdrop-blur-md'}`}>
+           <Gem size={18} className="text-gaming-gold animate-pulse" />
            <div className="flex flex-col">
               <span className="text-[8px] uppercase font-black text-white/30 tracking-widest">Seu Saldo</span>
-              <span className="font-mono font-black text-gaming-gold text-lg leading-none">{myMember?.diamonds || 0}</span>
+              <span className="font-mono font-black text-gaming-gold text-base sm:text-lg leading-none">{myMember?.diamonds || 0}</span>
            </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
          {rewards.map((reward) => (
            <motion.div 
             key={reward.id}
-            whileHover={!isEcoMode ? { y: -5 } : {}}
-            className={`group relative bg-gaming-card/40 border border-gaming-border rounded-[2.5rem] p-6 flex flex-col gap-6 overflow-hidden transition-all hover:bg-gaming-card/60 hover:border-gaming-gold/30 ${isEcoMode ? '' : 'backdrop-blur-md'}`}
+            whileHover={!isEcoMode ? { y: -3 } : {}}
+            className={`group relative bg-gaming-card/40 border border-gaming-border rounded-2xl p-4 sm:p-5 flex flex-col gap-4 overflow-hidden transition-all hover:bg-gaming-card/60 hover:border-gaming-gold/30 ${isEcoMode ? '' : 'backdrop-blur-md'}`}
            >
               {reward.inDevelopment && (
                 <div className={`absolute inset-0 bg-black/60 z-20 flex items-center justify-center rotate-[-15deg] scale-125 pointer-events-none ${isEcoMode ? '' : 'backdrop-blur-[2px]'}`}>
-                   <span className="bg-gaming-gold text-black px-8 py-2 font-black uppercase tracking-[0.3em] text-[10px] shadow-2xl">Em Desenvolvimento</span>
+                   <span className="bg-gaming-gold text-black px-6 py-1.5 font-black uppercase tracking-[0.3em] text-[8px] sm:text-[9px] shadow-2xl">Em Desenvolvimento</span>
                 </div>
               )}
 
               <div className="relative z-10">
-                 <div className="flex justify-between items-start mb-6">
-                    <div className={`p-4 rounded-2xl bg-white/5 border border-white/10 text-white group-hover:text-gaming-gold group-hover:border-gaming-gold/50 transition-all shadow-inner`}>
-                       <reward.icon size={32} />
+                 <div className="flex justify-between items-start mb-4">
+                    <div className={`p-3 rounded-xl bg-white/5 border border-white/10 text-white group-hover:text-gaming-gold group-hover:border-gaming-gold/50 transition-all shadow-inner`}>
+                       <reward.icon size={24} />
                     </div>
-                    <span className="text-[8px] font-black uppercase tracking-widest px-3 py-1 bg-white/5 rounded-full border border-white/5 text-white/40">{reward.rarity}</span>
+                    <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest px-2.5 py-0.5 bg-white/5 rounded-full border border-white/5 text-white/40">{reward.rarity}</span>
                  </div>
 
-                 <h4 className="font-display font-black uppercase text-xl mb-2 leading-tight group-hover:text-gaming-gold transition-colors">{reward.title}</h4>
-                 <p className="text-[10px] text-white/40 font-bold uppercase leading-relaxed tracking-wider min-h-[40px] italic">{reward.desc}</p>
+                 <h4 className="font-display font-black uppercase text-lg sm:text-xl mb-1.5 leading-tight group-hover:text-gaming-gold transition-colors truncate">{reward.title}</h4>
+                 <p className="text-[9px] sm:text-[10px] text-white/40 font-bold uppercase leading-relaxed tracking-wider min-h-[36px] italic">{reward.desc}</p>
               </div>
 
-              <div className="mt-auto relative z-10 pt-6 border-t border-white/5 flex flex-col gap-4">
+              <div className="mt-auto relative z-10 pt-4 border-t border-white/5 flex flex-col gap-3">
                  <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-black uppercase text-white/20 tracking-widest">Valor</span>
+                    <span className="text-[8px] sm:text-[9px] font-black uppercase text-white/20 tracking-widest">Valor</span>
                     <div className="flex items-center gap-1.5">
-                       <Gem size={14} className="text-gaming-gold" />
-                       <span className="font-mono font-black text-gaming-gold">{reward.price}</span>
+                       <Gem size={12} className="text-gaming-gold" />
+                       <span className="font-mono font-black text-gaming-gold text-sm sm:text-base">{reward.price}</span>
                     </div>
                  </div>
                  <button 
                   onClick={() => handleClaimReward(reward)}
-                  className={`w-full py-4 rounded-2xl font-display font-black uppercase tracking-[0.2em] text-xs transition-all relative overflow-hidden ${
+                  className={`w-full py-2.5 sm:py-3 rounded-xl font-display font-black uppercase tracking-[0.2em] text-[10px] sm:text-xs transition-all relative overflow-hidden ${
                     reward.inDevelopment 
                       ? 'bg-white/5 text-white/20 cursor-not-allowed' 
                       : 'bg-white text-black hover:bg-gaming-gold hover:shadow-[0_0_20px_rgba(251,191,36,0.4)] active:scale-95'
@@ -1591,7 +2152,7 @@ export function RewardsView() {
                         initial={{ y: 20, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
                         exit={{ y: -20, opacity: 0 }}
-                        className={`absolute inset-0 flex items-center justify-center text-[8px] sm:text-[10px] px-2 text-center text-wrap ${purchaseStatus.type === 'success' ? 'bg-green-500 text-black' : 'bg-red-500 text-white'}`}
+                        className={`absolute inset-0 flex items-center justify-center text-[8px] sm:text-[9px] px-2 text-center text-wrap ${purchaseStatus.type === 'success' ? 'bg-green-500 text-black' : 'bg-red-500 text-white'}`}
                        >
                          {purchaseStatus.message}
                        </motion.span>
@@ -1603,18 +2164,18 @@ export function RewardsView() {
               </div>
 
               {/* Decorative Background Icon */}
-              {!isEcoMode && <reward.icon size={120} className="absolute -right-8 -bottom-8 text-white/[0.02] -rotate-12 group-hover:scale-110 transition-transform duration-700" />}
+              {!isEcoMode && <reward.icon size={80} className="absolute -right-6 -bottom-6 text-white/[0.02] -rotate-12 group-hover:scale-110 transition-transform duration-700" />}
            </motion.div>
          ))}
       </div>
 
-      <div className="bg-linear-to-r from-gaming-purple/10 to-transparent border border-gaming-purple/20 rounded-3xl p-8 flex items-center gap-6 mt-4">
-         <div className="hidden md:flex w-20 h-20 bg-gaming-purple/20 rounded-full items-center justify-center text-gaming-purple flex-shrink-0 animate-pulse border border-gaming-purple/30">
-            <Gift size={40} />
+      <div className="bg-linear-to-r from-gaming-purple/10 to-transparent border border-gaming-purple/20 rounded-2xl p-5 flex items-center gap-4 mt-2">
+         <div className="hidden md:flex w-14 h-14 bg-gaming-purple/20 rounded-full items-center justify-center text-gaming-purple flex-shrink-0 animate-pulse border border-gaming-purple/30">
+            <Gift size={28} />
          </div>
          <div>
-            <h5 className="font-display font-black uppercase text-lg mb-1 italic">Eventos de Recarga</h5>
-            <p className="text-xs text-white/50 uppercase font-black tracking-widest">Fique atento ao nosso Whatsapp para eventos especiais onde você pode ganhar diamantes em dobro e recompensas exclusivas por tempo limitado.</p>
+            <h5 className="font-display font-black uppercase text-base mb-1 italic">Eventos de Recarga</h5>
+            <p className="text-[10px] sm:text-xs text-white/50 uppercase font-black tracking-widest leading-relaxed">Fique atento ao nosso Whatsapp para eventos especiais onde você pode ganhar diamantes em dobro e recompensas exclusivas por tempo limitado.</p>
          </div>
       </div>
     </div>
@@ -1653,9 +2214,11 @@ export function DevelopmentView({ tab, progress = 65 }: { tab: string, progress?
 
 // --- GERENCIA VIEW ---
 export function GerenciaView() {
-  const { members, myMember, deleteMember, banMember, updateMemberRole, theftReports, clearTheftReport, isEcoMode } = useClan();
+  const { user, members, myMember, deleteMember, banMember, updateMemberRole, updateClanLoginLogoImage, clan, theftReports, clearTheftReport, isEcoMode } = useClan();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const isLeader = user?.email === 'ryankevyn3000@gmail.com';
 
   const handleDeleteMember = async (memberId: string, name: string, definitive: boolean = false) => {
     const actionText = definitive ? 'BANIR' : 'EXPULSAR';
@@ -1682,7 +2245,7 @@ export function GerenciaView() {
   };
 
   const handlePromotion = async (memberId: string, currentRole: string) => {
-    if (!myMember || myMember.role !== 'leader') return;
+    if (!isLeader) return;
     
     let newRole = 'warrior';
     let actionLabel = '';
@@ -1730,13 +2293,13 @@ export function GerenciaView() {
     }
   };
 
-  if (myMember?.role !== 'leader') {
+  if (!isLeader) {
     return (
       <div className="flex flex-col items-center justify-center p-20 gap-6 opacity-40">
         <ShieldAlert size={64} className="text-red-500" />
         <div className="flex flex-col items-center text-center gap-2">
           <h2 className="text-2xl font-display font-black uppercase italic text-white tracking-tighter">Acesso Negado</h2>
-          <p className="text-[10px] font-black uppercase tracking-widest text-red-500/60 max-w-[200px]">Somente o Líder Supremo pode gerenciar a hierarquia do clã.</p>
+          <p className="text-[10px] font-black uppercase tracking-widest text-red-500/60 max-w-[200px]">Somente o Líder Supremo com o e-mail autorizado pode acessar as tecnologias de gestão de clã.</p>
         </div>
       </div>
     );
@@ -1842,11 +2405,11 @@ export function GerenciaView() {
                         className="bg-white/5 border border-white/5 hover:border-white/10 rounded-xl p-4 flex items-center justify-between transition-all group"
                       >
                        <div className="flex items-center gap-4">
-                          <img 
+                          <SafeAvatar 
                             src={m.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${m.userId}`} 
                             className="w-10 h-10 rounded-full border border-white/10 object-cover" 
                             alt={m.name}
-                            referrerPolicy="no-referrer"
+                            isEcoMode={isEcoMode}
                           />
                           <div className="flex flex-col">
                              <div className="flex items-center gap-2">
@@ -1923,6 +2486,127 @@ export function GerenciaView() {
                  </button>
               </div>
            </div>
+
+            {/* Gerenciamento de Logo do Login de Todos */}
+            <div className="bg-gaming-card/40 border border-gaming-border rounded-3xl p-6 flex flex-col gap-6">
+              <div className="flex items-center gap-2 border-b border-white/5 pb-4">
+                <Palette className="text-gaming-gold animate-pulse" size={18} />
+                <h4 className="font-display font-black uppercase text-sm tracking-widest italic">Logo do Login para Todos</h4>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <p className="text-[10px] text-white/50 leading-relaxed font-bold uppercase italic">
+                  Altere a foto do logo em todas as telas de login oficiais da Suprema Ordem.
+                </p>
+
+                {/* Previsualização em Tempo Real */}
+                <div className="flex items-center justify-center p-4 bg-black/40 rounded-2xl border border-white/5">
+                  <div className="flex flex-col items-center gap-2">
+                    <span className="text-[8px] uppercase tracking-widest text-white/20 font-black">Visualização Atual:</span>
+                    <div className="w-16 h-16 hex-clip bg-linear-to-br from-gaming-gold/20 to-gaming-purple/20 border border-gaming-gold/30 flex items-center justify-center shadow-[0_0_20px_rgba(251,191,36,0.2)]">
+                      <img 
+                        src={clan?.loginLogoImage || "/src/assets/images/supreme_order_gold_logo_1778976451328.png"} 
+                        alt="Logo Preview" 
+                        className="w-10 h-10 object-contain drop-shadow-[0_0_5px_rgba(251,191,36,0.5)]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Inputs do Logo */}
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-[9px] uppercase font-black text-white/40 tracking-widest">Opção 1: Upload de Arquivo</span>
+                    <label className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-all font-display font-black uppercase text-[9px] tracking-widest text-white/80 shrink-0 select-none">
+                      <Camera size={14} className="text-gaming-gold" /> Escolher Foto...
+                      <input 
+                        type="file" 
+                        className="hidden" 
+                        accept="image/*" 
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          
+                          const reader = new FileReader();
+                          reader.onload = async (event) => {
+                            if (event.target?.result) {
+                              try {
+                                 await updateClanLoginLogoImage(event.target.result as string);
+                                 alert("Logo do login atualizado com sucesso para todos!");
+                              } catch (err: any) {
+                                 console.error("Erro ao salvar loginLogo:", err);
+                                 alert("Não foi possível persistir no Firestore. Lembre-se de aceitar/adicionar as regras de segurança.");
+                              }
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5 pt-1">
+                    <span className="text-[9px] uppercase font-black text-white/40 tracking-widest">Opção 2: URL de Imagem da Web</span>
+                    <div className="flex gap-2">
+                      <input 
+                        type="text" 
+                        placeholder="https://exemplo.com/sua-logo.png" 
+                        className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-[11px] font-bold text-white outline-none focus:border-gaming-gold/40 transition-all placeholder-white/20"
+                        onKeyDown={async (e) => {
+                          if (e.key === 'Enter') {
+                            const val = e.currentTarget.value.trim();
+                            if (val) {
+                              try {
+                                await updateClanLoginLogoImage(val);
+                                e.currentTarget.value = "";
+                                alert("Logo alterado com sucesso!");
+                              } catch (err) {
+                                alert("Erro ao salvar.");
+                              }
+                            }
+                          }
+                        }}
+                      />
+                      <button 
+                        onClick={async (e) => {
+                          const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                          const val = input?.value?.trim();
+                          if (val) {
+                            try {
+                              await updateClanLoginLogoImage(val);
+                              input.value = "";
+                              alert("Logo alterado com sucesso!");
+                            } catch (err) {
+                              alert("Erro ao salvar.");
+                            }
+                          }
+                        }}
+                        className="px-3 py-2 bg-gaming-gold text-black rounded-xl font-display font-black uppercase text-[10px] tracking-widest hover:bg-gaming-gold/80 transition-all"
+                      >
+                        Salvar
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Restaurar Logo Padrão */}
+                  <button 
+                    onClick={async () => {
+                      if (confirm("Deseja mesmo restaurar o logo oficial padrão da Suprema Ordem?")) {
+                        try {
+                          await updateClanLoginLogoImage("");
+                          alert("Logo oficial restaurado!");
+                        } catch (err) {
+                          alert("Erro ao restaurar.");
+                        }
+                      }
+                    }}
+                    className="w-full py-2 bg-red-400/5 hover:bg-red-400/15 border border-red-500/10 hover:border-red-500/30 text-red-400 rounded-xl font-display font-black uppercase text-[9px] tracking-widest transition-all"
+                  >
+                    Restaurar Logo Padrão
+                  </button>
+                </div>
+              </div>
+            </div>
 
            <div className="bg-gaming-card/40 border border-gaming-border rounded-3xl p-6 flex flex-col gap-4">
               <h4 className="text-[10px] font-black uppercase text-white/20 tracking-widest">Aviso Importante</h4>

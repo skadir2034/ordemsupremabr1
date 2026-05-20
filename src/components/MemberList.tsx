@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Circle, UserPlus, Users, LogOut, Edit2, Trash2 } from 'lucide-react';
 import { useClan } from '../context/ClanContext';
+import { SafeAvatar } from './SafeAvatar';
 
 export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
   const [activeSubTab, setActiveSubTab] = useState('membros');
@@ -18,6 +19,29 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const isLeader = myMember?.role === 'leader';
+
+  const [visibleLimit, setVisibleLimit] = useState(6);
+  const [isExpanding, setIsExpanding] = useState(false);
+
+  const handleShowMore = () => {
+    if (isEcoMode) {
+      setVisibleLimit(sortedMembers.length);
+      return;
+    }
+    setIsExpanding(true);
+    const interval = setInterval(() => {
+      setVisibleLimit((prev) => {
+        if (prev >= sortedMembers.length) {
+          clearInterval(interval);
+          setIsExpanding(false);
+          return sortedMembers.length;
+        }
+        return prev + 6;
+      });
+    }, 150);
+  };
+
+  const visibleMembers = sortedMembers.slice(0, visibleLimit);
 
   const handleDeleteMember = async (memberId: string, name: string) => {
     if (confirm(`Deseja realmente ELIMINAR ${name} da Ordem Suprema? Esta ação removerá o acesso do usuário.`)) {
@@ -131,6 +155,18 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
   };
 
   const getNicknameColorClass = (colorId?: string) => {
+    if (isEcoMode) {
+      switch (colorId) {
+        case 'color_gold': return 'text-[#c5a059] font-bold';
+        case 'color_red': return 'text-[#b25d62] font-semibold';
+        case 'color_cyan': return 'text-[#93c5fd] font-semibold';
+        case 'color_pink': return 'text-[#c084fc] font-semibold';
+        case 'color_emerald': return 'text-[#a7f3d0] font-semibold';
+        case 'color_purple': return 'text-[#c0a9df] font-semibold';
+        case 'color_rgb': return 'text-gaming-gold font-extrabold';
+        default: return 'text-white';
+      }
+    }
     switch (colorId) {
       case 'color_gold': return 'text-[#c5a059] font-bold drop-shadow-[0_0_6px_rgba(197,160,89,0.4)]';
       case 'color_red': return 'text-[#b25d62] font-semibold drop-shadow-[0_0_6px_rgba(178,93,98,0.3)]';
@@ -156,7 +192,7 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
       </div>
 
       <div className="flex-1 bg-gaming-card/30 rounded-2xl border border-gaming-border overflow-hidden flex flex-col shadow-2xl backdrop-blur-sm">
-        <div className="overflow-x-auto no-scrollbar scroll-smooth">
+        <div className="overflow-x-auto no-scrollbar scroll-smooth flex-1">
           {!isMobile ? (
             <table className="w-full text-left border-collapse min-w-[600px]">
               <thead>
@@ -188,7 +224,7 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
                         Nenhum membro encontrado
                       </td>
                     </motion.tr>
-                  ) : sortedMembers.map((m, index) => (
+                  ) : visibleMembers.map((m, index) => (
                     <motion.tr 
                       key={m.id} 
                       layout
@@ -206,7 +242,12 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
                       <div className="flex items-center gap-3">
                         <div className="relative group/avatar">
                           {m.avatarUrl && (
-                            <img src={m.avatarUrl} alt={m.name} className={`w-8 h-8 rounded-full object-cover shadow-[0_0_10px_rgba(0,0,0,0.5)] ${getBorderClasses(m.profileBorder)}`} referrerPolicy="no-referrer" />
+                            <SafeAvatar 
+                              src={m.avatarUrl} 
+                              alt={m.name} 
+                              className={`w-8 h-8 rounded-full object-cover shadow-[0_0_10px_rgba(0,0,0,0.5)] ${getBorderClasses(m.profileBorder)}`} 
+                              isEcoMode={isEcoMode}
+                            />
                           )}
                           <div className="absolute -top-1 -right-1 w-4 h-4 bg-gaming-gold rounded-full flex items-center justify-center border border-black shadow-[0_0_10px_rgba(251,191,36,0.8)] z-10">
                             <span className="text-[7px] font-black text-black leading-none">{m.level || 0}</span>
@@ -257,7 +298,7 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
                   Array.from({ length: 3 }).map((_, i) => (
                     <div key={i} className="h-20 bg-white/5 rounded-xl animate-pulse" />
                   ))
-                ) : sortedMembers.map((m, index) => (
+                ) : visibleMembers.map((m, index) => (
                   <motion.div 
                     key={m.id} 
                     layout
@@ -269,7 +310,12 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
                   <div className="flex items-center gap-4">
                     <div className="relative group/avatar">
                       {m.avatarUrl ? (
-                        <img src={m.avatarUrl} alt={m.name} className={`w-10 h-10 rounded-full object-cover shadow-[0_0_15px_rgba(0,0,0,0.5)] ${getBorderClasses(m.profileBorder)}`} referrerPolicy="no-referrer" />
+                            <SafeAvatar 
+                              src={m.avatarUrl} 
+                              alt={m.name} 
+                              className={`w-10 h-10 rounded-full object-cover shadow-[0_0_15px_rgba(0,0,0,0.5)] ${getBorderClasses(m.profileBorder)}`} 
+                              isEcoMode={isEcoMode}
+                            />
                       ) : (
                         <div className={`w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-[10px] font-black uppercase text-white/30 ${getBorderClasses(m.profileBorder)}`}>{m.name.substring(0,2)}</div>
                       )}
@@ -302,6 +348,25 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
             </div>
           )}
         </div>
+
+        {visibleLimit < sortedMembers.length && (
+          <div className="flex justify-center p-4 border-t border-white/5 bg-black/10">
+            <button
+              onClick={handleShowMore}
+              disabled={isExpanding}
+              className="px-6 py-2.5 rounded-xl border border-gaming-gold/20 bg-gaming-gold/5 hover:bg-gaming-gold/10 text-gaming-gold text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer flex items-center gap-2"
+            >
+              {isExpanding ? (
+                <>
+                  <span className="w-3.5 h-3.5 border-2 border-gaming-gold border-t-transparent rounded-full animate-spin" />
+                  Carregando...
+                </>
+              ) : (
+                'Ver Mais'
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Action Bar */}

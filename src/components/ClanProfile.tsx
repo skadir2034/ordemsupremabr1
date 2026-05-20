@@ -4,6 +4,7 @@ import { Shield, ChevronRight, MapPin, Search, Users, LogOut, Camera, Circle, Sk
 import { useClan } from '../context/ClanContext';
 import { updateMemberAvatar } from '../services/clanService';
 import { auth } from '../lib/firebase';
+import { SafeAvatar } from './SafeAvatar';
 
 export function ClanProfile({ 
   isMobile = false,
@@ -61,33 +62,66 @@ export function ClanProfile({
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && clan && user) {
+      // Se for maior que 10MB, barramos de primeira para evitar crash no celular
       if (file.size > 10 * 1024 * 1024) {
-        alert("O arquivo é muito grande (Máximo de 10MB). Para imagens normais ou GIFs menores, selecione um arquivo menor.");
+        alert("O arquivo é muito grande (Máximo de 10MB).");
         return;
-      }
-      const isGif = file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif');
-      if (isGif) {
-        const currentLevel = myMember?.level || 0;
-        if (currentLevel < 2) {
-          alert("Acesso Bloqueado! Você precisa ser Nível 2 ou superior para usar GIFs animados. Continue completando missões da alcatéia!");
-          return;
-        }
       }
 
       try {
         const { ref: storageRef, uploadBytes, getDownloadURL } = await import('firebase/storage');
         const { storage } = await import('../lib/firebase');
 
-        // Create a unique path for user's uploaded avatar in Firebase Storage
+        let fileToUpload: Blob | File = file;
+        let mimeType = file.type || 'image/jpeg';
+
+        if (file.type === 'image/gif') {
+          // É um GIF
+          mimeType = 'image/gif';
+          // Para GIFs grandes de celular, mostramos um aviso de processamento
+          if (file.size > 1.5 * 1024 * 1024) {
+            console.log("Processando e otimizando o envio de GIF grande para celular...");
+          }
+        } else {
+          // É uma foto estática comum, vamos comprimi-la drasticamente no cliente para economizar rede e bateria
+          const dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (event) => resolve(event.target?.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+          });
+
+          // Comprime redimensionando para máximo de 200x200 com 70% de qualidade
+          const compressedDataUrl = await compressImage(dataUrl, 200, 200);
+          
+          // Converte o dataURL de volta para um Blob para upload ultra-rápido no Firebase Storage
+          const arr = compressedDataUrl.split(',');
+          const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+          const bstr = atob(arr[1]);
+          let n = bstr.length;
+          const u8arr = new Uint8Array(n);
+          while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+          }
+          fileToUpload = new Blob([u8arr], { type: mime });
+          mimeType = mime;
+        }
+
+        // Criar nome único para o avatar
         const fileRef = storageRef(storage, `avatars/${user.uid}/${Date.now()}_${file.name}`);
-        const snapshot = await uploadBytes(fileRef, file);
+        
+        // Configurar metadados do tipo de arquivo para garantir que os navegadores carreguem e reproduzam como imagem e GIF corretos
+        const metadata = { contentType: mimeType };
+        const snapshot = await uploadBytes(fileRef, fileToUpload, metadata);
         const downloadUrl = await getDownloadURL(snapshot.ref);
 
         await updateMemberAvatar(clan.id, user.uid, downloadUrl);
         setAvatarModalOpen(false);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to upload/update avatar to Firebase Storage', err);
-        alert("Erro ao enviar a imagem para o servidor. Tente novamente.");
+        const errorMessage = err?.message || String(err);
+        const errorCode = err?.code || 'desconhecido';
+        alert(`Erro de upload: ${errorMessage} (Código: ${errorCode}). Verifique a conexão com a internet ou as permissões do Firebase Storage.`);
       }
     }
   };
@@ -105,7 +139,8 @@ export function ClanProfile({
   };
 
   // Level thresholds and logic
-  const thresholds = [0, 50, 100, 200, 500, 1000, 1800, 2600, 3400, 4200, 5000];
+  // Level 1: 0 XP, Level 2: 100 XP, Level 3: 200 XP, up to Level 10
+  const thresholds = [0, 0, 100, 200, 400, 700, 1100, 1600, 2200, 2900, 3700];
   const currentXp = myMember?.xp || 0;
   const currentLevel = myMember?.level || 0;
   const nextLevelXp = thresholds[currentLevel + 1] || thresholds[thresholds.length - 1];
@@ -138,6 +173,18 @@ export function ClanProfile({
   };
 
   const getNicknameColorClass = (colorId?: string) => {
+    if (isEcoMode) {
+      switch (colorId) {
+        case 'color_gold': return 'text-[#c5a059] font-bold';
+        case 'color_red': return 'text-[#b25d62] font-semibold';
+        case 'color_cyan': return 'text-[#93c5fd] font-semibold';
+        case 'color_pink': return 'text-[#c084fc] font-semibold';
+        case 'color_emerald': return 'text-[#a7f3d0] font-semibold';
+        case 'color_purple': return 'text-[#c0a9df] font-semibold';
+        case 'color_rgb': return 'text-gaming-gold font-extrabold';
+        default: return 'text-white';
+      }
+    }
     switch (colorId) {
       case 'color_gold': return 'text-[#c5a059] font-bold drop-shadow-[0_0_8px_rgba(197,160,89,0.4)]';
       case 'color_red': return 'text-[#b25d62] font-semibold drop-shadow-[0_0_8px_rgba(178,93,98,0.3)]';
@@ -172,7 +219,7 @@ export function ClanProfile({
       {/* Background Image/Art */}
       <div className="absolute inset-0 opacity-65 pointer-events-none">
         <img 
-          src={myMember?.profileBg || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1964"} 
+          src={myMember?.profileBg || "https://cdnb.artstation.com/p/assets/images/images/017/680/475/small/andrej-otepka-square-04-tmp04web.jpg?1556922748"} 
           alt="Art" 
           className="w-full h-full object-cover"
         />
@@ -186,11 +233,10 @@ export function ClanProfile({
             {!isEcoMode && <div className={`absolute -inset-2 rounded-full blur-xl opacity-25 group-hover:opacity-75 transition duration-1000 ${myMember?.profileBorder === 'border_gold' ? 'bg-gaming-gold' : 'bg-gaming-gold/50'}`}></div>}
             <div className={`relative ${isMobile ? 'w-20 h-20' : 'w-32 h-32 md:w-40 md:h-40'} rounded-full p-1 group-hover:scale-105 transition-transform duration-500 flex items-center justify-center ${getBorderClasses(myMember?.profileBorder)}`}>
               {myMember?.avatarUrl ? (
-                <img 
+                <SafeAvatar 
                   src={myMember.avatarUrl} 
-                   alt="Avatar" 
                   className="w-full h-full object-cover rounded-full"
-                  referrerPolicy="no-referrer"
+                  isEcoMode={isEcoMode}
                 />
               ) : (
                 <div className="w-full h-full bg-linear-to-br from-gaming-gold to-gaming-purple/40 flex items-center justify-center text-center p-2 rounded-full">
@@ -198,7 +244,7 @@ export function ClanProfile({
                 </div>
               )}
                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
-                 <Camera className="text-gaming-gold" size={isMobile ? 16 : 32} />
+                  <Camera className="text-gaming-gold" size={isMobile ? 16 : 32} />
               </div>
             </div>
             <input 
@@ -228,7 +274,7 @@ export function ClanProfile({
                     {/* Option 1: Standard Image */}
                     <button
                       onClick={() => {
-                        setUploadAcceptType('image/png, image/jpeg, image/jpg, image/webp');
+                        setUploadAcceptType('image/png, image/jpeg, image/jpg, image/webp, image/gif');
                         setAvatarModalOpen(false);
                         setTimeout(() => {
                           fileInputRef.current?.click();
@@ -241,42 +287,27 @@ export function ClanProfile({
                       </div>
                       <div className="flex flex-col gap-0.5">
                         <span className="text-xs font-black uppercase tracking-wider text-white">Foto Personalizada</span>
-                        <span className="text-[9px] text-white/40 uppercase font-black tracking-wide">PNG, JPG, JPEG ou WEBP</span>
+                        <span className="text-[9px] text-white/40 uppercase font-black tracking-wide">PNG, JPG, JPEG, WEBP ou GIF</span>
                       </div>
                     </button>
 
                     {/* Option 2: Animated GIF */}
                     <button
                       onClick={() => {
-                        if (currentLevel < 2) {
-                          alert("Acesso Bloqueado! Você precisa ser Nível 2 ou superior para usar GIFs animados. Continue completando missões da aliança!");
-                          return;
-                        }
                         setUploadAcceptType('image/gif');
                         setAvatarModalOpen(false);
                         setTimeout(() => {
                           fileInputRef.current?.click();
                         }, 150);
                       }}
-                      className={`p-4 border rounded-2xl flex items-center gap-4 transition-all text-left group relative overflow-hidden ${
-                        currentLevel < 2
-                          ? 'bg-black/40 border-white/5 opacity-50 cursor-not-allowed'
-                          : 'bg-white/[0.02] hover:bg-white/[0.07] hover:border-gaming-gold/40 border-white/5'
-                      }`}
+                      className="p-4 bg-white/[0.02] hover:bg-white/[0.07] hover:border-gaming-gold/40 border border-white/5 rounded-2xl flex items-center gap-4 transition-all text-left group relative overflow-hidden"
                     >
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-display font-black text-xs ${
-                        currentLevel < 2 ? 'bg-red-500/10 text-red-500' : 'bg-purple-500/10 text-purple-400 group-hover:scale-105 transition-transform'
-                      }`}>
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-display font-black text-xs bg-purple-500/10 text-purple-400 group-hover:scale-105 transition-transform">
                         GIF
                       </div>
                       <div className="flex flex-col gap-0.5">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-xs font-black uppercase tracking-wider text-white">GIF Animado</span>
-                          {currentLevel < 2 && (
-                            <span className="text-[8px] bg-red-600/30 text-red-400 border border-red-600/40 px-2 py-0.5 rounded-md font-black uppercase tracking-tight animate-pulse">
-                              BLOQUEADO (NV. 2)
-                            </span>
-                          )}
                         </div>
                         <span className="text-[9px] text-white/40 uppercase font-black tracking-wide">Formato GIF Animado</span>
                       </div>
@@ -284,7 +315,9 @@ export function ClanProfile({
                   </div>
 
                   <button
-                    onClick={() => setAvatarModalOpen(false)}
+                    onClick={() => {
+                      setAvatarModalOpen(false);
+                    }}
                     className="w-full py-2.5 bg-white/5 hover:bg-white/10 active:bg-white/15 border border-white/10 text-white/60 hover:text-white uppercase font-black text-[9px] tracking-widest rounded-xl transition-all"
                   >
                     Fechar

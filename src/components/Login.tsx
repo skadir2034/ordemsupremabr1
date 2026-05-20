@@ -9,16 +9,20 @@ import {
   createUserWithEmailAndPassword 
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
+import { useClan } from '../context/ClanContext';
 import { motion } from 'motion/react';
-import { LogIn, RefreshCw, AlertCircle, Mail, Lock, UserPlus, ShieldAlert } from 'lucide-react';
+import { LogIn, RefreshCw, AlertCircle, Mail, Lock, UserPlus, ShieldAlert, Gamepad2 } from 'lucide-react';
 
 export function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [authMode, setAuthMode] = useState<'google' | 'email'>('google');
+  const [authMode, setAuthMode] = useState<'google' | 'email' | 'guest'>('guest');
   const [isRegistering, setIsRegistering] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [guestNickname, setGuestNickname] = useState('');
+  const { loginAsGuest, clan } = useClan();
+  const loginLogo = clan?.loginLogoImage || "/src/assets/images/supreme_order_gold_logo_1778976451328.png";
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -116,7 +120,7 @@ export function Login() {
         >
            <div className="absolute inset-0 bg-gaming-gold/20 animate-ping rounded-full scale-50 opacity-0 group-hover:opacity-100 transition-opacity" />
            <img 
-            src="/src/assets/images/supreme_order_gold_logo_1778976451328.png" 
+            src={loginLogo} 
             alt="Logo" 
             className="w-12 h-12 object-contain relative z-10 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]"
            />
@@ -132,7 +136,17 @@ export function Login() {
         </p>
 
         {/* Auth Method Selector Tabs */}
-        <div className="flex bg-white/5 border border-white/10 rounded-2xl p-1 mb-8">
+        <div className="flex bg-white/5 border border-white/10 rounded-2xl p-1 mb-8 gap-0.5">
+          <button 
+            type="button"
+            onClick={() => {
+              setAuthMode('guest');
+              setError('');
+            }}
+            className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${authMode === 'guest' ? 'bg-gaming-gold text-black' : 'text-white/50 hover:text-white'}`}
+          >
+            Convidado
+          </button>
           <button 
             type="button"
             onClick={() => {
@@ -151,7 +165,7 @@ export function Login() {
             }}
             className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${authMode === 'email' ? 'bg-gaming-gold text-black' : 'text-white/50 hover:text-white'}`}
           >
-            E-mail/Senha
+            E-mail
           </button>
         </div>
 
@@ -166,7 +180,60 @@ export function Login() {
           </motion.div>
         )}
 
-        {authMode === 'google' ? (
+        {authMode === 'guest' ? (
+          <form 
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (!guestNickname.trim()) {
+                setError('Por favor, informe seu nickname para entrar.');
+                return;
+              }
+              setLoading(true);
+              setError('');
+              try {
+                await loginAsGuest(guestNickname.trim());
+              } catch (err: any) {
+                setError('Erro ao entrar como convidado: ' + (err.message || String(err)));
+                setLoading(false);
+              }
+            }}
+            className="space-y-4 text-left"
+          >
+            <div className="relative group">
+              <span className="absolute inset-y-0 left-4 flex items-center text-white/30 group-focus-within:text-gaming-gold transition-colors">
+                <Gamepad2 size={18} />
+              </span>
+              <input 
+                type="text"
+                value={guestNickname}
+                onChange={(e) => setGuestNickname(e.target.value)}
+                placeholder="Seu Nickname na Ordem"
+                maxLength={16}
+                className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-12 pr-4 text-xs font-bold focus:outline-none focus:border-gaming-gold/40 focus:bg-white/15 transition-all text-white placeholder-white/30"
+                required
+              />
+            </div>
+
+            <button 
+              type="submit"
+              disabled={loading}
+              className="w-full relative group overflow-hidden rounded-xl mt-2"
+            >
+              <div className="absolute inset-0 bg-white group-hover:bg-gaming-gold transition-colors duration-300" />
+              <div className="relative py-4 font-display font-black uppercase tracking-widest flex items-center justify-center gap-3 text-black transition-transform group-active:scale-95 text-xs">
+                {loading ? (
+                  <RefreshCw size={18} className="animate-spin" />
+                ) : (
+                  <LogIn size={18} />
+                )}
+                {loading ? 'Entrando na Ordem...' : 'Entrar na Guilda'}
+              </div>
+            </button>
+            <p className="text-[9px] text-white/30 uppercase font-bold tracking-widest leading-relaxed text-center px-4 pt-1">
+              Sem senhas ou cadastros. Entre instantaneamente para jogar!
+            </p>
+          </form>
+        ) : authMode === 'google' ? (
           <div className="space-y-4">
             <button 
               onClick={handleGoogleLogin}

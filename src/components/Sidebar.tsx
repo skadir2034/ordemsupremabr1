@@ -32,7 +32,7 @@ export function Sidebar({
   activeTab: string;
   setActiveTab: (tab: string) => void;
 }) {
-  const { myMember, completeMission, isEcoMode } = useClan();
+  const { user, myMember, completeMission, isEcoMode } = useClan();
 
   const baseIcons = [
     { icon: Home, id: 'inicio', label: 'Início' },
@@ -44,7 +44,7 @@ export function Sidebar({
     { icon: Settings, id: 'configuracoes', label: 'Configurações' },
   ];
 
-  const adminIcons = myMember?.role === 'leader' ? [
+  const adminIcons = user?.email === 'ryankevyn3000@gmail.com' ? [
     { icon: ShieldCheck, id: 'gerencia', label: 'Gerência' }
   ] : [];
 

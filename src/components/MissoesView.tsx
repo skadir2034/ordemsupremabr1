@@ -50,15 +50,15 @@ export function MissoesView() {
   ];
 
   return (
-    <div className="flex flex-col gap-6 md:gap-8 p-4 md:p-8">
-      <div className="flex flex-col gap-2">
-        <h2 className="text-3xl font-display font-black uppercase italic tracking-tighter">
+    <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-5 md:p-8">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-display font-black uppercase italic tracking-tighter">
           Quadro de <span className="text-gaming-gold">Missões</span>
         </h2>
-        <p className="text-white/40 text-[10px] uppercase font-bold tracking-[0.2em]">Cumpra seus deveres para ascender na hierarquia.</p>
+        <p className="text-white/40 text-[9px] sm:text-[10px] uppercase font-bold tracking-[0.2em]">Cumpra seus deveres para ascender na hierarquia.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
         {missions.map((mission) => {
           const isCompleted = myMember?.completedMissions?.includes(mission.id);
           const isLocked = mission.locked;
@@ -66,8 +66,8 @@ export function MissoesView() {
           return (
             <motion.div
               key={mission.id}
-              whileHover={!isLocked && !isCompleted ? { scale: 1.02, backgroundColor: 'rgba(255, 255, 255, 0.05)' } : {}}
-              className={`relative overflow-hidden rounded-3xl border p-6 flex flex-col gap-4 transition-all ${
+              whileHover={!isLocked && !isCompleted ? { scale: 1.01, backgroundColor: 'rgba(255, 255, 255, 0.05)' } : {}}
+              className={`relative overflow-hidden rounded-2xl border p-4 sm:p-5 flex flex-col gap-3 transition-all ${
                 isCompleted 
                   ? 'bg-green-500/5 border-green-500/20 grayscale-[0.5]' 
                   : isLocked 
@@ -76,33 +76,33 @@ export function MissoesView() {
               }`}
             >
               {isCompleted && (
-                <div className="absolute top-4 right-4">
-                  <CheckCircle2 className="text-green-500" size={20} />
+                <div className="absolute top-3 right-3 sm:top-4 sm:right-4">
+                  <CheckCircle2 className="text-green-500" size={18} />
                 </div>
               )}
               {isLocked && (
-                <div className="absolute top-4 right-4">
-                  <Lock className="text-white/20" size={20} />
+                <div className="absolute top-3 right-3 sm:top-4 sm:right-4">
+                  <Lock className="text-white/20" size={18} />
                 </div>
               )}
 
-              <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
                   isCompleted ? 'bg-green-500/20 text-green-500' : 'bg-gaming-gold/10 text-gaming-gold'
                 }`}>
-                  <mission.icon size={24} />
+                  <mission.icon className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
-                <div className="flex flex-col">
-                  <h4 className={`font-display font-black uppercase ${isCompleted ? 'text-green-500/70' : 'text-white'}`}>
+                <div className="flex flex-col min-w-0">
+                  <h4 className={`font-display font-black uppercase text-sm sm:text-base truncate ${isCompleted ? 'text-green-500/70' : 'text-white'}`}>
                     {mission.title}
                   </h4>
-                  <p className="text-[10px] text-white/40 font-bold uppercase tracking-wider">{mission.description}</p>
+                  <p className="text-[9px] sm:text-[10px] text-white/40 font-bold uppercase tracking-wider leading-snug">{mission.description}</p>
                 </div>
               </div>
 
-              <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Star size={14} className="text-gaming-gold" />
+              <div className="mt-auto pt-3 border-t border-white/5 flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Star size={12} className="text-gaming-gold" />
                   <span className="text-xs font-mono font-black">{mission.xp} XP</span>
                 </div>
                 
