@@ -219,14 +219,31 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // 2. Listen to Members
     const membersRef = collection(db, 'clans', DEFAULT_CLAN_ID, 'members');
-    const membersQuery = query(membersRef, orderBy('role', 'asc'), orderBy('trophies', 'desc'));
+    const membersQuery = query(membersRef);
     
     const unsubscribeMembers = onSnapshot(membersQuery, (snapshot) => {
       const membersData = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       })) as Member[];
-      setMembers(membersData);
+      
+      // Sort members client-side to avoid needing a Firestore composite index
+      const sortedMembers = [...membersData].sort((a, b) => {
+        const roleOrder: Record<string, number> = {
+          leader: 1,
+          diplomat: 2,
+          military_leader: 3,
+          recruiter: 4,
+          muse: 5,
+          warrior: 6
+        };
+        const orderA = roleOrder[a.role] || 99;
+        const orderB = roleOrder[b.role] || 99;
+        if (orderA !== orderB) return orderA - orderB;
+        return (b.trophies || 0) - (a.trophies || 0);
+      });
+      
+      setMembers(sortedMembers);
       setLoading(false);
     }, (error) => {
       console.error('Members Snapshot Error:', error);
