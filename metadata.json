@@ -1,6 +1,6 @@
 {
-  "name": "Aliança Suprema Ordem",
-  "description": "Sistema de elite para gerenciamento, combate e sincronização de poder da Aliança Suprema Ordem.",
+  "name": "Remix: Continuação site (Parte 3)",
+  "description": "",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
