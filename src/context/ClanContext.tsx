@@ -81,6 +81,8 @@ interface ClanContextType {
   clearTheftReport: (reportId: string) => Promise<void>;
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  dbError: string | null;
+  retryConnection: () => void;
 }
 
 const ClanContext = createContext<ClanContextType | undefined>(undefined);
@@ -97,6 +99,14 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [theftReports, setTheftReports] = useState<TheftReport[]>([]);
   const [activeTab, setActiveTab] = useState('inicio');
+  const [dbError, setDbError] = useState<string | null>(null);
+  const [retryTrigger, setRetryTrigger] = useState(0);
+
+  const retryConnection = () => {
+    setDbError(null);
+    setLoading(true);
+    setRetryTrigger(prev => prev + 1);
+  };
   
   const toggleEcoMode = async () => {
     setIsOptimizing(true);
@@ -197,6 +207,36 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
 
     setLoading(true);
+    setDbError(null);
+
+    let active = true;
+
+    // Fast check using getDocFromServer to detect offline state, permission errors, or missing databases immediately
+    import('firebase/firestore').then(({ getDocFromServer, doc }) => {
+      if (!active) return;
+      getDocFromServer(doc(db, 'clans', DEFAULT_CLAN_ID))
+        .then(() => {
+          console.log("Direct connection to Firestore succeeded!");
+        })
+        .catch((err: any) => {
+          if (!active) return;
+          console.error("Firestore direct connection test failed:", err);
+          
+          let friendlyMessage = err?.message || String(err);
+          if (friendlyMessage.includes('permission') || friendlyMessage.toLowerCase().includes('denied')) {
+            friendlyMessage = "Permissão Negada (Permission Denied). Verifique se as regras do banco de dados (Firestore Security Rules) permitem leitura e gravação ou se o banco de dados foi iniciado em Modo de Produção/Bloqueado.";
+          } else if (friendlyMessage.toLowerCase().includes('not-found') || friendlyMessage.toLowerCase().includes('not found')) {
+            friendlyMessage = "O banco de dados ou o documento da guilda não coincide. Isso significa que o banco de dados principal no console do Firebase precisa ser ativado.";
+          } else if (friendlyMessage.toLowerCase().includes('failed-precondition')) {
+            friendlyMessage = "Pré-condição falhou (Failed Precondition). Pode ser necessário criar um índice no Firestore Console para consultas ordenadas.";
+          } else if (friendlyMessage.toLowerCase().includes('failed to get document') || friendlyMessage.toLowerCase().includes('network') || friendlyMessage.toLowerCase().includes('unavailable')) {
+            friendlyMessage = "Não foi possível conectar ao servidor do Firebase. Isso geralmente acontece quando o banco de dados do Firestore ainda NÃO foi criado ou ativado sob o projeto no Console do seu Firebase, ou a chave/configuração está inválida.";
+          }
+          
+          setDbError(friendlyMessage);
+          setLoading(false);
+        });
+    });
 
     // 1. Listen to Clan Data
     const clanDocRef = doc(db, 'clans', DEFAULT_CLAN_ID);
@@ -209,6 +249,11 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }, (error) => {
       console.error('Clan Snapshot Error:', error);
+      let friendlyMessage = error?.message || String(error);
+      if (friendlyMessage.includes('permission') || friendlyMessage.toLowerCase().includes('denied')) {
+        friendlyMessage = "Permissão Negada (Permission Denied) para ler Dados da Aliança. Ative o banco de dados no Console e garanta regras abertas de leitura.";
+      }
+      setDbError(friendlyMessage);
       try {
         handleFirestoreError(error, OperationType.GET, `clans/${DEFAULT_CLAN_ID}`);
       } catch (e) {
@@ -247,6 +292,11 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     }, (error) => {
       console.error('Members Snapshot Error:', error);
+      let friendlyMessage = error?.message || String(error);
+      if (friendlyMessage.includes('permission') || friendlyMessage.toLowerCase().includes('denied')) {
+        friendlyMessage = "Permissão Negada (Permission Denied) para ler Membros da Aliança. Ative o banco de dados no Console e garanta regras abertas de leitura.";
+      }
+      setDbError(friendlyMessage);
       setLoading(false);
       // Don't throw here to avoid crashing the whole context
       try {
@@ -268,11 +318,12 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     return () => {
+      active = false;
       unsubscribeClan();
       unsubscribeMembers();
       unsubscribeReports();
     };
-  }, [user, myMember?.role]);
+  }, [user, myMember?.role, retryTrigger]);
 
   const isAdmin = members.find(m => m.userId === user?.uid)?.role === 'leader';
 
@@ -494,7 +545,9 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isEcoMode, toggleEcoMode, isOptimizing,
       reportTheft, theftReports, clearTheftReport,
       claimUpdateReward,
-      activeTab, setActiveTab
+      activeTab, setActiveTab,
+      dbError,
+      retryConnection
     }}>
       {children}
     </ClanContext.Provider>

@@ -11,7 +11,7 @@ import { NicknameSelector } from './components/NicknameSelector';
 import { useClan } from './context/ClanContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { useDevice } from './hooks/useDevice';
-import { Monitor, Smartphone, RefreshCw, Loader2, ShieldAlert, LogOut } from 'lucide-react';
+import { Monitor, Smartphone, RefreshCw, Loader2, ShieldAlert, LogOut, Database, Key, AlertTriangle } from 'lucide-react';
 import { LevelUpModal } from './components/LevelUpModal';
 import { db } from './lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
@@ -30,11 +30,24 @@ import { MissoesView } from './components/MissoesView';
 
 export default function App() {
   const { isMobile, viewMode, setViewMode } = useDevice();
-  const { user, loading, clan, members, myMember, isOptimizing, isEcoMode, updateMemberData, logout, activeTab, setActiveTab } = useClan();
+  const { user, loading, clan, members, myMember, isOptimizing, isEcoMode, updateMemberData, logout, activeTab, setActiveTab, dbError, retryConnection } = useClan();
   const [initializing, setInitializing] = useState(false);
   const [isBanned, setIsBanned] = useState(false);
   
   const [showLevelUp, setShowLevelUp] = useState(false);
+  const [showTroubleshooter, setShowTroubleshooter] = useState(false);
+
+  useEffect(() => {
+    let timer: any;
+    if (loading && user) {
+      timer = setTimeout(() => {
+        setShowTroubleshooter(true);
+      }, 5500);
+    } else {
+      setShowTroubleshooter(false);
+    }
+    return () => clearTimeout(timer);
+  }, [loading, user]);
 
   useEffect(() => {
     if (myMember?.level && myMember.level > (myMember.lastCelebratedLevel || 0)) {
@@ -225,6 +238,96 @@ export default function App() {
   }, [user]);
 
   if (loading) {
+    if (dbError || showTroubleshooter) {
+      return (
+        <div className="min-h-screen bg-gaming-bg flex flex-col items-center justify-center p-6 text-center overflow-y-auto">
+          <div className="w-full max-w-xl bg-gaming-card/40 backdrop-blur-3xl border border-gaming-border p-8 md:p-10 rounded-[2.5rem] shadow-2xl relative my-8">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-gaming-gold to-transparent" />
+            
+            <div className="w-16 h-16 bg-gaming-gold/10 border border-gaming-gold/25 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <Loader2 className="text-gaming-gold animate-spin" size={32} />
+            </div>
+
+            <h1 className="text-2xl md:text-3xl font-display font-black uppercase mb-1 italic">
+              Conexão em <span className="text-gaming-gold">Andamento</span>
+            </h1>
+            <p className="text-white/40 uppercase text-[9px] tracking-[0.25em] font-bold mb-6">
+              O cliente está tentando sincronizar com o banco de dados do Firebase.
+            </p>
+
+            {/* Error Display */}
+            {dbError ? (
+              <div className="mb-6 bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-left text-xs font-semibold leading-relaxed font-mono">
+                <div className="flex gap-2 items-start">
+                  <AlertTriangle className="shrink-0 text-red-500 mt-0.5" size={16} />
+                  <div>
+                    <span className="font-bold block uppercase tracking-wider mb-1 text-[10px]">DETALHE TÉCNICO:</span>
+                    {dbError}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="mb-6 bg-gaming-purple/10 border border-gaming-purple/20 text-white/70 p-4 rounded-xl text-left text-xs leading-relaxed">
+                <div className="flex gap-2 items-start">
+                  <Database className="shrink-0 text-gaming-gold mt-0.5" size={16} />
+                  <div>
+                    <span className="font-bold text-gaming-gold block uppercase tracking-wider mb-1 text-[10px]">VERIFICANDO CONEXÃO:</span>
+                    O login foi bem-sucedido, mas o Firebase está demorando mais que o esperado para retornar os dados da guilda. Isso geralmente significa que o Firestore ainda não foi totalmente ativado ou o projeto precisa de inicialização.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Actionable Manual Guide */}
+            <div className="space-y-4 text-left border-t border-white/5 pt-6 mb-8">
+              <h3 className="text-[10px] font-black uppercase tracking-wider text-gaming-gold mb-3">Checklist de Solução (Passo-a-Passo):</h3>
+              
+              <div className="flex gap-3 text-xs text-white/70">
+                <div className="w-5 h-5 bg-white/5 rounded flex items-center justify-center text-[10px] font-bold border border-white/10 shrink-0 text-gaming-gold mt-0.5">1</div>
+                <div>
+                  <h4 className="font-bold text-white uppercase text-[10px]">Ative o Banco de Dados Firestore</h4>
+                  <p className="text-white/40 text-[11px] leading-relaxed">Vá no Console do seu Firebase, clique em <strong>Firestore Database</strong> no menu lateral e ative o banco clicando em <strong>"Criar Banco de Dados"</strong> se ainda não o fez.</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 text-xs text-white/70">
+                <div className="w-5 h-5 bg-white/5 rounded flex items-center justify-center text-[10px] font-bold border border-white/10 shrink-0 text-gaming-gold mt-0.5">2</div>
+                <div>
+                  <h4 className="font-bold text-white uppercase text-[10px]">Regras de Leitura/Gravação</h4>
+                  <p className="text-white/40 text-[11px] leading-relaxed">Verifique se as regras do banco na aba <strong>Rules</strong> permitem o acesso de usuários logados. Em ambiente de testes, as regras devem estar abertas ou seguir as geradas no projeto.</p>
+                </div>
+              </div>
+
+              <div className="flex gap-3 text-xs text-white/70">
+                <div className="w-5 h-5 bg-white/5 rounded flex items-center justify-center text-[10px] font-bold border border-white/10 shrink-0 text-gaming-gold mt-0.5">3</div>
+                <div>
+                  <h4 className="font-bold text-white uppercase text-[10px]">E-mail Autorizado</h4>
+                  <p className="text-white/40 text-[11px] leading-relaxed">Você está logado como: <strong className="text-white">{user?.email}</strong>. Se você é o líder ou oficial, verifique se seu e-mail coincide com o e-mail cadastrado no sistema do clã.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Controls */}
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => retryConnection()}
+                className="w-full py-3.5 bg-gaming-gold text-black rounded-lg font-display font-black uppercase tracking-widest hover:bg-white transition-all text-xs"
+              >
+                Tentar Sincronizar Novamente
+              </button>
+              
+              <button
+                onClick={() => logout()}
+                className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-lg font-display font-black uppercase tracking-widest transition-all text-xs flex items-center justify-center gap-2"
+              >
+                <LogOut size={14} /> Sair da Conta
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-gaming-bg flex items-center justify-center">
         <Loader2 className="text-gaming-gold animate-spin" size={48} />
