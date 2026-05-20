@@ -40,7 +40,7 @@ export const joinClan = async (userId: string, userName: string, userEmail: stri
     trophies: 0,
     donations: 0,
     xp: 0,
-    level: 0,
+    level: 1,
     heroPower: 0,
     diamonds: 0,
     boxes: 0,
@@ -50,6 +50,7 @@ export const joinClan = async (userId: string, userName: string, userEmail: stri
     premiumPass: false,
     appTheme: 'dark',
     chatTheme: 'dark',
+    profileBg: 'https://cdnb.artstation.com/p/assets/images/images/017/680/475/small/andrej-otepka-square-04-tmp04web.jpg?1556922748',
     lastCelebratedLevel: 0,
     status: 'online',
     joinedAt: new Date().toLocaleDateString()
