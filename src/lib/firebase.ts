@@ -5,6 +5,7 @@ import fallbackConfig from '../../firebase-applet-config.json';
 
 // Support Vite environment variables for safe production deployments (e.g. Vercel) without committing secrets to Git
 const metaEnv = (import.meta as any).env || {};
+const isCustomProject = !!metaEnv.VITE_FIREBASE_PROJECT_ID;
 
 const firebaseConfig = {
   apiKey: metaEnv.VITE_FIREBASE_API_KEY || fallbackConfig.apiKey,
@@ -14,7 +15,10 @@ const firebaseConfig = {
   messagingSenderId: metaEnv.VITE_FIREBASE_MESSAGING_SENDER_ID || fallbackConfig.messagingSenderId,
   appId: metaEnv.VITE_FIREBASE_APP_ID || fallbackConfig.appId,
   measurementId: metaEnv.VITE_FIREBASE_MEASUREMENT_ID || fallbackConfig.measurementId,
-  firestoreDatabaseId: metaEnv.VITE_FIREBASE_DATABASE_ID || fallbackConfig.firestoreDatabaseId,
+  // If they configured a custom project ID, do NOT fall back to the sandbox database ID unless explicitly requested
+  firestoreDatabaseId: isCustomProject 
+    ? (metaEnv.VITE_FIREBASE_DATABASE_ID || '')
+    : (metaEnv.VITE_FIREBASE_DATABASE_ID || fallbackConfig.firestoreDatabaseId),
 };
 
 const app = initializeApp(firebaseConfig);
