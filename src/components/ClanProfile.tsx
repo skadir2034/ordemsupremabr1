@@ -61,37 +61,34 @@ export function ClanProfile({
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && clan && user) {
-      if (file.size > 50 * 1024 * 1024) {
-        alert("O arquivo excede o limite máximo de 50MB.");
+      if (file.size > 10 * 1024 * 1024) {
+        alert("O arquivo é muito grande (Máximo de 10MB). Para imagens normais ou GIFs menores, selecione um arquivo menor.");
         return;
       }
       const isGif = file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif');
       if (isGif) {
         const currentLevel = myMember?.level || 0;
         if (currentLevel < 2) {
-          alert("Acesso Bloqueado! Você precisa ser Nível 2 ou superior para usar GIFs animados. Continue completando missões da aliança!");
+          alert("Acesso Bloqueado! Você precisa ser Nível 2 ou superior para usar GIFs animados. Continue completando missões da alcatéia!");
           return;
         }
       }
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64String = reader.result as string;
-        try {
-          const finalImage = isGif ? base64String : await compressImage(base64String);
-          
-          // Check if final size is within Firestore document single-row limitations (under ~850,000 chars)
-          if (finalImage.length > 850000) {
-            alert("O GIF animado é muito pesado para o banco de dados da Aliança (Limite de ~600KB para GIFs). Por favor, use um GIF menor ou compactado/otimizado para caber no banco de dados.");
-            return;
-          }
 
-          await updateMemberAvatar(clan.id, user.uid, finalImage);
-        } catch (err) {
-          console.error('Failed to update avatar', err);
-          alert("Erro ao processar imagem. Escolha outra imagem ou um GIF menor.");
-        }
-      };
-      reader.readAsDataURL(file);
+      try {
+        const { ref: storageRef, uploadBytes, getDownloadURL } = await import('firebase/storage');
+        const { storage } = await import('../lib/firebase');
+
+        // Create a unique path for user's uploaded avatar in Firebase Storage
+        const fileRef = storageRef(storage, `avatars/${user.uid}/${Date.now()}_${file.name}`);
+        const snapshot = await uploadBytes(fileRef, file);
+        const downloadUrl = await getDownloadURL(snapshot.ref);
+
+        await updateMemberAvatar(clan.id, user.uid, downloadUrl);
+        setAvatarModalOpen(false);
+      } catch (err) {
+        console.error('Failed to upload/update avatar to Firebase Storage', err);
+        alert("Erro ao enviar a imagem para o servidor. Tente novamente.");
+      }
     }
   };
 
@@ -173,35 +170,35 @@ export function ClanProfile({
       </div>
       
       {/* Background Image/Art */}
-      <div className="absolute inset-0 opacity-20 md:opacity-40 mix-blend-overlay">
+      <div className="absolute inset-0 opacity-65 pointer-events-none">
         <img 
-          src={myMember?.profileBg || "/src/assets/images/clan_bg_art_1778972376934.png"} 
+          src={myMember?.profileBg || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1964"} 
           alt="Art" 
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-gaming-bg via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-black/35" />
       </div>
 
-      <div className={`relative p-5 md:p-8 flex ${isMobile ? 'flex-col items-stretch' : 'flex-row items-center'} gap-6 md:gap-8`}>
+      <div className={`relative ${isMobile ? 'p-3.5 gap-4' : 'p-8 gap-8'} flex ${isMobile ? 'flex-col items-stretch' : 'flex-row items-center'}`}>
         {/* Left: Avatar & Info */}
-        <div className={`flex ${isMobile ? 'flex-col items-center text-center' : 'flex-row items-center'} gap-5 md:gap-8 flex-1`}>
+        <div className={`flex ${isMobile ? 'flex-col items-center text-center gap-3' : 'flex-row items-center gap-8'} flex-1`}>
           <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
             {!isEcoMode && <div className={`absolute -inset-2 rounded-full blur-xl opacity-25 group-hover:opacity-75 transition duration-1000 ${myMember?.profileBorder === 'border_gold' ? 'bg-gaming-gold' : 'bg-gaming-gold/50'}`}></div>}
-            <div className={`relative ${isMobile ? 'w-24 h-24' : 'w-32 h-32 md:w-40 md:h-40'} rounded-full p-1 group-hover:scale-105 transition-transform duration-500 flex items-center justify-center ${getBorderClasses(myMember?.profileBorder)}`}>
+            <div className={`relative ${isMobile ? 'w-20 h-20' : 'w-32 h-32 md:w-40 md:h-40'} rounded-full p-1 group-hover:scale-105 transition-transform duration-500 flex items-center justify-center ${getBorderClasses(myMember?.profileBorder)}`}>
               {myMember?.avatarUrl ? (
                 <img 
                   src={myMember.avatarUrl} 
-                  alt="Avatar" 
+                   alt="Avatar" 
                   className="w-full h-full object-cover rounded-full"
                   referrerPolicy="no-referrer"
                 />
               ) : (
-                <div className="w-full h-full bg-linear-to-br from-gaming-gold to-gaming-purple/40 flex items-center justify-center text-center p-2 md:p-4 rounded-full">
-                  <span className="text-[8px] md:text-[10px] font-display font-black uppercase text-black leading-tight">Mudar Foto</span>
+                <div className="w-full h-full bg-linear-to-br from-gaming-gold to-gaming-purple/40 flex items-center justify-center text-center p-2 rounded-full">
+                  <span className="text-[8px] font-display font-black uppercase text-black leading-tight">Mudar Foto</span>
                 </div>
               )}
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                 <Camera className="text-gaming-gold" size={isMobile ? 20 : 32} />
+               <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+                 <Camera className="text-gaming-gold" size={isMobile ? 16 : 32} />
               </div>
             </div>
             <input 
@@ -211,9 +208,6 @@ export function ClanProfile({
               className="hidden" 
               accept={uploadAcceptType} 
             />
-            <div className="text-[8px] text-white/40 uppercase tracking-wide font-black text-center mt-2.5 group-hover:text-gaming-gold transition-colors leading-tight max-w-[120px] mx-auto">
-              Aceita GIFs de até 50MB
-            </div>
 
             {/* Avatar Selection Choice Modal */}
             {avatarModalOpen && (
@@ -284,7 +278,7 @@ export function ClanProfile({
                             </span>
                           )}
                         </div>
-                        <span className="text-[9px] text-white/40 uppercase font-black tracking-wide">Arquivos .GIF de até 50MB</span>
+                        <span className="text-[9px] text-white/40 uppercase font-black tracking-wide">Formato GIF Animado</span>
                       </div>
                     </button>
                   </div>
@@ -309,13 +303,13 @@ export function ClanProfile({
                   </span>
                 </div>
               )}
-              <h1 className={`${isMobile ? 'text-xl' : 'text-3xl'} font-display font-bold tracking-tight mb-1`}>
+              <h1 className={`${isMobile ? 'text-lg' : 'text-3xl'} font-display font-bold tracking-tight mb-0.5`}>
                 <span className={getNicknameColorClass(myMember?.nicknameColor)}>{myMember?.name || 'Recruta'}</span> <span className="text-gaming-gold text-xs md:text-lg opacity-80 uppercase">[{clan?.tag || '---'}]</span>
               </h1>
-              <span className="text-[9px] md:text-[10px] text-white/40 uppercase tracking-widest font-bold max-w-[250px]">{leader && leader.userId === user?.uid ? "Fundador da Ordem Suprema" : "Membro leal da Ordem Suprema"}</span>
+              <span className="text-[8px] md:text-[10px] text-white/40 uppercase tracking-widest font-bold max-w-[250px]">{leader && leader.userId === user?.uid ? "Fundador da Ordem Suprema" : "Membro leal da Ordem Suprema"}</span>
             </div>
 
-            <div className={`flex gap-2 flex-wrap ${isMobile ? 'justify-center' : ''}`}>
+            <div className={`flex gap-1.5 flex-wrap ${isMobile ? 'justify-center' : ''}`}>
               {[
                 { icon: MapPin, label: "Na Base", action: () => { window.scrollTo({ top: 0, behavior: 'smooth' }); setActiveTab('inicio'); } },
                 { icon: Search, label: "Ver Ranking", action: () => { setActiveTab('inicio'); setTimeout(() => document.getElementById('member-list-section')?.scrollIntoView({ behavior: 'smooth' }), 100); } },
@@ -328,9 +322,9 @@ export function ClanProfile({
                     e.stopPropagation();
                     btn.action();
                   }}
-                  className="px-2.5 md:px-4 py-1.5 md:py-2 bg-white/5 border border-white/10 rounded-lg text-[9px] md:text-[10px] font-bold uppercase hover:bg-white/10 hover:border-gaming-gold/30 transition-all flex items-center gap-2 group"
+                  className="px-2 md:px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-[8px] md:text-[9px] font-bold uppercase hover:bg-white/10 hover:border-gaming-gold/30 transition-all flex items-center gap-1.5 group"
                 >
-                  <btn.icon size={10} className="text-gaming-gold/70 group-hover:text-gaming-gold" />
+                  <btn.icon size={8} className="text-gaming-gold/70 group-hover:text-gaming-gold" />
                   {!isMobile && btn.label}
                 </button>
               ))}

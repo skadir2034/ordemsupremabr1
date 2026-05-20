@@ -599,7 +599,7 @@ export function PerfilView() {
   ];
 
   const backgrounds = [
-    { id: 'padrão', title: 'Clã Padrão', desc: 'Fundo clássico de ordem.', price: 0, url: '/src/assets/images/clan_bg_art_1778972376934.png' },
+    { id: 'padrão', title: 'Alcatéia Alfa', desc: 'Fundo clássico rúnico de lobos.', price: 0, url: 'https://cdnb.artstation.com/p/assets/images/images/017/680/475/small/andrej-otepka-square-04-tmp04web.jpg?1556922748' },
     { id: 'cibernética', title: 'Hacker Cyber', desc: 'Terminal em neon azul.', price: 40, url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070' },
     { id: 'guerra', title: 'Campo de Batalha', desc: 'Solo devastado de guerra.', price: 60, url: 'https://images.unsplash.com/photo-1599394022918-6c276a570aba?q=80&w=2070' },
     { id: 'moderna', title: 'Neon Moderna', desc: 'Fluido moderno e futurista.', price: 50, url: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=2070' },
@@ -666,7 +666,7 @@ export function PerfilView() {
   };
 
   const handleBuyBackground = (bgItem: any) => {
-    const currentBg = myMember?.profileBg || '/src/assets/images/clan_bg_art_1778972376934.png';
+    const currentBg = myMember?.profileBg || 'https://cdnb.artstation.com/p/assets/images/images/017/680/475/small/andrej-otepka-square-04-tmp04web.jpg?1556922748';
     const isAlreadyUnlocked = currentBg === bgItem.url || bgItem.price === 0;
     const cost = isAlreadyUnlocked ? 0 : bgItem.price;
 
@@ -776,12 +776,12 @@ export function PerfilView() {
     });
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 50 * 1024 * 1024) {
-      alert("O arquivo excede o limite máximo de 50MB.");
+    if (file.size > 10 * 1024 * 1024) {
+      alert("O arquivo é muito grande (Máximo de 10MB). Para imagens normais ou GIFs menores, selecione um arquivo menor.");
       return;
     }
 
@@ -789,29 +789,25 @@ export function PerfilView() {
     if (isGif) {
       const currentLevel = myMember?.level || 0;
       if (currentLevel < 2) {
-        alert("Acesso Bloqueado! Você precisa ser Nível 2 ou superior para usar GIFs animados. Continue completando missões da aliança!");
+        alert("Acesso Bloqueado! Você precisa ser Nível 2 ou superior para usar GIFs animados. Continue completando missões da alcatéia!");
         return;
       }
     }
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const dataUrl = event.target?.result as string;
-      try {
-        const finalImage = isGif ? dataUrl : await compressImage(dataUrl);
 
-        // Check if final size is within Firestore document single-row limitations (under ~850,000 chars)
-        if (finalImage.length > 850000) {
-          alert("O GIF animado é muito pesado para o banco de dados da Aliança (Limite de ~600KB). Por favor, use um GIF menor ou compactado/otimizado para caber no banco de dados.");
-          return;
-        }
+    try {
+      const { ref: storageRef, uploadBytes, getDownloadURL } = await import('firebase/storage');
+      const { storage } = await import('../lib/firebase');
 
-        await updateMemberData({ avatarUrl: finalImage });
-      } catch (err) {
-        console.error('Failed to compress or save image:', err);
-        alert("Erro ao processar imagem. Tente outra imagem ou um GIF menor.");
-      }
-    };
-    reader.readAsDataURL(file);
+      const fileRef = storageRef(storage, `avatars/${user?.uid || 'unknown'}/${Date.now()}_${file.name}`);
+      const snapshot = await uploadBytes(fileRef, file);
+      const downloadUrl = await getDownloadURL(snapshot.ref);
+
+      await updateMemberData({ avatarUrl: downloadUrl });
+      setAvatarModalOpen(false);
+    } catch (err) {
+      console.error('Failed to upload/update avatar to Firebase Storage in Views:', err);
+      alert("Erro ao enviar a imagem para o servidor. Tente novamente.");
+    }
   };
 
   const handlePowerUpdate = () => {
@@ -981,7 +977,7 @@ export function PerfilView() {
 
               {/* BACKGROUNDS */}
               {storeTab === 'backgrounds' && backgrounds.map(bgOption => {
-                const currentBg = myMember?.profileBg || '/src/assets/images/clan_bg_art_1778972376934.png';
+                const currentBg = myMember?.profileBg || 'https://cdnb.artstation.com/p/assets/images/images/017/680/475/small/andrej-otepka-square-04-tmp04web.jpg?1556922748';
                 const isApplied = currentBg === bgOption.url;
 
                 return (
@@ -1084,8 +1080,18 @@ export function PerfilView() {
 
   return (
     <div className="flex flex-col gap-6 md:gap-8 p-4 md:p-8">
-      <div className="flex flex-col lg:flex-row items-center gap-6 md:gap-8 bg-gaming-card/40 border border-gaming-border rounded-3xl p-6 md:p-8">
-         <div className="flex flex-col items-center gap-2 shrink-0">
+      <div className="relative overflow-hidden flex flex-col lg:flex-row items-center gap-6 md:gap-8 bg-gaming-card/40 border border-gaming-border rounded-3xl p-6 md:p-8">
+          {/* Background Image/Art */}
+          <div className="absolute inset-0 opacity-45 sm:opacity-55 pointer-events-none">
+            <img 
+              src={myMember?.profileBg || "https://cdnb.artstation.com/p/assets/images/images/017/680/475/small/andrej-otepka-square-04-tmp04web.jpg?1556922748"} 
+              alt="Art" 
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-black/45" />
+          </div>
+
+         <div className="flex flex-col items-center gap-2 shrink-0 relative z-10">
            <div 
              onClick={() => setAvatarModalOpen(true)}
              className={`w-32 h-32 md:w-40 md:h-40 rounded-full p-1 relative group bg-black/20 flex items-center justify-center cursor-pointer ${getBorderClasses(myMember?.profileBorder)}`}
@@ -1111,7 +1117,7 @@ export function PerfilView() {
              onChange={handleAvatarChange}
              className="hidden"
            />
-           <span className="text-[8px] text-white/40 uppercase tracking-widest font-black">Aceita GIFs de até 50MB</span>
+
 
            {/* Avatar Selection Choice Modal */}
            {avatarModalOpen && (
@@ -1183,10 +1189,12 @@ export function PerfilView() {
                            </span>
                          )}
                        </div>
-                       <span className="text-[9px] text-white/40 uppercase font-black tracking-wide">Arquivos .GIF de até 50MB</span>
+                       <span className="text-[9px] text-white/40 uppercase font-black tracking-wide">Formato GIF Animado</span>
                      </div>
                    </button>
                  </div>
+
+
 
                  <button
                    onClick={() => setAvatarModalOpen(false)}
@@ -1288,77 +1296,76 @@ export function ConfiguracoesView() {
   const handleDeleteAccount = async () => {
     if (!myMember) return;
     
-    if (confirm("TEM CERTEZA? Esta ação é irreversível e você perderá todo o seu progresso na Aliança Suprema. Suas medalhas, diamonds e status serão apagados.")) {
+    if (confirm("TEM CERTEZA? Esta ação é irreversível e você perderá todo o seu progresso na Alcatéia Suprema. Suas medalhas, diamonds e status serão apagados.")) {
        try {
-         await deleteMember(myMember.userId);
-         // Deletion handles logout in the context
+          await deleteMember(myMember.userId);
        } catch (err) {
-         console.error('Erro ao deletar conta:', err);
-         alert("Ocorreu um erro ao tentar deletar sua conta. Tente novamente mais tarde.");
+          console.error('Erro ao deletar conta:', err);
+          alert("Ocorreu um erro ao tentar deletar sua conta. Tente novamente mais tarde.");
        }
     }
   };
 
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-8 max-w-5xl mx-auto w-full">
-      <h2 className="text-3xl font-display font-black uppercase italic tracking-tighter">
-        Configurações do <span className="text-gaming-gold">Sistema</span>
+    <div className="flex flex-col gap-4 p-2 md:p-4 max-w-4xl mx-auto w-full">
+      <h2 className="text-xl font-display font-black uppercase italic tracking-tight">
+        Ajustes da <span className="text-gaming-gold">Alcatéia</span>
       </h2>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Performance Optimization Section */}
-        <div className="col-span-1 lg:col-span-2 bg-linear-to-br from-gaming-purple/20 to-transparent border border-gaming-purple/20 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 shadow-xl relative overflow-hidden group">
-           <div className={`p-4 rounded-2xl bg-gaming-purple/20 text-gaming-purple border border-gaming-purple/30 group-hover:scale-110 transition-transform ${isOptimizing ? 'animate-spin' : ''}`}>
-              <Zap size={32} fill="currentColor" />
+        <div className="col-span-1 lg:col-span-2 bg-linear-to-br from-gaming-purple/15 to-transparent border border-gaming-purple/20 rounded-xl p-4 flex flex-col md:flex-row items-center gap-4 shadow-lg relative overflow-hidden group">
+           <div className={`p-2.5 rounded-xl bg-gaming-purple/20 text-gaming-purple border border-gaming-purple/20 group-hover:scale-105 transition-transform shrink-0 ${isOptimizing ? 'animate-spin' : ''}`}>
+              <Zap size={20} fill="currentColor" />
            </div>
            <div className="flex-1 text-center md:text-left">
-              <h4 className="font-display font-black uppercase text-xl mb-1 italic flex items-center gap-2">
-                Modo de Performance
-                <span className="bg-gaming-gold/20 text-gaming-gold text-[8px] px-2 py-0.5 rounded-full border border-gaming-gold/30">BETA</span>
+              <h4 className="font-display font-bold uppercase text-sm mb-0.5 italic flex items-center justify-center md:justify-start gap-1.5">
+                Modo Desempenho
+                <span className="bg-gaming-gold/20 text-gaming-gold text-[7px] px-1.5 py-0.5 rounded-full border border-gaming-gold/20 font-black">CELULAR</span>
               </h4>
-              <p className="text-[10px] sm:text-xs text-white/50 uppercase font-black tracking-widest leading-relaxed">
+              <p className="text-[9px] text-white/50 uppercase font-black tracking-wider leading-tight">
                 {isEcoMode 
-                  ? "Modo de Otimização ATIVO. Gráficos simplificados para dispositivos mais humildes."
-                  : "Desfrute de toda a glória visual da Aliança Suprema (Recomendado para PC/Celulares Tops)."}
+                  ? "Ativo. Gráficos simplificados para um jogo super veloz em celulares."
+                  : "Modo gráfico completo com efeitos e transições ativadas."}
               </p>
            </div>
            <button 
              onClick={toggleEcoMode}
              disabled={isOptimizing}
-             className={`px-8 py-4 rounded-2xl font-display font-black uppercase tracking-[0.2em] text-[10px] sm:text-xs transition-all relative overflow-hidden flex items-center gap-2 ${
+             className={`px-4 py-2 rounded-lg font-display font-black uppercase tracking-wider text-[8px] sm:text-[9px] transition-all flex items-center gap-1.5 ${
                isEcoMode 
                 ? 'bg-gaming-gold text-black hover:bg-white' 
-                : 'bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-white/30'
+                : 'bg-white/5 border border-white/10 text-white hover:bg-white/10'
              }`}
            >
               {isOptimizing ? (
-                <>
-                  <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  <span>Otimizando...</span>
-                </>
+                 <>
+                   <div className="w-2.5 h-2.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                   <span>Otimizando...</span>
+                 </>
               ) : isEcoMode ? (
-                <>
-                  <Zap size={14} fill="currentColor" />
-                  <span>Restaurar Qualidade Máxima</span>
-                </>
+                 <>
+                   <Zap size={10} fill="currentColor" />
+                   <span>Gráficos Completos</span>
+                 </>
               ) : (
-                <span>Otimizar para Celular Fraco</span>
+                 <span>Otimizar para Celular</span>
               )}
            </button>
         </div>
 
-        <div className="bg-gaming-card/40 border border-gaming-border rounded-[2rem] p-6 md:p-8 flex flex-col gap-8 shadow-xl">
-           <div className="flex items-center gap-3">
-              <Palette className="text-gaming-gold" />
-              <h4 className="font-display font-black uppercase tracking-widest text-sm">Personalização & Visual</h4>
+        <div className="bg-gaming-card/35 border border-gaming-border rounded-xl p-4 flex flex-col gap-5 shadow-lg">
+           <div className="flex items-center gap-2">
+              <Palette className="text-gaming-gold" size={18} />
+              <h4 className="font-display font-black uppercase tracking-wider text-xs">Aparência do Lobinho</h4>
            </div>
            
-           <div className="space-y-8">
+           <div className="space-y-4">
               <div>
-                  <span className="text-[10px] uppercase font-black text-white/40 tracking-[0.3em] block mb-4">Arte de Fundo do Perfil</span>
-                  <div className="grid grid-cols-2 gap-2">
+                  <span className="text-[8px] uppercase font-black text-white/40 tracking-widest block mb-2">Fundo do Perfil</span>
+                  <div className="grid grid-cols-2 gap-1.5">
                      {[
-                       { id: 'padrão', label: 'Padrão', url: '/src/assets/images/clan_bg_art_1778972376934.png' },
+                       { id: 'padrão', label: 'Padrão', url: 'https://cdnb.artstation.com/p/assets/images/images/017/680/475/small/andrej-otepka-square-04-tmp04web.jpg?1556922748' },
                        { id: 'cibernética', label: 'Cibernética', url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070' },
                        { id: 'guerra', label: 'Guerra', url: 'https://images.unsplash.com/photo-1599394022918-6c276a570aba?q=80&w=2070' },
                        { id: 'moderna', label: 'Moderna', url: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=2070' }
@@ -1366,9 +1373,9 @@ export function ConfiguracoesView() {
                        <button 
                          key={art.id}
                          onClick={() => updateMemberData({ profileBg: art.url })}
-                         className={`relative overflow-hidden group py-3 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${myMember?.profileBg === art.url || (!myMember?.profileBg && art.id === 'padrão') ? 'border-gaming-gold text-gaming-gold' : 'bg-white/5 border-white/10 text-white/40 hover:text-white'}`}
+                         className={`relative overflow-hidden group py-1.5 rounded-lg border text-[8px] font-black uppercase tracking-wider transition-all ${myMember?.profileBg === art.url || (!myMember?.profileBg && art.id === 'padrão') ? 'border-gaming-gold text-gaming-gold' : 'bg-white/5 border-white/10 text-white/40'}`}
                        >
-                         <img src={art.url} className="absolute inset-0 w-full h-full object-cover opacity-10 group-hover:opacity-20 transition-opacity" alt="" />
+                         <img src={art.url} className="absolute inset-0 w-full h-full object-cover opacity-5 group-hover:opacity-10 transition-opacity" alt="" />
                          <span className="relative z-10">{art.label}</span>
                        </button>
                      ))}
@@ -1376,18 +1383,18 @@ export function ConfiguracoesView() {
                </div>
 
               <div>
-                 <span className="text-[10px] uppercase font-black text-white/40 tracking-[0.3em] block mb-4">Esquema de Cores do Clã</span>
-                 <div className="grid grid-cols-2 gap-2">
+                 <span className="text-[8px] uppercase font-black text-white/40 tracking-widest block mb-2">Tema da Alcatéia</span>
+                 <div className="grid grid-cols-2 gap-1.5">
                     {[
-                       { id: 'dark', label: 'Lua de Sangue (Carmesim Sutil)' },
-                       { id: 'neon', label: 'Nevasca (Gélido Tundra)' },
-                       { id: 'gold', label: 'Ouro Rúnico (Alpha Supremo)' },
-                       { id: 'classic', label: 'Lobo de Prata (Monocromático)' }
+                       { id: 'dark', label: 'Alcatéia Alfa (Dourado & Roxo)' },
+                       { id: 'neon', label: 'Nevasca Violeta' },
+                       { id: 'gold', label: 'Ouro Rúnico' },
+                       { id: 'classic', label: 'Lobo de Prata' }
                     ].map(t => (
                       <button 
                         key={t.id}
                         onClick={() => handleThemeChange(t.id as any)}
-                        className={`py-4 px-2 rounded-xl border text-[9px] font-black uppercase tracking-widest transition-all ${myMember?.appTheme === t.id ? 'bg-gaming-gold text-black border-gaming-gold shadow-[0_0_15px_rgba(197,160,89,0.3)]' : 'bg-white/5 border-white/10 text-white/40 hover:text-white'}`}
+                        className={`py-2 px-1 rounded-lg border text-[8px] font-black uppercase tracking-wider transition-all ${myMember?.appTheme === t.id ? 'bg-gaming-gold text-black border-gaming-gold shadow-[0_0_10px_rgba(226,180,77,0.2)]' : 'bg-white/5 border-white/10 text-white/40 hover:text-white'}`}
                       >
                         {t.label}
                       </button>
@@ -1396,9 +1403,9 @@ export function ConfiguracoesView() {
               </div>
 
               <div>
-                 <div className="flex justify-between items-center mb-4">
-                    <span className="text-[10px] uppercase font-black text-white/40 tracking-[0.3em]">Opacidade da Interface</span>
-                    <span className="text-xs font-mono text-gaming-gold">{myMember?.opacityLevel || 80}%</span>
+                 <div className="flex justify-between items-center mb-1.5">
+                    <span className="text-[8px] uppercase font-black text-white/40 tracking-widest">Opacidade do Painel</span>
+                    <span className="text-[10px] font-mono text-gaming-gold">{myMember?.opacityLevel || 80}%</span>
                  </div>
                  <input 
                     type="range" 
@@ -1406,33 +1413,33 @@ export function ConfiguracoesView() {
                     max="100"
                     value={myMember?.opacityLevel || 80}
                     onChange={handleOpacityChange}
-                    className="w-full accent-gaming-gold bg-white/10 rounded-full h-2 appearance-none cursor-pointer" 
+                    className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-gaming-gold" 
                  />
               </div>
            </div>
         </div>
 
-        <div className="bg-gaming-card/40 border border-gaming-border rounded-3xl p-8 flex flex-col gap-6">
-           <div className="flex items-center gap-3">
-              <Settings className="text-gaming-gold" />
-              <h4 className="font-display font-black uppercase">Conta & Segurança</h4>
+        <div className="bg-gaming-card/35 border border-gaming-border rounded-xl p-4 flex flex-col gap-4 shadow-lg">
+           <div className="flex items-center gap-2">
+              <Settings className="text-gaming-gold" size={18} />
+              <h4 className="font-display font-black uppercase text-xs">Identificação & Segurança</h4>
            </div>
            
-           <div className="space-y-4 flex-1">
+           <div className="space-y-3 flex-1">
               <button 
                 onClick={logout}
-                className="w-full py-4 bg-white/5 border border-white/10 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all"
+                className="w-full py-2.5 bg-white/5 border border-white/10 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-white hover:text-black transition-all"
               >
-                Encerrar Sessão
+                Encerrar Caçada (Sair)
               </button>
 
-              <div className="pt-6 mt-6 border-t border-white/5">
-                <h5 className="text-[10px] uppercase font-black text-red-500 tracking-widest mb-4">Zona de Risco</h5>
+              <div className="pt-4 border-t border-white/5">
+                <h5 className="text-[8px] uppercase font-black text-red-500 tracking-widest mb-2">Sair da Alcatéia</h5>
                 <button 
                   onClick={handleDeleteAccount}
-                  className="w-full py-4 bg-red-500/10 border border-red-500/30 rounded-xl text-xs font-black uppercase tracking-widest text-red-500 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2"
+                  className="w-full py-2.5 bg-red-500/10 border border-red-500/20 rounded-lg text-[9px] font-black uppercase tracking-widest text-red-400 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-1.5"
                 >
-                  <Trash2 size={16} /> Deletar Conta Definitivamente
+                  <Trash2 size={12} /> Excluir Conta do Clã
                 </button>
               </div>
            </div>

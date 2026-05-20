@@ -67,7 +67,7 @@ export function Sidebar({
     <aside className={`
       bg-gaming-bg border-gaming-border z-50 flex items-center transition-all duration-300
       ${isMobile 
-        ? 'fixed bottom-0 left-0 right-0 h-20 border-t justify-around px-6 py-2 pb-6' 
+        ? 'fixed bottom-0 left-0 right-0 h-16 border-t justify-around px-4 py-1 pb-2 bg-gaming-bg/95 backdrop-blur-md shadow-lg shadow-black/45' 
         : 'fixed left-0 top-0 w-16 h-full border-r flex-col py-6 gap-6'}
     `}>
       {!isMobile && (
@@ -93,14 +93,14 @@ export function Sidebar({
               whileTap={!isEcoMode ? { scale: 0.95 } : {}}
               onClick={() => handleTabClick(item.id)}
               className={`relative transition-colors duration-200 flex items-center justify-center ${
-                isMobile ? 'p-3 flex-col gap-1' : 'p-2.5 rounded-lg'
+                isMobile ? 'p-1.5 flex-col gap-0.5' : 'p-2.5 rounded-lg'
               } ${
                 isTabActive(item.id) 
                   ? 'bg-gaming-gold/20 text-gaming-gold shadow-[0_0_15px_-3px_rgba(251,191,36,0.4)]' 
                   : 'text-white/40 hover:text-white hover:bg-white/5'
               } ${isMobile ? 'bg-transparent shadow-none border-0' : ''}`}
             >
-              <item.icon size={20} />
+              <item.icon size={isMobile ? 18 : 20} />
               
               {hasNotification && (
                 <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-gaming-bg ring-1 ring-red-500/50" />

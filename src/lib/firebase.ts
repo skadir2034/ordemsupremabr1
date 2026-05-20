@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 import fallbackConfig from '../../firebase-applet-config.json';
 
 // Support Vite environment variables for safe production deployments (e.g. Vercel) without committing secrets to Git
@@ -28,4 +29,6 @@ export const db = firebaseConfig.firestoreDatabaseId && firebaseConfig.firestore
   ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
   : getFirestore(app);
 export const auth = getAuth(app);
+export const storage = getStorage(app);
+
 
