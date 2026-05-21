@@ -17,9 +17,9 @@ export const createInitialClan = async (userId: string, userEmail: string | null
   });
 };
 
-export const joinClan = async (userId: string, userName: string, userEmail: string | null) => {
+export const joinClan = async (userId: string, userName: string, userEmail: string | null, isGuest: boolean = false, guestCreatedAt?: number) => {
   const clanId = 'main-clan';
-  const isLeader = userEmail === 'ryankevyn3000@gmail.com';
+  const isLeader = userEmail === 'ryankevyn3000@gmail.com' || userEmail === 'ryankevyn2025@gmail.com';
   const clanRef = doc(db, 'clans', clanId);
   
   if (isLeader) {
@@ -53,7 +53,9 @@ export const joinClan = async (userId: string, userName: string, userEmail: stri
     profileBg: 'https://cdnb.artstation.com/p/assets/images/images/017/680/475/small/andrej-otepka-square-04-tmp04web.jpg?1556922748',
     lastCelebratedLevel: 0,
     status: 'online',
-    joinedAt: new Date().toLocaleDateString()
+    joinedAt: new Date().toLocaleDateString(),
+    isGuest,
+    guestCreatedAt: guestCreatedAt || (isGuest ? Date.now() : 0)
   });
 };
 
