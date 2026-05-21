@@ -37,6 +37,14 @@ interface Member {
   unlockedTitles?: string[];
   nicknameColor?: string;
   unlockedColors?: string[];
+  customStatus?: string;
+  customBio?: string;
+  avatarAnimation?: string;
+  bannerEffect?: string;
+  combatGroup?: string;
+  combatGroupClaimed?: boolean;
+  isGuest?: boolean;
+  guestCreatedAt?: number;
 }
 
 interface TheftReport {
@@ -86,6 +94,7 @@ interface ClanContextType {
   isOptimizing: boolean;
   reportTheft: () => Promise<void>;
   claimUpdateReward: () => Promise<void>;
+  distributeElixirXP: () => Promise<number>;
   theftReports: TheftReport[];
   clearTheftReport: (reportId: string) => Promise<void>;
   activeTab: string;
@@ -93,6 +102,8 @@ interface ClanContextType {
   dbError: string | null;
   retryConnection: () => void;
   loginAsGuest: (nickname: string) => Promise<void>;
+  isGuest: boolean;
+  guestTimeLeft: string;
 }
 
 const ClanContext = createContext<ClanContextType | undefined>(undefined);
@@ -114,6 +125,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [activeTab, setActiveTab] = useState('inicio');
   const [dbError, setDbError] = useState<string | null>(null);
   const [retryTrigger, setRetryTrigger] = useState(0);
+  const [guestTimeLeft, setGuestTimeLeft] = useState<string>('');
 
   // Load Local Data (simulating Firestore collections for guests / offline fallback)
   const getLocalMembers = (): Member[] => {
@@ -273,7 +285,9 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
         profileBg: 'https://cdnb.artstation.com/p/assets/images/images/017/680/475/small/andrej-otepka-square-04-tmp04web.jpg?1556922748',
         lastCelebratedLevel: 0,
         status: 'online',
-        joinedAt: new Date().toLocaleDateString()
+        joinedAt: new Date().toLocaleDateString(),
+        isGuest: true,
+        guestCreatedAt: Date.now()
       };
       const updated = [...currentMembers, newMember];
       localStorage.setItem('local_members', JSON.stringify(updated));
@@ -291,6 +305,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const result = await fSignInAnonymously(auth);
       // Success! Sign-in anonymously worked. Let's save a flag to set character nickname
       localStorage.setItem('pending_guest_nickname', nickname);
+      localStorage.setItem(`guest_created_${result.user.uid}`, String(Date.now()));
     } catch (authErr: any) {
       console.warn("Could not sign in anonymously via Firebase. Falling back to local guest mode.", authErr);
       // Local fallback
@@ -302,6 +317,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isGuest: true
       };
       localStorage.setItem('guest_user', JSON.stringify(guestUser));
+      localStorage.setItem(`guest_created_${guestUid}`, String(Date.now()));
       setUser(guestUser as any);
       setLoading(true); // triggers useEffect to populate guest state
     }
@@ -329,6 +345,72 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const DEFAULT_CLAN_ID = 'main-clan';
 
   const myMember = user ? members.find(m => m.userId === user.uid) || null : null;
+
+  const isGuest = user ? ((user as any).isGuest === true || user.isAnonymous === true || user.email === 'convidado@supremaordem.com' || myMember?.isGuest === true) : false;
+
+  useEffect(() => {
+    if (!user || !isGuest) {
+      setGuestTimeLeft('');
+      return;
+    }
+
+    const creationKey = `guest_created_${user.uid}`;
+    let storedTimeStr = localStorage.getItem(creationKey);
+    if (!storedTimeStr) {
+      storedTimeStr = String(myMember?.guestCreatedAt || Date.now());
+      localStorage.setItem(creationKey, storedTimeStr);
+    }
+    const creationTime = Number(storedTimeStr);
+
+    const updateTimer = async () => {
+      const now = Date.now();
+      const elapsed = now - creationTime;
+      const twentyFourHours = 24 * 60 * 60 * 1000;
+      const remaining = twentyFourHours - elapsed;
+
+      if (remaining <= 0) {
+        clearInterval(timer);
+        console.log(`Guest session for ${user.uid} expired (24 hours reached). Terminating account...`);
+        try {
+          if (!(user as any).isGuest) {
+            // Firestore guest
+            const { doc, deleteDoc } = await import('firebase/firestore');
+            const memberRef = doc(db, 'clans', 'main-clan', 'members', user.uid);
+            await deleteDoc(memberRef).catch(() => {});
+          } else {
+            // Local fallback guest, remove from local members list
+            const currentMembers = getLocalMembers();
+            const updated = currentMembers.filter(m => m.userId !== user.uid);
+            localStorage.setItem('local_members', JSON.stringify(updated));
+            setMembers(updated);
+          }
+          localStorage.removeItem('guest_user');
+          localStorage.removeItem(creationKey);
+          await logout();
+          alert("Sua conta de convidado de 24 horas expirou e foi encerrada permanentemente!");
+        } catch (err) {
+          console.error("Failed to terminate expired guest account:", err);
+          localStorage.removeItem('guest_user');
+          localStorage.removeItem(creationKey);
+          logout();
+        }
+        return;
+      }
+
+      const hours = Math.floor(remaining / (1000 * 60 * 60));
+      const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((remaining % (1000 * 60)) / 1000);
+
+      setGuestTimeLeft(
+        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+      );
+    };
+
+    updateTimer();
+    const timer = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(timer);
+  }, [user, isGuest, myMember?.guestCreatedAt]);
 
   useEffect(() => {
     // Handle redirect result
@@ -370,7 +452,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Update specific user name and role to Skadir/Leader if needed
   useEffect(() => {
     if (user && (user as any).isGuest) return;
-    if (user?.email === 'ryankevyn3000@gmail.com' && members.length > 0) {
+    if ((user?.email === 'ryankevyn3000@gmail.com' || user?.email === 'ryankevyn2025@gmail.com') && members.length > 0) {
       const myMember = members.find(m => m.userId === user.uid);
       if (myMember && (myMember.name !== 'Skadir' || myMember.role !== 'leader')) {
         const memberRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'members', user.uid);
@@ -443,9 +525,10 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const pendingNick = localStorage.getItem('pending_guest_nickname');
     if (pendingNick) {
       localStorage.removeItem('pending_guest_nickname');
-      // Create member in Firestore
+      const createdTimestamp = Number(localStorage.getItem(`guest_created_${user.uid}`)) || Date.now();
+      // Create member in Firestore as Guest
       import('../services/clanService').then(({ joinClan }) => {
-        joinClan(user.uid, pendingNick, user.email || null)
+        joinClan(user.uid, pendingNick, user.email || null, true, createdTimestamp)
           .then(() => console.log('Successfully completed guest registration in Firestore!'))
           .catch(err => {
             console.error('Failed to complete guest registration in Firestore:', err);
@@ -930,6 +1013,61 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
+  const distributeElixirXP = async () => {
+    if (!user || !myMember) return 0;
+
+    let count = 0;
+    const thresholds = [0, 0, 100, 200, 400, 700, 1100, 1600, 2200, 2900, 3700];
+
+    if ((user as any).isGuest) {
+      const currentMembers = getLocalMembers();
+      const updated = currentMembers.map(m => {
+        if (m.combatGroup && !m.combatGroupClaimed) {
+          count++;
+          const newXp = (m.xp || 0) + 50;
+          let calculatedLevel = 1;
+          for (let i = 0; i < thresholds.length; i++) {
+            if (newXp >= thresholds[i]) calculatedLevel = i;
+            else break;
+          }
+          calculatedLevel = Math.min(calculatedLevel, 10);
+          return {
+            ...m,
+            xp: newXp,
+            level: Math.max(m.level || 1, calculatedLevel),
+            combatGroupClaimed: true
+          };
+        }
+        return m;
+      });
+      localStorage.setItem('local_members', JSON.stringify(updated));
+      setMembers(updated);
+      return count;
+    }
+
+    // In production Firestore
+    const eligibleMembers = members.filter(m => m.combatGroup && !m.combatGroupClaimed);
+    for (const m of eligibleMembers) {
+      count++;
+      const newXp = (m.xp || 0) + 50;
+      let calculatedLevel = 1;
+      for (let i = 0; i < thresholds.length; i++) {
+        if (newXp >= thresholds[i]) calculatedLevel = i;
+        else break;
+      }
+      calculatedLevel = Math.min(calculatedLevel, 10);
+
+      const memberRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'members', m.userId);
+      await updateDoc(memberRef, {
+        xp: newXp,
+        level: Math.max(m.level || 1, calculatedLevel),
+        combatGroupClaimed: true
+      });
+    }
+
+    return count;
+  };
+
   const clearTheftReport = async (reportId: string) => {
     if ((user as any).isGuest) {
       const savedReports = localStorage.getItem('local_theft_reports');
@@ -952,11 +1090,13 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateClanGuideImage, updateClanGuerraDia1Image, updateClanLoginLogoImage, updatePresenceStatus,
       isEcoMode, toggleEcoMode, isOptimizing,
       reportTheft, theftReports, clearTheftReport,
-      claimUpdateReward,
+      claimUpdateReward, distributeElixirXP,
       activeTab, setActiveTab,
       dbError,
       retryConnection,
-      loginAsGuest
+      loginAsGuest,
+      isGuest,
+      guestTimeLeft
     }}>
       {children}
     </ClanContext.Provider>
