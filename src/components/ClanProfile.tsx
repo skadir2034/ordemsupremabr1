@@ -1,10 +1,9 @@
 import { motion } from 'motion/react';
-import React, { useRef, useState } from 'react';
+import React from 'react';
 import { Shield, ChevronRight, MapPin, Search, Users, LogOut, Camera, Circle, Skull, BookOpen } from 'lucide-react';
 import { useClan } from '../context/ClanContext';
-import { updateMemberAvatar } from '../services/clanService';
-import { auth } from '../lib/firebase';
 import { SafeAvatar } from './SafeAvatar';
+import { auth } from '../lib/firebase';
 
 export function ClanProfile({ 
   isMobile = false,
@@ -16,115 +15,9 @@ export function ClanProfile({
   setActiveTab: (tab: string) => void;
 }) {
   const { clan, members, user, loading, isEcoMode } = useClan();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [avatarModalOpen, setAvatarModalOpen] = useState(false);
-  const [uploadAcceptType, setUploadAcceptType] = useState('image/*');
   
   const myMember = members.find(m => m.userId === user?.uid);
   const leader = members.find(m => m.role === 'leader');
-
-  const handleAvatarClick = () => {
-    if (myMember) {
-      setAvatarModalOpen(true);
-    }
-  };
-
-  const compressImage = (base64: string, maxWidth = 300, maxHeight = 300): Promise<string> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.src = base64;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-
-        if (width > height) {
-          if (width > maxWidth) {
-            height *= maxWidth / width;
-            width = maxWidth;
-          }
-        } else {
-          if (height > maxHeight) {
-            width *= maxHeight / height;
-            height = maxHeight;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', 0.6)); 
-      };
-    });
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && clan && user) {
-      // Se for maior que 10MB, barramos de primeira para evitar crash no celular
-      if (file.size > 10 * 1024 * 1024) {
-        alert("O arquivo é muito grande (Máximo de 10MB).");
-        return;
-      }
-
-      try {
-        const { ref: storageRef, uploadBytes, getDownloadURL } = await import('firebase/storage');
-        const { storage } = await import('../lib/firebase');
-
-        let fileToUpload: Blob | File = file;
-        let mimeType = file.type || 'image/jpeg';
-
-        if (file.type === 'image/gif') {
-          // É um GIF
-          mimeType = 'image/gif';
-          // Para GIFs grandes de celular, mostramos um aviso de processamento
-          if (file.size > 1.5 * 1024 * 1024) {
-            console.log("Processando e otimizando o envio de GIF grande para celular...");
-          }
-        } else {
-          // É uma foto estática comum, vamos comprimi-la drasticamente no cliente para economizar rede e bateria
-          const dataUrl = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (event) => resolve(event.target?.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
-          });
-
-          // Comprime redimensionando para máximo de 200x200 com 70% de qualidade
-          const compressedDataUrl = await compressImage(dataUrl, 200, 200);
-          
-          // Converte o dataURL de volta para um Blob para upload ultra-rápido no Firebase Storage
-          const arr = compressedDataUrl.split(',');
-          const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
-          const bstr = atob(arr[1]);
-          let n = bstr.length;
-          const u8arr = new Uint8Array(n);
-          while (n--) {
-            u8arr[n] = bstr.charCodeAt(n);
-          }
-          fileToUpload = new Blob([u8arr], { type: mime });
-          mimeType = mime;
-        }
-
-        // Criar nome único para o avatar
-        const fileRef = storageRef(storage, `avatars/${user.uid}/${Date.now()}_${file.name}`);
-        
-        // Configurar metadados do tipo de arquivo para garantir que os navegadores carreguem e reproduzam como imagem e GIF corretos
-        const metadata = { contentType: mimeType };
-        const snapshot = await uploadBytes(fileRef, fileToUpload, metadata);
-        const downloadUrl = await getDownloadURL(snapshot.ref);
-
-        await updateMemberAvatar(clan.id, user.uid, downloadUrl);
-        setAvatarModalOpen(false);
-      } catch (err: any) {
-        console.error('Failed to upload/update avatar to Firebase Storage', err);
-        const errorMessage = err?.message || String(err);
-        const errorCode = err?.code || 'desconhecido';
-        alert(`Erro de upload: ${errorMessage} (Código: ${errorCode}). Verifique a conexão com a internet ou as permissões do Firebase Storage.`);
-      }
-    }
-  };
 
   const getRoleLabel = (role: string) => {
     switch (role) {
@@ -158,6 +51,10 @@ export function ClanProfile({
         case 'border_dark': return 'border-2 border-red-600';
         case 'border_emerald': return 'border-2 border-emerald-400';
         case 'border_rgb': return 'border-2 border-pink-500';
+        case 'border_laser': return 'border-2 border-purple-500';
+        case 'border_cyber': return 'border-2 border-cyan-400';
+        case 'border_cosmic': return 'border-2 border-indigo-400';
+        case 'border_fire': return 'border-2 border-red-500';
         default: return 'border-2 border-white/10';
       }
     }
@@ -168,6 +65,10 @@ export function ClanProfile({
       case 'border_dark': return 'border-2 border-red-600 shadow-[0_0_20px_rgba(220,38,38,0.7)]';
       case 'border_emerald': return 'border-2 border-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.6)] animate-pulse';
       case 'border_rgb': return 'border-2 border-pink-500 shadow-[0_0_20px_rgba(236,72,153,0.7)] animate-bounce';
+      case 'border_laser': return 'border-2 border-transparent bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 shadow-[0_0_20px_rgba(239,68,68,0.7)] animate-pulse';
+      case 'border_cyber': return 'border-2 border-cyan-400 ring-2 ring-pink-500/40 shadow-[0_0_20px_rgba(6,182,212,0.7)] animate-pulse';
+      case 'border_cosmic': return 'border-2 border-indigo-500 shadow-[0_0_20px_rgba(168,85,247,0.8)] animate-pulse ring-4 ring-purple-600/20';
+      case 'border_fire': return 'border-2 border-red-500 shadow-[0_0_25px_rgba(239,68,68,0.8)] animate-pulse';
       default: return 'border-2 border-gaming-gold/30';
     }
   };
@@ -217,114 +118,57 @@ export function ClanProfile({
       </div>
       
       {/* Background Image/Art */}
-      <div className="absolute inset-0 opacity-65 pointer-events-none">
+      <div className="absolute inset-0 opacity-65 pointer-events-none overflow-hidden">
         <img 
           src={myMember?.profileBg || "https://cdnb.artstation.com/p/assets/images/images/017/680/475/small/andrej-otepka-square-04-tmp04web.jpg?1556922748"} 
           alt="Art" 
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 bg-black/35" />
+
+        {/* Suprema Banners Animados Overlay */}
+        {myMember?.bannerEffect === 'effect_fire' && (
+          <div className="absolute inset-0 bg-gradient-to-tr from-red-950/20 via-orange-900/10 to-red-600/15 mix-blend-color-dodge animate-pulse">
+            <div className="absolute -inset-10 bg-[radial-gradient(circle_at_center,rgba(239,68,68,0.25)_0,transparent_60%)] blur-3xl animate-bounce" style={{ animationDuration: '6s' }} />
+            <div className="absolute -inset-20 bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.15)_0,transparent_75%)] blur-2xl animate-pulse" style={{ animationDuration: '4.5s' }} />
+          </div>
+        )}
+        {myMember?.bannerEffect === 'effect_neon' && (
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-950/20 via-purple-900/15 to-cyan-950/20">
+            <div className="absolute top-0 bottom-0 left-1/4 w-0.5 bg-gradient-to-b from-cyan-400 via-purple-500 to-transparent opacity-40 animate-pulse" />
+            <div className="absolute top-0 bottom-0 left-2/4 w-0.5 bg-gradient-to-b from-purple-400 via-pink-500 to-transparent opacity-60 animate-pulse" style={{ animationDuration: '3s' }} />
+            <div className="absolute top-0 bottom-0 left-3/4 w-0.5 bg-gradient-to-b from-pink-400 via-cyan-500 to-transparent opacity-45 animate-pulse" style={{ animationDuration: '2.5s' }} />
+          </div>
+        )}
+        {myMember?.bannerEffect === 'effect_matrix' && (
+          <div className="absolute inset-0 bg-black/40 overflow-hidden font-mono text-[7px] text-green-500/25 select-none whitespace-nowrap leading-none">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="absolute animate-pulse" style={{ left: `${i * 9}%`, top: `${(i % 3) * 20}%`, animationDelay: `${i * 200}ms` }}>
+                101001100101
+              </div>
+            ))}
+          </div>
+        )}
+        {myMember?.bannerEffect === 'effect_cosmic' && (
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute -inset-24 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.2)_0,transparent_55%)] blur-3xl animate-pulse" style={{ animationDuration: '10s' }} />
+            <div className="absolute inset-0 bg-gradient-to-tr from-sky-900/10 via-purple-900/10 to-pink-900/10" />
+          </div>
+        )}
       </div>
 
       <div className={`relative ${isMobile ? 'p-3.5 gap-4' : 'p-8 gap-8'} flex ${isMobile ? 'flex-col items-stretch' : 'flex-row items-center'}`}>
         {/* Left: Avatar & Info */}
         <div className={`flex ${isMobile ? 'flex-col items-center text-center gap-3' : 'flex-row items-center gap-8'} flex-1`}>
-          <div className="relative group cursor-pointer" onClick={handleAvatarClick}>
-            {!isEcoMode && <div className={`absolute -inset-2 rounded-full blur-xl opacity-25 group-hover:opacity-75 transition duration-1000 ${myMember?.profileBorder === 'border_gold' ? 'bg-gaming-gold' : 'bg-gaming-gold/50'}`}></div>}
-            <div className={`relative ${isMobile ? 'w-20 h-20' : 'w-32 h-32 md:w-40 md:h-40'} rounded-full p-1 group-hover:scale-105 transition-transform duration-500 flex items-center justify-center ${getBorderClasses(myMember?.profileBorder)}`}>
-              {myMember?.avatarUrl ? (
-                <SafeAvatar 
-                  src={myMember.avatarUrl} 
-                  className="w-full h-full object-cover rounded-full"
-                  isEcoMode={isEcoMode}
-                />
-              ) : (
-                <div className="w-full h-full bg-linear-to-br from-gaming-gold to-gaming-purple/40 flex items-center justify-center text-center p-2 rounded-full">
-                  <span className="text-[8px] font-display font-black uppercase text-black leading-tight">Mudar Foto</span>
-                </div>
-              )}
-               <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
-                  <Camera className="text-gaming-gold" size={isMobile ? 16 : 32} />
-              </div>
+          <div className="relative group">
+            {!isEcoMode && <div className={`absolute -inset-2 rounded-full blur-xl opacity-25 transition duration-1000 ${myMember?.profileBorder === 'border_gold' ? 'bg-gaming-gold' : 'bg-gaming-gold/50'}`}></div>}
+            <div className={`relative ${isMobile ? 'w-20 h-20' : 'w-32 h-32 md:w-40 md:h-40'} rounded-full p-1 flex items-center justify-center ${getBorderClasses(myMember?.profileBorder)}`}>
+              <SafeAvatar 
+                src={myMember?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.uid}`} 
+                className="w-full h-full object-cover rounded-full"
+                isEcoMode={isEcoMode}
+              />
             </div>
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              onChange={handleFileChange} 
-              className="hidden" 
-              accept={uploadAcceptType} 
-            />
-
-            {/* Avatar Selection Choice Modal */}
-            {avatarModalOpen && (
-              <div 
-                className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
-                onClick={(e) => { e.stopPropagation(); setAvatarModalOpen(false); }}
-              >
-                <div 
-                  className="bg-gaming-card border border-gaming-border p-6 rounded-3xl max-w-sm w-full flex flex-col gap-5 shadow-2xl relative text-left"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="flex flex-col gap-1 text-center">
-                    <h3 className="text-sm font-display font-black uppercase text-gaming-gold tracking-wider">Alterar Foto de Perfil</h3>
-                    <p className="text-[9px] text-white/40 uppercase font-bold tracking-widest">Escolha a sua forma de identificação</p>
-                  </div>
-
-                  <div className="flex flex-col gap-3">
-                    {/* Option 1: Standard Image */}
-                    <button
-                      onClick={() => {
-                        setUploadAcceptType('image/png, image/jpeg, image/jpg, image/webp, image/gif');
-                        setAvatarModalOpen(false);
-                        setTimeout(() => {
-                          fileInputRef.current?.click();
-                        }, 150);
-                      }}
-                      className="p-4 bg-white/[0.02] hover:bg-white/[0.07] hover:border-gaming-gold/40 border border-white/5 rounded-2xl flex items-center gap-4 transition-all text-left group"
-                    >
-                      <div className="w-10 h-10 rounded-xl bg-gaming-gold/10 flex items-center justify-center text-gaming-gold group-hover:scale-105 transition-transform shrink-0">
-                        <Camera size={18} />
-                      </div>
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-xs font-black uppercase tracking-wider text-white">Foto Personalizada</span>
-                        <span className="text-[9px] text-white/40 uppercase font-black tracking-wide">PNG, JPG, JPEG, WEBP ou GIF</span>
-                      </div>
-                    </button>
-
-                    {/* Option 2: Animated GIF */}
-                    <button
-                      onClick={() => {
-                        setUploadAcceptType('image/gif');
-                        setAvatarModalOpen(false);
-                        setTimeout(() => {
-                          fileInputRef.current?.click();
-                        }, 150);
-                      }}
-                      className="p-4 bg-white/[0.02] hover:bg-white/[0.07] hover:border-gaming-gold/40 border border-white/5 rounded-2xl flex items-center gap-4 transition-all text-left group relative overflow-hidden"
-                    >
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-display font-black text-xs bg-purple-500/10 text-purple-400 group-hover:scale-105 transition-transform">
-                        GIF
-                      </div>
-                      <div className="flex flex-col gap-0.5">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-black uppercase tracking-wider text-white">GIF Animado</span>
-                        </div>
-                        <span className="text-[9px] text-white/40 uppercase font-black tracking-wide">Formato GIF Animado</span>
-                      </div>
-                    </button>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      setAvatarModalOpen(false);
-                    }}
-                    className="w-full py-2.5 bg-white/5 hover:bg-white/10 active:bg-white/15 border border-white/10 text-white/60 hover:text-white uppercase font-black text-[9px] tracking-widest rounded-xl transition-all"
-                  >
-                    Fechar
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
 
           <div className={`flex flex-col gap-3 md:gap-4 ${isMobile ? 'items-center' : 'items-start'}`}>
@@ -340,6 +184,11 @@ export function ClanProfile({
                 <span className={getNicknameColorClass(myMember?.nicknameColor)}>{myMember?.name || 'Recruta'}</span> <span className="text-gaming-gold text-xs md:text-lg opacity-80 uppercase">[{clan?.tag || '---'}]</span>
               </h1>
               <span className="text-[8px] md:text-[10px] text-white/40 uppercase tracking-widest font-bold max-w-[250px]">{leader && leader.userId === user?.uid ? "Fundador da Ordem Suprema" : "Membro leal da Ordem Suprema"}</span>
+              {myMember?.customStatus && (
+                <div className="mt-2 flex items-center gap-1.5 px-3 py-1 bg-black/60 border border-white/5 rounded-full text-[9px] md:text-[10px] text-white/80 italic font-medium w-fit">
+                  <span>💬 {myMember.customStatus}</span>
+                </div>
+              )}
             </div>
 
             <div className={`flex gap-1.5 flex-wrap ${isMobile ? 'justify-center' : ''}`}>

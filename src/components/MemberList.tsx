@@ -140,6 +140,10 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
         case 'border_dark': return 'border border-red-600';
         case 'border_emerald': return 'border border-emerald-400';
         case 'border_rgb': return 'border border-pink-500';
+        case 'border_laser': return 'border border-purple-500';
+        case 'border_cyber': return 'border border-cyan-400';
+        case 'border_cosmic': return 'border border-indigo-400';
+        case 'border_fire': return 'border border-red-500';
         default: return 'border border-white/10';
       }
     }
@@ -150,6 +154,10 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
       case 'border_dark': return 'border border-red-600 shadow-[0_0_10px_rgba(220,38,38,0.7)]';
       case 'border_emerald': return 'border border-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.6)] animate-pulse';
       case 'border_rgb': return 'border border-pink-500 shadow-[0_0_12px_rgba(236,72,153,0.7)] animate-bounce';
+      case 'border_laser': return 'border border-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.7)] animate-pulse';
+      case 'border_cyber': return 'border border-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.7)] animate-pulse';
+      case 'border_cosmic': return 'border border-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.7)] animate-pulse';
+      case 'border_fire': return 'border border-red-500 shadow-[0_0_12px_rgba(239,68,68,0.7)] animate-pulse';
       default: return 'border border-white/10';
     }
   };
@@ -254,11 +262,18 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
                           </div>
                           {!isEcoMode && <div className="absolute inset-0 rounded-full bg-gaming-gold/20 blur-md opacity-0 group-hover/avatar:opacity-100 transition-opacity" />}
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <span className={`text-xs font-bold transition-colors ${getNicknameColorClass(m.nicknameColor)}`}>{m.name}</span>
-                          {m.title && (
-                            <span className="bg-gaming-gold/10 text-gaming-gold text-[7px] font-black uppercase tracking-[0.1em] px-1 py-0.5 rounded border border-gaming-gold/20 scale-95 uppercase font-sans">
-                              {m.title}
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-1.5">
+                            <span className={`text-xs font-bold transition-colors ${getNicknameColorClass(m.nicknameColor)}`}>{m.name}</span>
+                            {m.title && (
+                              <span className="bg-gaming-gold/10 text-gaming-gold text-[7px] font-black uppercase tracking-[0.1em] px-1 py-0.5 rounded border border-gaming-gold/20 scale-95 uppercase font-sans">
+                                {m.title}
+                              </span>
+                            )}
+                          </div>
+                          {m.customStatus && (
+                            <span className="text-[9px] text-white/50 italic font-medium tracking-wide mt-0.5 max-w-[180px] truncate" title={m.customStatus}>
+                              💬 {m.customStatus}
                             </span>
                           )}
                         </div>
@@ -333,6 +348,11 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
                           </span>
                         )}
                       </div>
+                      {m.customStatus && (
+                        <span className="text-[9px] text-white/50 italic font-medium tracking-wide mt-0.5">
+                          💬 {m.customStatus}
+                        </span>
+                      )}
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className={`text-[8px] font-black uppercase tracking-widest ${getRoleBadgeColor(m.role)}`}>{getRoleLabel(m.role)}</span>
                       </div>

@@ -44,7 +44,7 @@ export function Sidebar({
     { icon: Settings, id: 'configuracoes', label: 'Configurações' },
   ];
 
-  const adminIcons = user?.email === 'ryankevyn3000@gmail.com' ? [
+  const adminIcons = (user?.email === 'ryankevyn3000@gmail.com' || user?.email === 'ryankevyn2025@gmail.com') ? [
     { icon: ShieldCheck, id: 'gerencia', label: 'Gerência' }
   ] : [];
 

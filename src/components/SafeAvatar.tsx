@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface SafeAvatarProps {
   src: string;
@@ -9,13 +9,25 @@ interface SafeAvatarProps {
 
 export function SafeAvatar({ src, className = '', alt = 'Avatar', isEcoMode = false }: SafeAvatarProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const isGif = src && (src.includes('.gif') || src.includes('data:image/gif') || src.includes('avatars%2F') || src.toLowerCase().endsWith('.gif'));
+  const [loadError, setLoadError] = useState(false);
+
+  // Real GIFs should have .gif or data:image/gif.
+  // Avoid false positives like "avatars%2F" which matches any files uploaded to that storage folder.
+  const isGif = src && (
+    src.toLowerCase().includes('.gif') || 
+    src.includes('data:image/gif')
+  );
 
   useEffect(() => {
-    // Se o modo Eco estiver ativado e for uma imagem do tipo GIF (ou suspeita de GIF),
+    // Reset error state when src changes
+    setLoadError(false);
+  }, [src]);
+
+  useEffect(() => {
+    // Se o modo Eco estiver ativado e for uma imagem do tipo GIF,
     // desenhamos ela em um Canvas. O Canvas desenha apenas o primeiro frame (estático),
     // reduzindo o consumo de processamento/GPU do celular em 100% para GIFs animados!
-    if (isEcoMode && src && canvasRef.current) {
+    if (isEcoMode && isGif && src && !loadError && canvasRef.current) {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
       const img = new Image();
@@ -37,11 +49,15 @@ export function SafeAvatar({ src, className = '', alt = 'Avatar', isEcoMode = fa
         
         ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
       };
+      img.onerror = () => {
+        console.warn('Failed to load/draw image to canvas (usually CORS or network). Falling back to native img rendering.');
+        setLoadError(true);
+      };
     }
-  }, [src, isEcoMode, isGif]);
+  }, [src, isEcoMode, isGif, loadError]);
 
-  // Se Eco Mode estiver ativo e for um GIF animado, exibe o canvas estático
-  if (isEcoMode && isGif) {
+  // Se Eco Mode estiver ativo, for um GIF animado e não houver erro de carregamento, exibe o canvas estático
+  if (isEcoMode && isGif && !loadError) {
     return (
       <canvas 
         ref={canvasRef} 
@@ -52,10 +68,10 @@ export function SafeAvatar({ src, className = '', alt = 'Avatar', isEcoMode = fa
     );
   }
 
-  // Se Eco Mode desativado ou imagem não for GIF, renderiza o GIF animado/imagem normal
+  // Se Eco Mode desativado ou imagem não for GIF (ou falhar no canvas/CORS), renderiza o GIF animado/imagem normal
   return (
     <img 
-      src={src} 
+      src={src || undefined} 
       className={className} 
       alt={alt} 
       referrerPolicy="no-referrer" 

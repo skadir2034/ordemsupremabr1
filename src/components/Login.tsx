@@ -119,11 +119,7 @@ export function Login() {
           className="w-20 h-20 hex-clip bg-linear-to-br from-gaming-gold/20 to-gaming-purple/20 border border-gaming-gold/30 flex items-center justify-center mx-auto mb-6 shadow-[0_0_40px_rgba(251,191,36,0.3)] relative group"
         >
            <div className="absolute inset-0 bg-gaming-gold/20 animate-ping rounded-full scale-50 opacity-0 group-hover:opacity-100 transition-opacity" />
-           <img 
-            src={loginLogo} 
-            alt="Logo" 
-            className="w-12 h-12 object-contain relative z-10 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]"
-           />
+           <span className="text-4xl relative z-10 drop-shadow-[0_0_12px_rgba(251,191,36,0.6)] select-none">🐺</span>
         </motion.div>
 
          <h1 className="text-3xl md:text-4xl font-display font-black uppercase tracking-tighter mb-2 italic leading-tight">
@@ -212,6 +208,16 @@ export function Login() {
                 className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-12 pr-4 text-xs font-bold focus:outline-none focus:border-gaming-gold/40 focus:bg-white/15 transition-all text-white placeholder-white/30"
                 required
               />
+            </div>
+
+            <div className="p-3.5 bg-red-500/10 border border-red-500/30 rounded-xl flex items-start gap-3">
+              <ShieldAlert size={18} className="text-red-500 shrink-0 mt-0.5 animate-pulse" />
+              <div className="flex-1 flex flex-col gap-0.5">
+                <span className="text-[9px] uppercase font-mono font-black text-red-500 tracking-wider">Aviso Restrição Temporária</span>
+                <span className="text-[8px] uppercase font-bold text-red-400 leading-normal">
+                  Contas de convidado são temporárias e serão excluídas permanentemente em 24h. Além disso, convidados estão bloqueados de participar de eventos de combate e decisivos da guilda!
+                </span>
+              </div>
             </div>
 
             <button 
