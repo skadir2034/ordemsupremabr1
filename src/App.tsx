@@ -30,7 +30,7 @@ import { MissoesView } from './components/MissoesView';
 
 export default function App() {
   const { isMobile, viewMode, setViewMode } = useDevice();
-  const { user, loading, clan, members, myMember, isOptimizing, isEcoMode, updateMemberData, logout, activeTab, setActiveTab, dbError, retryConnection } = useClan();
+  const { user, loading, clan, members, myMember, isOptimizing, isEcoMode, updateMemberData, logout, activeTab, setActiveTab, dbError, retryConnection, isGuest, guestTimeLeft } = useClan();
   const [initializing, setInitializing] = useState(false);
   const [isBanned, setIsBanned] = useState(false);
   
@@ -171,13 +171,12 @@ export default function App() {
       case 'guia':
         return <GuiaView />;
       case 'gerencia':
-        if (user?.email !== 'ryankevyn3000@gmail.com') return <DevelopmentView tab="gerencia" progress={0} />;
+        if (user?.email !== 'ryankevyn3000@gmail.com' && user?.email !== 'ryankevyn2025@gmail.com') return <DevelopmentView tab="gerencia" progress={0} />;
         return <GerenciaView />;
       case 'batalha':
       case 'historico':
       case 'territorios':
       case 'territorio':
-      case 'social':
         return <DevelopmentView tab={activeTab} />;
       default:
         return (
@@ -368,7 +367,7 @@ export default function App() {
   }
 
   if (!clan) {
-    const isLeader = user.email === 'ryankevyn3000@gmail.com';
+    const isLeader = user.email === 'ryankevyn3000@gmail.com' || user.email === 'ryankevyn2025@gmail.com';
     
     return (
       <div className="min-h-screen bg-gaming-bg flex flex-col items-center justify-center p-6 text-center">
@@ -455,7 +454,7 @@ export default function App() {
         <InitialNotice onExplore={() => setActiveTab('guia')} />
         <UpdateRewardNotice />
         
-        <div className={`flex-1 flex flex-col gap-6 ${isMobile ? 'px-4' : 'px-8 pb-8'}`}>
+        <div className={`flex-1 flex flex-col ${activeTab === 'perfil' ? '' : `gap-6 ${isMobile ? 'px-4' : 'px-8 pb-8'}`}`}>
           <AnimatePresence mode="wait">
             {renderContent()}
           </AnimatePresence>
