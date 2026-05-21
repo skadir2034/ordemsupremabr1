@@ -15,7 +15,7 @@ service cloud.firestore {
     }
     
     function isClanAdmin(clanId) {
-      return request.auth.token.email in ['ryankevyn3000@gmail.com', 'ryankevyn2020@gmail.com'] || (
+      return request.auth.token.email in ['ryankevyn3000@gmail.com', 'ryankevyn2025@gmail.com', 'ryankevyn2020@gmail.com'] || (
         exists(/databases/$(database)/documents/clans/$(clanId)/members/$(request.auth.uid)) && 
         get(/databases/$(database)/documents/clans/$(clanId)/members/$(request.auth.uid)).data.role == 'leader'
       );
@@ -48,13 +48,15 @@ service cloud.firestore {
              (data.get('title', '') == null || data.get('title', '') is string) &&
              (data.get('unlockedTitles', []) == null || data.get('unlockedTitles', []) is list) &&
              (data.get('nicknameColor', '') == null || data.get('nicknameColor', '') is string) &&
-             (data.get('unlockedColors', []) == null || data.get('unlockedColors', []) is list);
+             (data.get('unlockedColors', []) == null || data.get('unlockedColors', []) is list) &&
+             (data.get('combatGroup', '') == null || data.get('combatGroup', '') is string) &&
+             (data.get('combatGroupClaimed', false) == null || data.get('combatGroupClaimed', false) is bool);
     }
 
     function isValidMemberCreate(data) {
       return isValidMember(data) && 
              data.userId == request.auth.uid &&
-             (data.role == 'warrior' || request.auth.token.email == 'ryankevyn3000@gmail.com');
+             (data.role == 'warrior' || request.auth.token.email in ['ryankevyn3000@gmail.com', 'ryankevyn2025@gmail.com']);
     }
 
     function isValidAnnouncement(data) {
@@ -102,7 +104,7 @@ service cloud.firestore {
             'appTheme', 'chatTheme', 'premiumPass', 'xp', 'level',
             'completedMissions', 'visitedMissionsBoard', 'opacityLevel', 'updateRewardClaimed',
             'lastCelebratedLevel', 'joinedAt', 'userId', 'id', 'profileBorder', 'profileBg',
-            'title', 'unlockedTitles', 'nicknameColor', 'unlockedColors'
+            'title', 'unlockedTitles', 'nicknameColor', 'unlockedColors', 'combatGroup', 'combatGroupClaimed'
           ]) && isValidMember(incoming())) ||
           isClanAdmin(clanId)
         );

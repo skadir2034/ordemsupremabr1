@@ -48,7 +48,9 @@
         "title": { "type": "string", "description": "Equipped honor title" },
         "unlockedTitles": { "type": "array", "items": { "type": "string" }, "description": "Unlocked honor titles" },
         "nicknameColor": { "type": "string", "description": "Selected nickname color ID" },
-        "unlockedColors": { "type": "array", "items": { "type": "string" }, "description": "Unlocked nickname color IDs" }
+        "unlockedColors": { "type": "array", "items": { "type": "string" }, "description": "Unlocked nickname color IDs" },
+        "combatGroup": { "type": "string", "description": "Selected combat group for the tournament" },
+        "combatGroupClaimed": { "type": "boolean", "description": "Whether the tournament rewards have been claimed/approved for this member" }
       },
       "required": ["userId", "name", "role", "trophies"]
     },
