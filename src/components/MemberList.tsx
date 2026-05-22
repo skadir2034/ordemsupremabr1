@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Circle, UserPlus, Users, LogOut, Edit2, Trash2 } from 'lucide-react';
 import { useClan } from '../context/ClanContext';
@@ -8,12 +8,14 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
   const [activeSubTab, setActiveSubTab] = useState('membros');
   const { members, loading, logout, myMember, deleteMember, updateMemberRole, isEcoMode } = useClan();
   
-  const sortedMembers = [...members].sort((a, b) => {
-    if (b.level !== a.level) {
-      return (b.level || 0) - (a.level || 0);
-    }
-    return (b.heroPower || 0) - (a.heroPower || 0);
-  });
+  const sortedMembers = useMemo(() => {
+    return [...members].sort((a, b) => {
+      if (b.level !== a.level) {
+        return (b.level || 0) - (a.level || 0);
+      }
+      return (b.heroPower || 0) - (a.heroPower || 0);
+    });
+  }, [members]);
 
   const [editingMember, setEditingMember] = useState<string | null>(null);
 
@@ -41,7 +43,9 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
     }, 150);
   };
 
-  const visibleMembers = sortedMembers.slice(0, visibleLimit);
+  const visibleMembers = useMemo(() => {
+    return sortedMembers.slice(0, visibleLimit);
+  }, [sortedMembers, visibleLimit]);
 
   const handleDeleteMember = async (memberId: string, name: string) => {
     if (confirm(`Deseja realmente ELIMINAR ${name} da Ordem Suprema? Esta ação removerá o acesso do usuário.`)) {

@@ -12,6 +12,17 @@ export function Header({ isMobile = false }: { isMobile?: boolean }) {
 
   const [timeToNextBonus, setTimeToNextBonus] = useState<string>('');
 
+  const getBrasiliaDate = () => {
+    const now = new Date();
+    // UTC-3
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const date = new Date(utc + (3600000 * -3));
+    return date.toISOString().split('T')[0];
+  };
+
+  const today = getBrasiliaDate();
+  const hasDailyBonusAvailable = myMember && myMember.lastDailyBonus !== today;
+
   React.useEffect(() => {
     const timer = setInterval(() => {
       const now = new Date();
@@ -68,9 +79,14 @@ export function Header({ isMobile = false }: { isMobile?: boolean }) {
           whileHover={{ scale: 1.15 }}
           whileTap={{ scale: 0.9 }}
           onClick={() => setActiveModal('bonus')}
-          className="p-1.5 bg-gaming-purple/10 border border-gaming-purple/30 rounded-xl shrink-0 group transition-all hover:bg-gaming-purple/20 hover:border-gaming-purple/50 shadow-[0_0_10px_rgba(147,51,234,0.1)] flex items-center justify-center w-8 h-8"
+          className="relative p-1.5 bg-gaming-purple/10 border border-gaming-purple/30 rounded-xl shrink-0 group transition-all hover:bg-gaming-purple/20 hover:border-gaming-purple/50 shadow-[0_0_10px_rgba(147,51,234,0.1)] flex items-center justify-center w-8 h-8"
         >
           <Gift size={14} className="text-gaming-purple group-hover:rotate-12 transition-transform" />
+          {hasDailyBonusAvailable && (
+            <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-red-500 rounded-full border border-black animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.9)] flex items-center justify-center">
+              <span className="w-1 h-1 bg-white rounded-full" />
+            </span>
+          )}
         </motion.button>
 
         <motion.button 

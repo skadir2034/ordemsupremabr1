@@ -1320,6 +1320,24 @@ export function CombateView() {
       return;
     }
     if (!myMember) return;
+
+    if (myMember.combatGroup === group) {
+      alert("Você já está alistado neste regimento de combate!");
+      return;
+    }
+
+    const LIMITS = {
+      'A': 7,
+      'B': 7,
+      'C': 6
+    };
+
+    const currentCount = members.filter(m => m.combatGroup === group).length;
+    if (currentCount >= LIMITS[group]) {
+      alert(`O Regimento ${group} de Combate está lotado! Limite máximo de ${LIMITS[group]} vagas atingido.`);
+      return;
+    }
+
     setLoading(true);
     try {
       await updateMemberData({
@@ -1387,52 +1405,52 @@ export function CombateView() {
   const isGroupC = activeGroup === 'C';
   const themeTextClass = isGroupA ? 'text-red-500' : isGroupB ? 'text-gaming-gold' : 'text-blue-400';
   const themeBorderClass = isGroupA ? 'border-red-600/30' : isGroupB ? 'border-gaming-gold/30' : 'border-blue-500/30';
-  const themeBgClass = isGroupA ? 'bg-red-950/20' : isGroupB ? 'bg-amber-950/20' : 'bg-blue-950/20';
+  const themeBgClass = isGroupA ? 'bg-red-950/20' : isGroupB ? 'bg-amber-950/20' : 'bg-blue-920/20';
   const themeAccentBg = isGroupA ? 'bg-red-500' : isGroupB ? 'bg-gaming-gold' : 'bg-blue-400';
   const themeAccentText = isGroupA ? 'text-red-200' : isGroupB ? 'text-amber-200' : 'text-blue-200';
 
   return (
-    <div className="flex flex-col gap-6 p-4 md:p-8 max-w-6xl mx-auto w-full pb-20 selection:bg-gaming-gold selection:text-black">
+    <div className="flex flex-col gap-6 p-3 sm:p-4 md:p-8 max-w-6xl mx-auto w-full pb-20 selection:bg-gaming-gold selection:text-black">
       {/* War Dashboard Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-800 pb-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-zinc-850 pb-4">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse shrink-0" />
-            <span className="text-[10px] uppercase font-black text-white/50 tracking-[0.4em] font-mono">OPERAÇÃO DE BRIEFING DA GUILDA</span>
+            <span className="text-[9px] uppercase font-black text-white/50 tracking-[0.4em] font-mono">OPERAÇÃO DE BRIEFING DA GUILDA</span>
           </div>
-          <h2 className="text-4xl md:text-5xl font-display font-black uppercase italic tracking-tighter text-white">
-            CENTRAL DE DEPLOY — <span className="text-gaming-gold text-shadow-gold">LUTA PELO ELIXIR</span>
+          <h2 className="text-2xl sm:text-3xl lg:text-4.5xl font-display font-black uppercase italic tracking-tighter text-white leading-none">
+            CENTRAL DE DEPLOY — <span className="text-gaming-gold text-shadow-gold text-nowrap">LUTA PELO ELIXIR</span>
           </h2>
         </div>
         
         {/* Date Container with Countdown under it */}
-        <div className="bg-zinc-900/60 border border-zinc-800 px-5 py-3 rounded-2xl flex flex-col items-center justify-center shrink-0 min-w-[220px] shadow-lg">
+        <div className="bg-zinc-950/80 border border-zinc-800 px-4 py-2.5 rounded-2xl flex flex-col items-center justify-center shrink-0 lg:min-w-[220px] shadow-lg">
           <span className="text-[8px] font-black uppercase text-zinc-400 tracking-wider font-mono">HORA DA INVASÃO (BRT)</span>
-          <span className="text-sm font-mono font-black text-white italic">AMANHÃ • 22/05 às 23:00</span>
+          <span className="text-xs sm:text-sm font-mono font-black text-white italic">AMANHÃ • 22/05 às 23:00</span>
           
           {/* CRONÔMETRO DE BRASÍLIA */}
-          <div className="mt-2 pt-1.5 border-t border-zinc-800/80 w-full flex flex-col items-center">
+          <div className="mt-1.5 pt-1.5 border-t border-zinc-800/80 w-full flex flex-col items-center">
             <span className="text-[7px] font-black uppercase text-red-500 tracking-wider font-mono animate-pulse flex items-center gap-1 mb-1">
               <Clock size={8} className="text-red-500" /> CONTAGEM REGRESSIVA
             </span>
             {!timeLeft.completed ? (
               <div className="flex items-center gap-1 text-[11px] font-mono font-black">
-                <div className="flex flex-col items-center min-w-[34px] bg-red-950/30 border border-red-900/30 px-1 py-0.5 rounded">
+                <div className="flex flex-col items-center min-w-[32px] bg-red-950/30 border border-red-900/30 px-1 py-0.5 rounded">
                   <span className="text-red-500 font-extrabold leading-none">{String(timeLeft.days).padStart(2, '0')}</span>
                   <span className="text-[5px] text-white/40 mt-0.5 uppercase tracking-tighter leading-none">DIAS</span>
                 </div>
                 <span className="text-red-500/50 animate-pulse">:</span>
-                <div className="flex flex-col items-center min-w-[34px] bg-red-950/30 border border-red-900/30 px-1 py-0.5 rounded">
+                <div className="flex flex-col items-center min-w-[32px] bg-red-950/30 border border-red-900/30 px-1 py-0.5 rounded">
                   <span className="text-red-500 font-extrabold leading-none">{String(timeLeft.hours).padStart(2, '0')}</span>
                   <span className="text-[5px] text-white/40 mt-0.5 uppercase tracking-tighter leading-none">HORAS</span>
                 </div>
                 <span className="text-red-500/50 animate-pulse">:</span>
-                <div className="flex flex-col items-center min-w-[34px] bg-red-950/30 border border-red-900/30 px-1 py-0.5 rounded">
+                <div className="flex flex-col items-center min-w-[32px] bg-red-950/30 border border-red-900/30 px-1 py-0.5 rounded">
                   <span className="text-red-500 font-extrabold leading-none">{String(timeLeft.minutes).padStart(2, '0')}</span>
                   <span className="text-[5px] text-white/40 mt-0.5 uppercase tracking-tighter leading-none">MIN</span>
                 </div>
                 <span className="text-red-500/50 animate-pulse">:</span>
-                <div className="flex flex-col items-center min-w-[34px] bg-red-950/30 border border-red-900/30 px-1 py-0.5 rounded">
+                <div className="flex flex-col items-center min-w-[32px] bg-red-950/30 border border-red-900/30 px-1 py-0.5 rounded">
                   <span className="text-red-500 font-extrabold leading-none">{String(timeLeft.seconds).padStart(2, '0')}</span>
                   <span className="text-[5px] text-white/40 mt-0.5 uppercase tracking-tighter leading-none">SEG</span>
                 </div>
@@ -1448,125 +1466,123 @@ export function CombateView() {
       <motion.div
         initial={{ scale: 0.98, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="p-5 bg-red-950/40 border-2 border-red-600 rounded-3xl shadow-[0_0_30px_rgba(239,68,68,0.15)] flex flex-col md:flex-row items-center gap-4 relative overflow-hidden"
+        className="p-4 bg-red-950/30 border border-red-600/50 rounded-2xl shadow-[0_0_20px_rgba(239,68,68,0.1)] flex flex-col sm:flex-row items-center gap-4 relative overflow-hidden"
       >
-        <div className="absolute top-0 right-0 p-1 bg-red-600 text-[8px] font-black uppercase text-white tracking-widest rounded-bl-xl font-mono animate-pulse">
-          ORDEM SUPREMA
+        <div className="absolute top-0 right-0 p-1 bg-red-600/80 text-[7px] font-black uppercase text-white tracking-widest rounded-bl-xl font-mono animate-pulse">
+          DIRETÓRIO
         </div>
-        <div className="w-12 h-12 rounded-2xl bg-red-600/20 border border-red-600 flex items-center justify-center shrink-0">
-          <Sword className="text-red-500 animate-pulse" size={24} />
+        <div className="w-10 h-10 rounded-xl bg-red-600/20 border border-red-600/40 flex items-center justify-center shrink-0">
+          <Sword className="text-red-400 animate-pulse" size={20} />
         </div>
-        <div className="flex flex-col gap-1 w-full">
-          <span className="text-[9px] uppercase font-black tracking-widest text-red-500 font-mono">COMUNICADO URGENTE DO DIRETÓRIO DE OUTPOSTS:</span>
-          <p className="text-xs text-white leading-relaxed font-bold uppercase italic">
-            "Atenção, aliança! Confirmado: nosso ataque conjunto será amanhã, dia 22/05, às 23:00 (horário do jogo). Todos devem estar logados e prontos para a estratégia às 23:00 em ponto. Não se atrasem!"
+        <div className="flex flex-col gap-0.5 w-full text-center sm:text-left">
+          <span className="text-[8px] uppercase font-black tracking-widest text-red-500 font-mono">AVISO RECURSAL URGENTE:</span>
+          <p className="text-[11px] text-white leading-normal font-bold uppercase italic">
+            "Ataque amanhã (22/05) às 23:00 BRT. Todos logados às 23:00 em ponto!"
           </p>
         </div>
       </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* A) OPERATIONAL PROTOCOLS SECTION (Left Column) - REFINED TO GOLD/SLATE */}
         <div className="lg:col-span-2 flex flex-col gap-6">
-          <div className="bg-zinc-900/30 border border-zinc-800 rounded-3xl p-6 md:p-8 flex flex-col gap-6 shadow-2xl relative overflow-hidden">
-            <div className="absolute inset-0 bg-linear-to-b from-zinc-800/10 via-transparent to-transparent pointer-events-none" />
+          <div className="bg-zinc-900/20 border border-zinc-800/80 rounded-3xl p-5 md:p-6 flex flex-col gap-6 shadow-xl relative overflow-hidden">
+            <div className="absolute inset-0 bg-linear-to-b from-zinc-800/5 via-transparent to-transparent pointer-events-none" />
             
-            <div className="flex items-center gap-3 border-b border-zinc-800/40 pb-4">
-              <Compass className="text-gaming-gold" size={24} />
+            <div className="flex items-center gap-2.5 border-b border-zinc-800/40 pb-3">
+              <Compass className="text-gaming-gold" size={20} />
               <div>
-                <h3 className="font-display font-black uppercase text-lg text-white">PLANO DE CONFRONTO E OPERAÇÃO TÁTICA</h3>
-                <p className="text-[9px] uppercase font-bold text-zinc-500 tracking-widest leading-relaxed">
-                  CÓDIGO DE ORIENTAÇÃO COORDENADA — GERENCIAMENTO DE TERRITÓRIOS
+                <h3 className="font-display font-black uppercase text-base text-white tracking-wide">PLANEJAMENTO TÁTICO & PROTOCOLO</h3>
+                <p className="text-[8px] uppercase font-bold text-zinc-500 tracking-widest leading-none">
+                  LIGAÇÃO DIRECIONAL E LOGÍSTICA DE COMBATE
                 </p>
               </div>
             </div>
 
-            <p className="text-xs text-white/90 leading-relaxed font-bold uppercase italic">
-              "Para garantir a vitória da nossa aliança, precisamos de <strong className="text-gaming-gold font-extrabold text-shadow-gold animate-pulse">disciplina, coordenação e foco nos objetivos corretos</strong>. Não basta ter poder de combate; é preciso saber quando e onde lutar."
+            <p className="text-[11px] text-white/80 leading-relaxed font-bold uppercase italic border-l-2 border-gaming-gold/40 pl-3">
+              "Para garantir a vitória da nossa aliança, precisamos de <strong className="text-gaming-gold font-extrabold text-shadow-gold animate-pulse">disciplina, coordenação e foco nos objetivos corretos</strong>. Não basta ter poder; é preciso inteligência."
             </p>
 
-            <div className="flex flex-col gap-6 mt-2">
-              <h4 className="text-[10px] uppercase font-black text-gaming-gold tracking-widest flex items-center gap-2 border-b border-zinc-800/45 pb-2">
-                <Flame size={14} className="text-gaming-gold" /> FASES OPERACIONAIS DE DEBELAÇÃO
+            <div className="flex flex-col gap-4 mt-1">
+              <h4 className="text-[10px] uppercase font-black text-gaming-gold tracking-widest flex items-center gap-1.5 border-b border-zinc-800/40 pb-1.5">
+                <Flame size={12} className="text-gaming-gold" /> FASES DO CONFRONTO (CRITICAL INFO)
               </h4>
 
-              <div className="space-y-6">
-                {/* Phases using Amber/Gold instead of Red for general items */}
-                <div className="flex gap-4 group">
-                  <div className="w-8 h-8 rounded-xl bg-zinc-900/60 border border-zinc-800 flex items-center justify-center font-display font-black text-sm text-gaming-gold shrink-0 group-hover:border-gaming-gold/50 transition-colors">1</div>
-                  <div className="flex flex-col gap-1">
-                    <h5 className="text-xs font-black uppercase tracking-tight text-white group-hover:text-amber-400 transition-colors">1. Preparação (Antes do Evento)</h5>
-                    <p className="text-[10px] text-white/50 uppercase leading-relaxed font-bold">
-                      • <strong className="text-amber-400/90">Seleção de Elenco:</strong> O R5/R4 definirá os 20 membros iniciais e os 10 reservas.<br />
-                      • <strong className="text-amber-400/90">Logística:</strong> Todos com exército curado e recursos de aceleração prontos para blitz.
-                    </p>
+              <div className="grid grid-cols-1 gap-3">
+                {/* Phase 1: Preparation */}
+                <div className="border border-indigo-950/60 bg-indigo-950/10 rounded-2xl p-3.5 border-l-4 border-l-indigo-500 transition-all hover:bg-indigo-950/15">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center font-mono font-black text-[10px] text-indigo-300">1</span>
+                    <h5 className="text-[11px] font-black uppercase text-indigo-200 tracking-wider">Preparação (Antes do Evento)</h5>
                   </div>
+                  <p className="text-[10px] text-white/70 uppercase leading-relaxed font-bold font-mono">
+                    • <strong className="text-indigo-400">Escala de Guerra:</strong> O R5/R4 definirá os 20 membros do deploy e reservas.<br />
+                    • <strong className="text-indigo-400">Logística:</strong> Todos com exércitos curados e aceleradores prontos.
+                  </p>
                 </div>
 
-                <div className="flex gap-4 group">
-                  <div className="w-8 h-8 rounded-xl bg-zinc-900/60 border border-zinc-800 flex items-center justify-center font-display font-black text-sm text-gaming-gold shrink-0 group-hover:border-gaming-gold/50 transition-colors">2</div>
-                  <div className="flex flex-col gap-1">
-                    <h5 className="text-xs font-black uppercase tracking-tight text-white group-hover:text-amber-400 transition-colors">2. Fase Inicial (0 a 10 min) – "Corrida pelo Ouro"</h5>
-                    <p className="text-[10px] text-white/55 uppercase leading-relaxed font-bold">
-                      • <strong className="text-amber-400/90">Objetivo Primário:</strong> Oficinas de Alquimia.<br />
-                      • <strong className="text-amber-400/90">Tática:</strong> Ignorem combates desnecessários fora do perímetro. A prioridade é capturar as duas Oficinas para gerar pontuação passiva imediata.
-                    </p>
+                {/* Phase 2: Gold Rush */}
+                <div className="border border-cyan-950/60 bg-cyan-950/10 rounded-2xl p-3.5 border-l-4 border-l-cyan-400 transition-all hover:bg-cyan-950/15">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="w-5 h-5 rounded-full bg-cyan-400/20 flex items-center justify-center font-mono font-black text-[10px] text-cyan-200">2</span>
+                    <h5 className="text-[11px] font-black uppercase text-cyan-300 tracking-wider">Fase Inicial (0 a 10 min) • "Corrida pelo Ouro"</h5>
                   </div>
+                  <p className="text-[10px] text-white/70 uppercase leading-relaxed font-bold font-mono">
+                    • <strong className="text-cyan-400">Objetivo Primário:</strong> Capturar Oficinas de Alquimia.<br />
+                    • <strong className="text-cyan-400">Tática:</strong> Evite batalhas soltas. Segurar as duas Oficinas gera bônus imediato.
+                  </p>
                 </div>
 
-                <div className="flex gap-4 group">
-                  <div className="w-8 h-8 rounded-xl bg-zinc-900/60 border border-zinc-800 flex items-center justify-center font-display font-black text-sm text-gaming-gold shrink-0 group-hover:border-gaming-gold/50 transition-colors">3</div>
-                  <div className="flex flex-col gap-1">
-                    <h5 className="text-xs font-black uppercase tracking-tight text-white group-hover:text-amber-400 transition-colors">3. Fase Intermediária (10 a 13 min) – "Hora da Verdade"</h5>
-                    <p className="text-[10px] text-white/55 uppercase leading-relaxed font-bold">
-                      • <strong className="text-amber-400/90 font-extrabold">Alvo Central:</strong> Castelo do Elixir + Bases Estratégicas.<br />
-                      • <strong className="text-amber-400/90 font-bold">Tática de Domínio:</strong> Aos 10 minutos, o Castelo abre. <em className="text-red-500 font-extrabold not-italic text-shadow-red animate-pulse">Toda a aliança em peso deve convergir para ele.</em><br />
-                      • <strong className="text-amber-400/90 font-extrabold">Suporte Crítico:</strong> Ocupem o Altar Amaldiçoado ou a Relíquia para buffs destrutivos.
-                    </p>
+                {/* Phase 3: Castle Open */}
+                <div className="border border-amber-950/60 bg-amber-950/10 rounded-2xl p-3.5 border-l-4 border-l-amber-500 transition-all hover:bg-amber-950/15">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center font-mono font-black text-[10px] text-amber-300">3</span>
+                    <h5 className="text-[11px] font-black uppercase text-amber-300 tracking-wider">Fase Intermediária (10 a 13 min) • "Verdade"</h5>
                   </div>
+                  <p className="text-[10px] text-white/70 uppercase leading-relaxed font-bold font-mono">
+                    • <strong className="text-amber-400">Castelo do Elixir:</strong> Abre exatamente aos 10 minutos.<br />
+                    • <strong className="text-amber-400">Tática de Domínio:</strong> Toda a guilda deve marchar junta ao centro.<br />
+                    • <strong className="text-amber-400">Altificação:</strong> Ocupe os Altares para ativar bônus de dano de tropa.
+                  </p>
                 </div>
 
-                <div className="flex gap-4 group">
-                  <div className="w-8 h-8 rounded-xl bg-zinc-900/60 border border-zinc-800 flex items-center justify-center font-display font-black text-sm text-gaming-gold shrink-0 group-hover:border-gaming-gold/50 transition-colors">4</div>
-                  <div className="flex flex-col gap-1">
-                    <h5 className="text-xs font-black uppercase tracking-tight text-white group-hover:text-amber-400 transition-colors">4. Fase Final (13 a 30 min) – "Manutenção da Vitória"</h5>
-                    <p className="text-[10px] text-white/55 uppercase leading-relaxed font-bold">
-                      • <strong className="text-amber-400/90">Objetivo Secundário:</strong> Acampamentos + Defesa de Muralha.<br />
-                      • <strong className="text-amber-400/90">Coleta e Desgaste:</strong> Enviem tropas leves para coletar ervas nos Acampamentos rapidamente.<br />
-                      • <strong className="text-red-500 font-black">Manobra de Contenção:</strong> <em className="text-red-500 font-black not-italic uppercase underline">Não permitam sob hipótese alguma que o inimigo colete os Kits Doutores!</em>
-                    </p>
+                {/* Phase 4: Final Crash */}
+                <div className="border border-red-950/60 bg-red-950/10 rounded-2xl p-3.5 border-l-4 border-l-red-500 transition-all hover:bg-red-950/15">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center font-mono font-black text-[10px] text-red-350">4</span>
+                    <h5 className="text-[11px] font-black uppercase text-red-300 tracking-wider">Fase Final (13 a 30 min) • "Defesa Crucial"</h5>
                   </div>
+                  <p className="text-[10px] text-white/70 uppercase leading-relaxed font-bold font-mono">
+                    • <strong className="text-red-400">Forte e Kits:</strong> Enviem tropas rápidas para coletar ervas e manter o cerco.<br />
+                    • <strong className="text-red-400">Contenção Crítica:</strong> Garanta que o inimigo não colete os Kits Doutores!
+                  </p>
                 </div>
               </div>
             </div>
 
             {/* Dicas de Combate using Zinc-Slate background */}
-            <div className="bg-zinc-950/25 border border-zinc-800 p-5 rounded-2xl flex flex-col gap-4 shadow-inner">
-              <h4 className="text-[10px] uppercase font-black text-gaming-gold tracking-widest flex items-center gap-2 font-mono">
-                <Target size={14} className="text-gaming-gold animate-pulse" /> DIRETRIZES DE EMBATE DA GUILDA
+            <div className="bg-zinc-950/30 border border-zinc-800/60 p-4 rounded-xl flex flex-col gap-3">
+              <h4 className="text-[10px] uppercase font-black text-gaming-gold tracking-widest flex items-center gap-1.5 font-mono">
+                <Target size={12} className="text-gaming-gold animate-pulse" /> DIRETRIZES RÁPIDAS DE DISPARO
               </h4>
-              <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 text-[10px] uppercase font-bold text-white/70">
-                <li className="flex gap-2">
-                  <span className="text-gaming-gold font-black">🛡️ 1.</span>
-                  <span>Ataques Isolados Proibidos: O Ataque coordenado (rally) é a única ferramenta para quebrar tropas R5 adversárias.</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-gaming-gold font-black">🛡️ 2.</span>
-                  <span>Fortificação da Tenda: Ocupar e trancar estrategicamente uma das Tendas de Cura para manter a pressão viva.</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-gaming-gold font-black">🛡️ 3.</span>
-                  <span>Manobras de Teleporte: Utilize o Portal de Migração estrategicamente para encurtar tempos de marcha militar.</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-gaming-gold font-black">🛡️ 4.</span>
-                  <span>Silêncio de Rádio: Obedeça estritamente à cadeia de comando e canais de chat de guerra em tempo real.</span>
-                </li>
-                <li className="col-span-1 md:col-span-2 flex gap-2 border-t border-zinc-800 pt-2 text-white font-black animate-pulse">
-                  <span className="text-red-500">🚩 5.</span>
-                  <span>Ataque em Desespero: <span className="text-red-500">Nos 2 minutos cruciais do final, esvazie todos os arsenais ofensivos contra o Castelo!</span></span>
-                </li>
-              </ul>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[9px] uppercase font-bold text-white/70">
+                <div className="flex gap-2">
+                  <span className="text-gaming-gold font-extrabold font-mono">01.</span>
+                  <span>Ataques Isolados Proibidos: O Ataque coordenado (rally) é a única ferramenta.</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="text-gaming-gold font-extrabold font-mono">02.</span>
+                  <span>Defesa de Tenda: Segure uma Tenda de Cura para repor guerreiros vivos.</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="text-gaming-gold font-extrabold font-mono">03.</span>
+                  <span>Portais: Marchas usando o Portal reduzem o deslocamento em 80%.</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="text-gaming-gold font-extrabold font-mono">04.</span>
+                  <span>Cadeia de Voz: Obedeça as ordens do R5/R4 no Discord em tempo real.</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1591,9 +1607,14 @@ export function CombateView() {
                 </p>
               </div>
             )}
-            <div className="flex items-center gap-2 border-b border-zinc-800/80 pb-3">
-              <ShieldCheck className="text-gaming-gold animate-pulse" size={20} />
-              <h3 className="font-display font-black uppercase text-sm tracking-widest text-white">RECRUTAMENTO OPERACIONAL</h3>
+            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="text-gaming-gold animate-pulse" size={20} />
+                <h3 className="font-display font-black uppercase text-sm tracking-widest text-white">RECRUTAMENTO OPERACIONAL</h3>
+              </div>
+              <span className="text-[10px] bg-zinc-850 border border-zinc-800 px-2 py-1 rounded-md text-zinc-400 font-mono font-bold">
+                VAGAS TOTAIS: <span className="text-white font-black">{groupA.length + groupB.length + groupC.length} / 20</span>
+              </span>
             </div>
             
             <p className="text-[10px] uppercase font-bold text-white/70 leading-relaxed">
@@ -1617,7 +1638,12 @@ export function CombateView() {
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-2.5">
                       <Skull size={16} className={activeGroup === 'A' ? "text-red-500" : "text-white/40 group-hover:text-red-500"} />
-                      <span className="text-xs uppercase font-black tracking-wider">Regimento A - Elite de Assalto</span>
+                      <div className="flex flex-col">
+                        <span className="text-xs uppercase font-black tracking-wider">Regimento A - Elite de Assalto</span>
+                        <span className={`text-[9px] font-bold uppercase transition-colors ${7 - groupA.length <= 0 ? 'text-red-500 animate-pulse font-black' : 'text-zinc-400'}`}>
+                          {7 - groupA.length <= 0 ? '🚫 Vagas Esgotadas' : `Slots Disponíveis: ${7 - groupA.length} de 7`}
+                        </span>
+                      </div>
                     </div>
                     {activeGroup === 'A' && (
                       <span className="text-[8px] bg-red-600 text-white px-2 py-0.5 rounded font-black uppercase tracking-widest font-mono">
@@ -1657,7 +1683,12 @@ export function CombateView() {
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-2.5">
                       <Shield size={16} className={activeGroup === 'B' ? "text-gaming-gold" : "text-white/40 group-hover:text-gaming-gold"} />
-                      <span className="text-xs uppercase font-black tracking-wider">Regimento B - Suporte e Buffs</span>
+                      <div className="flex flex-col">
+                        <span className="text-xs uppercase font-black tracking-wider">Regimento B - Suporte e Buffs</span>
+                        <span className={`text-[9px] font-bold uppercase transition-colors ${7 - groupB.length <= 0 ? 'text-red-500 animate-pulse font-black' : 'text-zinc-400'}`}>
+                          {7 - groupB.length <= 0 ? '🚫 Vagas Esgotadas' : `Slots Disponíveis: ${7 - groupB.length} de 7`}
+                        </span>
+                      </div>
                     </div>
                     {activeGroup === 'B' && (
                       <span className="text-[8px] bg-gaming-gold text-black px-2 py-0.5 rounded font-black uppercase tracking-widest font-mono">
@@ -1697,7 +1728,12 @@ export function CombateView() {
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-2.5">
                       <Backpack size={16} className={activeGroup === 'C' ? "text-blue-400" : "text-white/40 group-hover:text-blue-400"} />
-                      <span className="text-xs uppercase font-black tracking-wider">Regimento C - Logística e Coleta</span>
+                      <div className="flex flex-col">
+                        <span className="text-xs uppercase font-black tracking-wider">Regimento C - Logística e Coleta</span>
+                        <span className={`text-[9px] font-bold uppercase transition-colors ${6 - groupC.length <= 0 ? 'text-red-500 animate-pulse font-black' : 'text-zinc-400'}`}>
+                          {6 - groupC.length <= 0 ? '🚫 Vagas Esgotadas' : `Slots Disponíveis: ${6 - groupC.length} de 6`}
+                        </span>
+                      </div>
                     </div>
                     {activeGroup === 'C' && (
                       <span className="text-[8px] bg-blue-500 text-white px-2 py-0.5 rounded font-black uppercase tracking-widest font-mono">
@@ -2882,44 +2918,131 @@ export function ConfiguracoesView() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Performance Optimization Section */}
-        <div className="col-span-1 lg:col-span-2 bg-linear-to-br from-gaming-purple/15 to-transparent border border-gaming-purple/20 rounded-xl p-4 flex flex-col md:flex-row items-center gap-4 shadow-lg relative overflow-hidden group">
-           <div className={`p-2.5 rounded-xl bg-gaming-purple/20 text-gaming-purple border border-gaming-purple/20 group-hover:scale-105 transition-transform shrink-0 ${isOptimizing ? 'animate-spin' : ''}`}>
-              <Zap size={20} fill="currentColor" />
-           </div>
-           <div className="flex-1 text-center md:text-left">
-              <h4 className="font-display font-bold uppercase text-sm mb-0.5 italic flex items-center justify-center md:justify-start gap-1.5">
-                Modo Desempenho
-                <span className="bg-gaming-gold/20 text-gaming-gold text-[7px] px-1.5 py-0.5 rounded-full border border-gaming-gold/20 font-black">CELULAR</span>
-              </h4>
-              <p className="text-[9px] text-white/50 uppercase font-black tracking-wider leading-tight">
-                {isEcoMode 
-                  ? "Ativo. Gráficos simplificados para um jogo super veloz em celulares."
-                  : "Modo gráfico completo com efeitos e transições ativadas."}
-              </p>
-           </div>
-           <button 
-             onClick={toggleEcoMode}
-             disabled={isOptimizing}
-             className={`px-4 py-2 rounded-lg font-display font-black uppercase tracking-wider text-[8px] sm:text-[9px] transition-all flex items-center gap-1.5 ${
-               isEcoMode 
-                ? 'bg-gaming-gold text-black hover:bg-white' 
-                : 'bg-white/5 border border-white/10 text-white hover:bg-white/10'
-             }`}
-           >
-              {isOptimizing ? (
-                 <>
-                   <div className="w-2.5 h-2.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                   <span>Otimizando...</span>
-                 </>
-              ) : isEcoMode ? (
-                 <>
-                   <Zap size={10} fill="currentColor" />
-                   <span>Gráficos Completos</span>
-                 </>
-              ) : (
-                 <span>Otimizar para Celular</span>
-              )}
-           </button>
+        <div className="col-span-1 lg:col-span-2 bg-linear-to-br from-gaming-purple/10 to-transparent border border-gaming-purple/20 rounded-xl p-5 flex flex-col gap-5 shadow-lg relative overflow-hidden">
+          <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top,rgba(157,128,245,0.05)_0%,transparent_60%)]" />
+          
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
+            <div className="flex items-center gap-3">
+              <div className={`p-2.5 rounded-xl bg-gaming-purple/20 text-gaming-purple border border-gaming-purple/20 shrink-0 ${isOptimizing ? 'animate-spin' : ''}`}>
+                <Zap size={20} fill="currentColor" />
+              </div>
+              <div>
+                <h4 className="font-display font-black uppercase text-sm italic tracking-wide flex items-center gap-1.5 text-white">
+                  Central de Performance & Hardware
+                  <span className="bg-gaming-gold/15 text-gaming-gold text-[7px] px-2 py-0.5 rounded-full border border-gaming-gold/20 font-black uppercase font-mono tracking-widest">
+                    v3.0 PRO
+                  </span>
+                </h4>
+                <p className="text-[9px] text-white/50 uppercase font-black tracking-wider leading-tight mt-0.5">
+                  Ajuste a fidelidade gráfica e consumo de bateria baseados no seu tipo de dispositivo
+                </p>
+              </div>
+            </div>
+            
+            <div className="text-left">
+              <span className="text-[8px] uppercase font-black text-white/40 tracking-widest block font-sans">PERFIL ATUAL:</span>
+              <span className={`text-[10px] font-black uppercase tracking-widest ${isEcoMode ? 'text-green-400' : 'text-gaming-gold'}`}>
+                {isEcoMode ? '⚡ MÁXIMA FLUIDEZ (CELULAR FRACO)' : '🚀 EXTRA ELEGÂNCIA (LENDÁRIO)'}
+              </span>
+            </div>
+          </div>
+
+          {/* Preset Buttons */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <button
+              onClick={() => {
+                if (!isEcoMode) {
+                  toggleEcoMode();
+                }
+              }}
+              disabled={isOptimizing}
+              className={`py-3 px-4 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1 cursor-pointer outline-none ${
+                isEcoMode 
+                  ? 'bg-green-500/10 border-green-500 text-green-100 shadow-[0_0_15px_rgba(34,197,94,0.15)] font-black' 
+                  : 'bg-white/5 border-white/5 hover:border-white/15 text-white/60 hover:text-white'
+              }`}
+            >
+              <span className="text-xs">📱 CELULAR FRACO</span>
+              <span className="text-[7px] font-bold uppercase tracking-widest text-zinc-400">FPS Máximo & Bateria</span>
+            </button>
+            
+            <button
+              onClick={() => {
+                if (isEcoMode) {
+                  toggleEcoMode();
+                }
+              }}
+              disabled={isOptimizing}
+              className={`py-3 px-4 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1 cursor-pointer outline-none ${
+                !isEcoMode 
+                  ? 'bg-gaming-gold/15 border border-gaming-gold/30 text-gaming-gold shadow-[0_0_15px_rgba(226,180,77,0.15)] font-black' 
+                  : 'bg-white/5 border-white/5 text-white/60 hover:text-white hover:border-white/15'
+              }`}
+            >
+              <span className="text-xs">⚡ NEUTRO / EQUILIBRADO</span>
+              <span className="text-[7px] font-bold uppercase tracking-widest text-zinc-400">Equilibrado / Estável</span>
+            </button>
+
+            <button
+              onClick={() => {
+                if (isEcoMode) {
+                  toggleEcoMode();
+                }
+              }}
+              disabled={isOptimizing}
+              className={`py-3 px-4 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1 cursor-pointer outline-none ${
+                !isEcoMode 
+                  ? 'bg-linear-to-r from-purple-950/40 to-gaming-card border border-gaming-purple shadow-[0_0_20px_rgba(157,128,245,0.2)] text-white font-black' 
+                  : 'bg-white/5 border-white/5 text-white/60 hover:text-white hover:border-white/15'
+              }`}
+            >
+              <span className="text-xs">🚀 PC / CELULAR FORTE</span>
+              <span className="text-[7px] font-bold uppercase tracking-widest text-zinc-400">Gráficos Ultra 120 FPS</span>
+            </button>
+          </div>
+
+          {/* Render Checklist Metrics */}
+          <div className="bg-black/40 border border-white/5 p-4 rounded-xl grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="flex flex-col gap-1">
+              <span className="text-[7px] font-bold text-white/40 uppercase tracking-widest font-mono">Processador CPU</span>
+              <div className="flex items-center gap-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full ${isEcoMode ? 'bg-green-400' : 'bg-gaming-gold'}`} />
+                <span className="text-[10px] font-black uppercase text-white font-mono">
+                  {isEcoMode ? 'Carga Reduzida (-50%)' : 'Modo Full Performance'}
+                </span>
+              </div>
+            </div>
+            
+            <div className="flex flex-col gap-1">
+              <span className="text-[7px] font-bold text-white/40 uppercase tracking-widest font-mono">Placa de Vídeo GPU</span>
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                <span className="text-[10px] font-black uppercase text-white font-mono">
+                  {isEcoMode ? 'Aceleração Compositor 3D' : 'Efeitos Shaders de Luxo'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <span className="text-[7px] font-bold text-white/40 uppercase tracking-widest font-mono">Memória RAM</span>
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                <span className="text-[10px] font-black uppercase text-white font-mono">
+                  {isEcoMode ? 'Pré-render Otimizado' : 'Modo Render Fluido'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <span className="text-[7px] font-bold text-white/40 uppercase tracking-widest font-mono">Animações & Blurs</span>
+              <div className="flex items-center gap-1.5">
+                <span className={`w-1.5 h-1.5 rounded-full ${isEcoMode ? 'bg-green-400' : 'bg-gaming-gold'}`} />
+                <span className="text-[10px] font-black uppercase text-white font-mono">
+                  {isEcoMode ? 'Ignoradas/Sem Lag' : 'Ativas 120Hz'}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="bg-gaming-card/35 border border-gaming-border rounded-xl p-4 flex flex-col gap-5 shadow-lg">
@@ -3860,21 +3983,21 @@ export function GerenciaView() {
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div className="bg-white/5 p-2 rounded-xl border border-white/5">
                     <span className="text-[8px] font-bold text-white/30 uppercase block mb-1">Grupo A</span>
-                    <span className="text-base font-black text-red-500">{members.filter(m => m.combatGroup === 'A').length}</span>
+                    <span className="text-base font-black text-red-500">{members.filter(m => m.combatGroup === 'A').length} / 7</span>
                   </div>
                   <div className="bg-white/5 p-2 rounded-xl border border-white/5">
                     <span className="text-[8px] font-bold text-white/30 uppercase block mb-1">Grupo B</span>
-                    <span className="text-base font-black text-gaming-gold">{members.filter(m => m.combatGroup === 'B').length}</span>
+                    <span className="text-base font-black text-gaming-gold">{members.filter(m => m.combatGroup === 'B').length} / 7</span>
                   </div>
                   <div className="bg-white/5 p-2 rounded-xl border border-white/5">
                     <span className="text-[8px] font-bold text-white/30 uppercase block mb-1">Grupo C</span>
-                    <span className="text-base font-black text-blue-400">{members.filter(m => m.combatGroup === 'C').length}</span>
+                    <span className="text-base font-black text-blue-400">{members.filter(m => m.combatGroup === 'C').length} / 6</span>
                   </div>
                 </div>
 
                 {/* Eligible participants waiting for validation */}
                 <div className="mt-2 flex flex-col gap-1.5 text-[10px] font-bold uppercase text-white/70">
-                  <p>Inscritos Totais: <span className="text-white font-extrabold">{members.filter(m => m.combatGroup !== undefined).length}</span></p>
+                  <p>Inscritos Totais: <span className="text-white font-extrabold">{members.filter(m => m.combatGroup !== undefined).length} / 20</span></p>
                   <p>Aguardando XP (50): <span className="text-gaming-gold font-extrabold">{members.filter(m => m.combatGroup !== undefined && m.combatGroupClaimed !== true).length}</span></p>
                 </div>
 

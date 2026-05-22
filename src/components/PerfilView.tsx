@@ -21,7 +21,7 @@ import { storage } from '../lib/firebase';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export function PerfilView() {
-  const { myMember, user, updateMemberData, completeMission, isEcoMode } = useClan();
+  const { myMember, user, updateMemberData, completeMission, isEcoMode, isGuest } = useClan();
   
   // Controls if we are viewing the clean card (false) or the edit studio (true)
   const [isEditing, setIsEditing] = useState(false);
@@ -32,12 +32,23 @@ export function PerfilView() {
   const [tempBio, setTempBio] = useState(myMember?.customBio || 'Membro leal do Clã Alcatéia Suprema. Preparado para batalhas de arena, missões estratégicas e honra de elite militar.');
   const [tempPower, setTempPower] = useState(myMember?.heroPower || 0);
 
+  const [tempAvatarUrl, setTempAvatarUrl] = useState('');
+  const [tempBannerUrl, setTempBannerUrl] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+
   useEffect(() => {
     if (myMember?.customStatus !== undefined) setTempStatus(myMember.customStatus);
     if (myMember?.name !== undefined) setTempName(myMember.name);
     if (myMember?.customBio !== undefined) setTempBio(myMember.customBio);
     if (myMember?.heroPower !== undefined) setTempPower(myMember.heroPower);
   }, [myMember]);
+
+  useEffect(() => {
+    if (isEditing) {
+      setTempAvatarUrl(myMember?.avatarUrl || '');
+      setTempBannerUrl(myMember?.profileBg || '');
+    }
+  }, [isEditing, myMember]);
 
   const [purchaseStatus, setPurchaseStatus] = useState<{ id: string, message: string, type: 'success' | 'error' } | null>(null);
   const [avatarModalOpen, setAvatarModalOpen] = useState(false);
@@ -242,31 +253,58 @@ export function PerfilView() {
     }
   };
 
-  const compressImage = (base64: string, maxWidth = 300, maxHeight = 300): Promise<string> => {
+  const compressImage = (base64: string, maxWidth = 300, maxHeight = 300, cropToSquare = false): Promise<string> => {
     return new Promise((resolve) => {
       const img = new Image();
-      img.src = base64;
+      // DO NOT set crossOrigin on base64 local data URLs as it triggers security blocks in many web environments
+      if (!base64.startsWith('data:')) {
+        img.crossOrigin = 'anonymous';
+      }
       img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        if (width > height) {
-          if (width > maxWidth) {
-            height *= maxWidth / width;
-            width = maxWidth;
+        try {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(base64);
+            return;
           }
-        } else {
-          if (height > maxHeight) {
-            width *= maxHeight / height;
-            height = maxHeight;
+
+          if (cropToSquare) {
+            const size = Math.min(img.width, img.height);
+            const sx = (img.width - size) / 2;
+            const sy = (img.height - size) / 2;
+            canvas.width = maxWidth;
+            canvas.height = maxWidth;
+            ctx.drawImage(img, sx, sy, size, size, 0, 0, maxWidth, maxWidth);
+          } else {
+            let width = img.width;
+            let height = img.height;
+            if (width > height) {
+              if (width > maxWidth) {
+                height *= maxWidth / width;
+                width = maxWidth;
+              }
+            } else {
+              if (height > maxHeight) {
+                width *= maxHeight / height;
+                height = maxHeight;
+              }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
           }
+          resolve(canvas.toDataURL('image/jpeg', 0.65)); 
+        } catch (err) {
+          console.error("Erro interno ao processar compressão em Canvas:", err);
+          resolve(base64);
         }
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        resolve(canvas.toDataURL('image/jpeg', 0.6)); 
       };
+      img.onerror = (err) => {
+        console.error("Erro ao decodificar imagem para compressão:", err);
+        resolve(base64);
+      };
+      img.src = base64;
     });
   };
 
@@ -274,15 +312,15 @@ export function PerfilView() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      alert("O arquivo é muito grande (Máximo de 10MB).");
+    const originalSizeKb = Math.round(file.size / 1024);
+
+    if (file.size > 15 * 1024 * 1024) {
+      alert(`O arquivo selecionado tem ${originalSizeKb} KB, o que é muito grande (Máximo permitido: 15 MB).`);
+      e.target.value = '';
       return;
     }
 
     try {
-      let fileToUpload: Blob | File = file;
-      let mimeType = file.type || 'image/jpeg';
-
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (event) => resolve(event.target?.result as string);
@@ -290,47 +328,21 @@ export function PerfilView() {
         reader.readAsDataURL(file);
       });
 
-      let compressedDataUrl = dataUrl;
-      const isGif = file.type === 'image/gif';
-
+      const isGif = file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif');
       if (!isGif) {
-        compressedDataUrl = await compressImage(dataUrl, 180, 180);
-        
-        const arr = compressedDataUrl.split(',');
-        const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
-        const bstr = atob(arr[1]);
-        let n = bstr.length;
-        const u8arr = new Uint8Array(n);
-        while (n--) {
-          u8arr[n] = bstr.charCodeAt(n);
-        }
-        fileToUpload = new Blob([u8arr], { type: mime });
-        mimeType = mime;
+        const compressed = await compressImage(dataUrl, 150, 150, true);
+        setTempAvatarUrl(compressed);
       } else {
-        if (file.size > 800 * 1024) {
-          alert("GIFs de perfil devem ter menos de 800KB para garantir boa performance.");
-          return;
-        }
+        setTempAvatarUrl(dataUrl);
       }
-
-      try {
-        const fileRef = storageRef(storage, `avatars/${user?.uid || 'unknown'}/${Date.now()}_${file.name}`);
-        const metadata = { contentType: mimeType };
-        const snapshot = await uploadBytes(fileRef, fileToUpload, metadata);
-        const downloadUrl = await getDownloadURL(snapshot.ref);
-
-        await updateMemberData({ avatarUrl: downloadUrl });
-      } catch (storageErr) {
-        console.warn('Firebase Storage blocked or unconfigured. Falling back to high-performance direct document save.', storageErr);
-        await updateMemberData({ avatarUrl: compressedDataUrl });
-      }
-
-      setAvatarModalOpen(false);
-      setPurchaseStatus({ id: 'avatar_upload_success', message: 'A foto de perfil foi atualizada com sucesso!', type: 'success' });
-      setTimeout(() => setPurchaseStatus(null), 2500);
+      
+      setPurchaseStatus({ id: 'avatar_preview_success', message: 'Visualização da foto carregada! Clique em Confirmar no topo para salvar.', type: 'success' });
+      setTimeout(() => setPurchaseStatus(null), 3000);
     } catch (err: any) {
-      console.error('Failed to upload/update avatar:', err);
-      alert(`Erro de upload: ${err?.message || String(err)}`);
+      console.error('Failed to preview avatar:', err);
+      alert(`Erro ao ler o arquivo de imagem: ${err.message || err}`);
+    } finally {
+      e.target.value = '';
     }
   };
 
@@ -338,15 +350,15 @@ export function PerfilView() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      alert("O arquivo de banner é muito grande (Máximo de 15MB).");
+    const originalSizeKb = Math.round(file.size / 1024);
+
+    if (file.size > 15 * 1024 * 1024) {
+      alert(`O arquivo de banner selecionado tem ${originalSizeKb} KB, o que é muito grande (Máximo permitido: 15 MB).`);
+      e.target.value = '';
       return;
     }
 
     try {
-      let fileToUpload: Blob | File = file;
-      let mimeType = file.type || 'image/jpeg';
-
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = (event) => resolve(event.target?.result as string);
@@ -354,59 +366,186 @@ export function PerfilView() {
         reader.readAsDataURL(file);
       });
 
-      let compressedDataUrl = dataUrl;
-      const isGif = file.type === 'image/gif';
-
+      const isGif = file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif');
       if (!isGif) {
-        compressedDataUrl = await compressImage(dataUrl, 500, 250);
-        
-        const arr = compressedDataUrl.split(',');
-        const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
-        const bstr = atob(arr[1]);
-        let n = bstr.length;
-        const u8arr = new Uint8Array(n);
-        while (n--) {
-          u8arr[n] = bstr.charCodeAt(n);
-        }
-        fileToUpload = new Blob([u8arr], { type: mime });
-        mimeType = mime;
+        const compressed = await compressImage(dataUrl, 500, 250);
+        setTempBannerUrl(compressed);
       } else {
-        if (file.size > 1.2 * 1024 * 1024) {
-          alert("Banners de GIF animado estão limitados a 1.2MB para preservar performance.");
-          return;
+        setTempBannerUrl(dataUrl);
+      }
+
+      setPurchaseStatus({ id: 'banner_preview_success', message: 'Visualização do banner carregada! Clique em Confirmar no topo para salvar.', type: 'success' });
+      setTimeout(() => setPurchaseStatus(null), 3000);
+    } catch (err: any) {
+      console.error('Failed to preview banner:', err);
+      alert(`Erro ao ler o arquivo de banner: ${err.message || err}`);
+    } finally {
+      e.target.value = '';
+    }
+  };
+
+  const handleSaveChanges = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      const updates: any = {};
+      
+      const isUnconfiguredFirebase = !storage?.app?.options?.storageBucket || 
+                                     storage.app.options.storageBucket.includes('remixed-') || 
+                                     storage.app.options.projectId === 'remixed-project-id';
+      
+      const skipStorage = isGuest || isUnconfiguredFirebase;
+      
+      // Helper for enforcing timeouts on promises
+      const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> => {
+        return Promise.race([
+          promise,
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms`)), timeoutMs))
+        ]);
+      };
+      
+      // 1. Verify and upload avatar if changed
+      if (tempAvatarUrl !== undefined && tempAvatarUrl !== myMember?.avatarUrl) {
+        if (tempAvatarUrl === '') {
+          updates.avatarUrl = '';
+        } else if (tempAvatarUrl.startsWith('data:')) {
+          if (skipStorage) {
+            updates.avatarUrl = tempAvatarUrl;
+          } else {
+            try {
+              const isGif = tempAvatarUrl.includes('image/gif');
+              const mimeType = isGif ? 'image/gif' : 'image/jpeg';
+              
+              const ext = isGif ? 'gif' : 'jpg';
+              const fileRef = storageRef(storage, `avatars/${user?.uid || 'unknown'}/${Date.now()}_profile.${ext}`);
+              
+              const arr = tempAvatarUrl.split(',');
+              const bstr = atob(arr[1]);
+              let n = bstr.length;
+              const u8arr = new Uint8Array(n);
+              while (n--) {
+                u8arr[n] = bstr.charCodeAt(n);
+              }
+              const blobToUpload = new Blob([u8arr], { type: mimeType });
+              const metadata = { contentType: mimeType };
+              
+              const snapshot = await withTimeout(
+                uploadBytes(fileRef, blobToUpload, metadata),
+                2500,
+                'Avatar Upload'
+              );
+              
+              const downloadUrl = await withTimeout(
+                getDownloadURL(snapshot.ref),
+                1500,
+                'Avatar URL fetch'
+              );
+              
+              updates.avatarUrl = downloadUrl;
+            } catch (storageErr: any) {
+              console.warn('Firebase Storage blocked, disabled or unconfigured. Falling back to direct document base64 save.', storageErr);
+              
+              const payloadSizeKb = Math.round((tempAvatarUrl.length * 3) / 4 / 1024);
+              if (payloadSizeKb > 550) {
+                alert(`A foto de perfil em base64 tem ${payloadSizeKb} KB, o que excede o limite de tamanho do documento (Firestore direto).\n\nPara consertar isso, mude para uma foto ou GIF animado mais compacto.`);
+                setIsSaving(false);
+                return;
+              }
+              updates.avatarUrl = tempAvatarUrl;
+            }
+          }
+        } else {
+          updates.avatarUrl = tempAvatarUrl;
         }
       }
 
-      try {
-        const fileRef = storageRef(storage, `banners/${user?.uid || 'unknown'}/${Date.now()}_${file.name}`);
-        const metadata = { contentType: mimeType };
-        const snapshot = await uploadBytes(fileRef, fileToUpload, metadata);
-        const downloadUrl = await getDownloadURL(snapshot.ref);
-
-        await updateMemberData({ profileBg: downloadUrl });
-      } catch (storageErr) {
-        console.warn('Firebase Storage blocked or unconfigured for banners. Falling back to direct document save.', storageErr);
-        await updateMemberData({ profileBg: compressedDataUrl });
+      // 2. Verify and upload banner if changed
+      if (tempBannerUrl !== undefined && tempBannerUrl !== myMember?.profileBg) {
+        if (tempBannerUrl === '') {
+          updates.profileBg = '';
+        } else if (tempBannerUrl.startsWith('data:')) {
+          if (skipStorage) {
+            updates.profileBg = tempBannerUrl;
+          } else {
+            try {
+              const isGif = tempBannerUrl.includes('image/gif');
+              const mimeType = isGif ? 'image/gif' : 'image/jpeg';
+              
+              const ext = isGif ? 'gif' : 'jpg';
+              const fileRef = storageRef(storage, `banners/${user?.uid || 'unknown'}/${Date.now()}_banner.${ext}`);
+              
+              const arr = tempBannerUrl.split(',');
+              const bstr = atob(arr[1]);
+              let n = bstr.length;
+              const u8arr = new Uint8Array(n);
+              while (n--) {
+                u8arr[n] = bstr.charCodeAt(n);
+              }
+              const blobToUpload = new Blob([u8arr], { type: mimeType });
+              const metadata = { contentType: mimeType };
+              
+              const snapshot = await withTimeout(
+                uploadBytes(fileRef, blobToUpload, metadata),
+                2500,
+                'Banner Upload'
+              );
+              
+              const downloadUrl = await withTimeout(
+                getDownloadURL(snapshot.ref),
+                1500,
+                'Banner URL fetch'
+              );
+              
+              updates.profileBg = downloadUrl;
+            } catch (storageErr: any) {
+              console.warn('Firebase Storage blocked for banners. Falling back to direct document base64 save.', storageErr);
+              
+              const payloadSizeKb = Math.round((tempBannerUrl.length * 3) / 4 / 1024);
+              if (payloadSizeKb > 550) {
+                alert(`O banner em base64 tem ${payloadSizeKb} KB, o que excede o limite tático do documento (Firestore direto).\n\nPor favor, envie um banner/GIF menor ou mais leve.`);
+                setIsSaving(false);
+                return;
+              }
+              updates.profileBg = tempBannerUrl;
+            }
+          }
+        } else {
+          updates.profileBg = tempBannerUrl;
+        }
       }
 
-      setPurchaseStatus({ id: 'banner_upload_success', message: 'Banner atualizado com sucesso!', type: 'success' });
+      // 3. Save name, bio, power and complete edit check
+      if (tempName && tempName.trim() !== myMember?.name) {
+        updates.name = tempName.trim();
+      }
+      if (tempBio !== myMember?.customBio) {
+        updates.customBio = tempBio;
+      }
+      if (Number(tempPower) !== myMember?.heroPower) {
+        updates.heroPower = Number(tempPower);
+      }
+
+      // Perform a single atomic database or localstate update!
+      if (Object.keys(updates).length > 0) {
+        await updateMemberData(updates);
+      }
+
+      completeMission('edit_hero_power', 50);
+
+      setIsEditing(false);
+      setPurchaseStatus({ id: 'all_save_success', message: 'Seu perfil foi atualizado e salvo com sucesso!', type: 'success' });
       setTimeout(() => setPurchaseStatus(null), 2500);
     } catch (err: any) {
-      console.error('Failed to upload/update banner:', err);
-      alert(`Erro de upload do banner: ${err?.message || String(err)}`);
+      console.error('Failed to save profile modifications:', err);
+      alert(`Ocorreu um erro ao salvar as alterações:\n\n${err?.message || err}`);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleSaveAccount = (e: React.FormEvent) => {
     e.preventDefault();
-    updateMemberData({
-      name: tempName,
-      customBio: tempBio,
-      heroPower: Number(tempPower)
-    });
-    completeMission('edit_hero_power', 50);
-    setPurchaseStatus({ id: 'account_save', message: 'Estatísticas Atualizadas!', type: 'success' });
-    setTimeout(() => setPurchaseStatus(null), 2000);
+    handleSaveChanges();
   };
 
   const handleSaveStatus = (evt: React.FormEvent) => {
@@ -418,22 +557,12 @@ export function PerfilView() {
 
   const handleSaveNickAndPower = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tempName.trim()) return;
-    updateMemberData({
-      name: tempName.trim(),
-      heroPower: Number(tempPower)
-    });
-    setPurchaseStatus({ id: 'nick_only_save', message: 'Estatísticas e Poder militar atualizados com sucesso!', type: 'success' });
-    setTimeout(() => setPurchaseStatus(null), 2000);
+    handleSaveChanges();
   };
 
   const handleSaveBioOnly = (e: React.FormEvent) => {
     e.preventDefault();
-    updateMemberData({
-      customBio: tempBio
-    });
-    setPurchaseStatus({ id: 'bio_only_save', message: 'Biografia salva com sucesso!', type: 'success' });
-    setTimeout(() => setPurchaseStatus(null), 2000);
+    handleSaveChanges();
   };
 
   const statusTemplates = [
@@ -623,7 +752,6 @@ export function PerfilView() {
                 )}
               </div>
             </div>
-
           </div>
         </div>
       </div>
@@ -821,7 +949,7 @@ export function PerfilView() {
             {/* Panoramic Banner Area */}
             <div className="w-full h-48 sm:h-64 md:h-80 rounded-2xl md:rounded-3xl overflow-hidden relative border border-white/5 shadow-2xl shrink-0 select-none">
               <img
-                src={myMember?.profileBg || "https://cdnb.artstation.com/p/assets/images/images/017/680/475/small/andrej-otepka-square-04-tmp04web.jpg?1556922748"}
+                src={tempBannerUrl || "https://cdnb.artstation.com/p/assets/images/images/017/680/475/small/andrej-otepka-square-04-tmp04web.jpg?1556922748"}
                 alt="Banner Base"
                 className="w-full h-full object-cover opacity-80"
               />
@@ -847,17 +975,23 @@ export function PerfilView() {
                 </div>
               )}
 
-              {/* Back button integrated inside high-end header */}
+              {/* Confirm / Cancel buttons integrated inside header */}
               <div className="absolute top-4 right-4 flex items-center gap-2.5 z-30">
-                <span className="px-2 py-0.5 bg-gaming-gold/20 text-gaming-gold border border-gaming-gold/30 rounded text-[7.5px] font-black uppercase tracking-widest">
-                  Modo Edição
-                </span>
                 <button
                   type="button"
                   onClick={() => setIsEditing(false)}
-                  className="px-3 py-1.5 bg-black/50 hover:bg-black/70 border border-white/10 text-white rounded-lg text-[9px] font-black uppercase tracking-wider transition-all hover:scale-105 active:scale-95 shadow-md flex items-center gap-1"
+                  disabled={isSaving}
+                  className="px-3 py-1.5 bg-red-950/50 hover:bg-red-950/70 border border-red-500/30 text-white rounded-lg text-[9px] font-black uppercase tracking-wider transition-all hover:scale-105 active:scale-95 shadow-md flex items-center gap-1 disabled:opacity-50"
                 >
-                  <Check size={11} /> Confirmar & Sair
+                  <X size={11} /> Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveChanges}
+                  disabled={isSaving}
+                  className="px-4 py-1.5 bg-gaming-gold hover:brightness-110 text-black rounded-lg text-[9px] font-black uppercase tracking-wider transition-all hover:scale-105 active:scale-95 shadow-md flex items-center gap-1 disabled:opacity-50"
+                >
+                  <Check size={11} /> {isSaving ? "Salvando..." : "Confirmar & Salvar"}
                 </button>
               </div>
             </div>
@@ -865,10 +999,10 @@ export function PerfilView() {
             {/* Avatar & Portrait Overlay Area */}
             <div className="relative z-10 px-4 md:px-10 flex flex-col md:flex-row md:items-end justify-between -mt-12 sm:-mt-16 md:-mt-24 mb-6">
               <div className="flex flex-col md:flex-row items-center md:items-end gap-4 md:gap-6 w-full">
-                {/* Avatar sphere */}
+                {/* Avatar sphere with preview */}
                 <div className={`w-24 h-24 sm:w-32 sm:h-32 md:w-38 md:h-38 rounded-full bg-[#18191c] p-1.5 relative flex items-center justify-center transition-all shadow-2xl ${getBorderClasses(myMember?.profileBorder)}`}>
                   <SafeAvatar
-                    src={myMember?.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.uid}`}
+                    src={tempAvatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.uid}`}
                     alt="Profile Avatar"
                     className="w-full h-full rounded-full object-cover relative z-10"
                     isEcoMode={isEcoMode}
@@ -879,11 +1013,11 @@ export function PerfilView() {
                   </div>
                 </div>
 
-                {/* Nickname and active setting instructions */}
+                {/* Nickname with live input preview */}
                 <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left gap-1 md:pb-2">
                   <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
                     <h2 className={`text-2xl sm:text-3xl md:text-4xl font-display font-black tracking-tight uppercase leading-none filter drop-shadow [text-shadow:_0_2px_10px_rgba(0,0,0,0.5)] ${getNicknameColorClass(myMember?.nicknameColor)}`}>
-                      {myMember?.name || 'Recruta'}
+                      {tempName || 'Recruta'}
                     </h2>
                     {myMember?.title && myMember?.showTitle !== false && (
                       <span className="px-2.5 py-0.5 bg-gaming-gold/10 text-gaming-gold border border-gaming-gold/20 rounded-md text-[8px] font-black uppercase tracking-widest h-fit">
@@ -931,7 +1065,7 @@ export function PerfilView() {
                   Personalizando: {sidebarItems.find(i => i.id === activeTab)?.label}
                 </span>
                 <p className="text-[9px] text-zinc-400 font-semibold uppercase tracking-wider mt-1">
-                  {activeTab === 'nick' && 'Defina seu novo nome de guerra para os canais do clã.'}
+                   {activeTab === 'nick' && 'Defina seu novo nome de guerra para os canais do clã.'}
                   {activeTab === 'bio' && 'Escreva uma frase marcante sobre suas conquistas e história militar.'}
                   {activeTab === 'avatar' && 'Personalize a moldura e mude a foto/GIF de exibição para destacar seu avatar.'}
                   {activeTab === 'effects' && 'Equipe fundos rúnicos estáticos ou ative efeitos de movimento no seu banner.'}
@@ -1022,7 +1156,7 @@ export function PerfilView() {
                       <div className="flex flex-col gap-1.5">
                         <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Foto de Perfil Personalizada</label>
                         <p className="text-[9px] text-zinc-500 font-semibold uppercase tracking-wider leading-normal">
-                          Mude sua foto para uma de seu computador, incluindo GIFs animados!
+                          Mude sua foto temporariamente para visualizar o resultado e depois clique em Salvar para gravar!
                         </p>
                       </div>
 
@@ -1043,6 +1177,49 @@ export function PerfilView() {
                             <span className="text-[9px] text-zinc-400 uppercase font-black tracking-wide">Aceita PNG, JPEG, WEBP ou GIF Animado</span>
                           </div>
                         </button>
+
+                        {tempAvatarUrl !== '' && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTempAvatarUrl('');
+                              setPurchaseStatus({ id: 'avatar_preview_success', message: 'Visualização alternada para foto padrão! Clique em Salvar.', type: 'success' });
+                              setTimeout(() => setPurchaseStatus(null), 3000);
+                            }}
+                            className="p-4 bg-red-950/20 hover:bg-red-950/35 border border-red-500/30 hover:border-red-500/50 rounded-2xl flex items-center gap-4 transition-all text-left group"
+                          >
+                            <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400 shrink-0">
+                              <X size={18} />
+                            </div>
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-xs font-black uppercase tracking-wider text-white group-hover:text-red-400 transition-colors">Usar Foto de Perfil Padrão</span>
+                              <span className="text-[9px] text-zinc-400 uppercase font-black tracking-wide">Restaurar avatar do Dicebear baseado no seu ID</span>
+                            </div>
+                          </button>
+                        )}
+
+                        {tempAvatarUrl !== myMember?.avatarUrl && (
+                          <div className="p-3 bg-gaming-gold/10 border border-gaming-gold/20 rounded-xl flex flex-col gap-1 mt-2">
+                            <span className="text-[9px] font-black text-gaming-gold uppercase tracking-wider">⚠️ Preview Ativo (Não Salvo)</span>
+                            <span className="text-[8.5px] text-zinc-400 uppercase font-bold leading-relaxed">
+                              Sua foto/GIF alterada está sendo exibida acima. Você precisa clicar em "Confirmar e Salvar" para gravá-la em seu perfil de verdade.
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between gap-4 pt-3 border-t border-white/5 mt-2">
+                        {purchaseStatus?.id === 'avatar_preview_success' ? (
+                          <span className="text-[9px] text-gaming-gold font-black uppercase tracking-wider animate-pulse">{purchaseStatus.message}</span>
+                        ) : <span />}
+                        <button
+                          type="button"
+                          onClick={handleSaveChanges}
+                          disabled={isSaving}
+                          className="px-5 py-2.5 bg-[#248046] hover:bg-[#1a6535] disabled:opacity-50 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all hover:scale-105 active:scale-95 shadow-md flex items-center gap-1"
+                        >
+                          {isSaving ? 'Gravando...' : 'Confirmar e Salvar'}
+                        </button>
                       </div>
                     </div>
                   )}
@@ -1053,7 +1230,7 @@ export function PerfilView() {
                       <div className="flex flex-col gap-1.5">
                         <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Banner de Perfil Personalizado</label>
                         <p className="text-[9px] text-zinc-500 font-semibold uppercase tracking-wider leading-normal">
-                          Destaque seu painel enviando uma foto de fundo customizada ou um GIF animado!
+                          Selecione um arquivo de banner temporário e veja a mágica acontecer acima no preview!
                         </p>
                       </div>
 
@@ -1075,15 +1252,51 @@ export function PerfilView() {
                           </div>
                         </button>
 
-                        {purchaseStatus?.id === 'banner_upload_success' && (
-                          <p className="text-[9px] text-green-400 font-black uppercase tracking-wider animate-pulse pt-1">
-                            {purchaseStatus.message}
-                          </p>
+                        {tempBannerUrl !== '' && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTempBannerUrl('');
+                              setPurchaseStatus({ id: 'banner_preview_success', message: 'Visualização alternada para banner padrão! Clique em Salvar.', type: 'success' });
+                              setTimeout(() => setPurchaseStatus(null), 3000);
+                            }}
+                            className="p-4 bg-red-950/20 hover:bg-red-950/35 border border-red-500/30 hover:border-red-500/50 rounded-2xl flex items-center gap-4 transition-all text-left group"
+                          >
+                            <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400 shrink-0">
+                              <X size={18} />
+                            </div>
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-xs font-black uppercase tracking-wider text-white group-hover:text-red-400 transition-colors">Usar Banner de Perfil Padrão</span>
+                              <span className="text-[9px] text-zinc-400 uppercase font-black tracking-wide">Restaurar banner clássico rúnico de lobos</span>
+                            </div>
+                          </button>
                         )}
+
+                        {tempBannerUrl !== myMember?.profileBg && (
+                          <div className="p-3 bg-gaming-gold/10 border border-gaming-gold/20 rounded-xl flex flex-col gap-1 mt-2">
+                            <span className="text-[9px] font-black text-gaming-gold uppercase tracking-wider">⚠️ Preview Ativo (Não Salvo)</span>
+                            <span className="text-[8.5px] text-zinc-400 uppercase font-bold leading-relaxed">
+                              Seu novo banner de fundo/GIF está sendo exibido acima. Clique em "Confirmar e Salvar" para gravá-lo permanentemente!
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center justify-between gap-4 pt-3 border-t border-white/5 mt-2">
+                        {purchaseStatus?.id === 'banner_preview_success' ? (
+                          <span className="text-[9px] text-gaming-gold font-black uppercase tracking-wider animate-pulse">{purchaseStatus.message}</span>
+                        ) : <span />}
+                        <button
+                          type="button"
+                          onClick={handleSaveChanges}
+                          disabled={isSaving}
+                          className="px-5 py-2.5 bg-[#248046] hover:bg-[#1a6535] disabled:opacity-50 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all hover:scale-105 active:scale-95 shadow-md flex items-center gap-1"
+                        >
+                          {isSaving ? 'Gravando...' : 'Confirmar e Salvar'}
+                        </button>
                       </div>
                     </div>
                   )}
-
                   {/* TAB 5: PLACA DE IDENTIFICAÇÃO */}
                   {activeTab === 'nameplate' && (
                     <div className="bg-black/30 p-8 rounded-2xl border border-white/5 flex flex-col items-center justify-center text-center gap-4 py-16">

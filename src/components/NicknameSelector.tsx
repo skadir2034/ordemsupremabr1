@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { User, Check, ArrowRight, ShieldCheck, LogOut } from 'lucide-react';
+import { User, Check, ArrowRight, ShieldCheck, LogOut, Gamepad2 } from 'lucide-react';
 import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
 
 interface NicknameSelectorProps {
   onSelect: (nickname: string) => void;
   loading?: boolean;
+  onSelectGuest?: (nickname: string) => void;
 }
 
-export function NicknameSelector({ onSelect, loading }: NicknameSelectorProps) {
+export function NicknameSelector({ onSelect, loading, onSelectGuest }: NicknameSelectorProps) {
   const [nickname, setNickname] = useState('');
   const [error, setError] = useState('');
 
@@ -93,6 +94,29 @@ export function NicknameSelector({ onSelect, loading }: NicknameSelectorProps) {
               </>
             )}
           </button>
+
+          {onSelectGuest && (
+            <button 
+              type="button"
+              disabled={loading}
+              onClick={async () => {
+                const nameToUse = nickname.trim() || 'Guerreiro';
+                if (nameToUse.length < 3) {
+                  setError('Digite pelo menos 3 caracteres para o Nick de Convidado');
+                  return;
+                }
+                try {
+                  await signOut(auth);
+                  onSelectGuest(nameToUse);
+                } catch (e) {
+                  console.error(e);
+                }
+              }}
+              className="w-full bg-linear-to-r from-gaming-purple/80 to-pink-500/80 text-white py-3.5 rounded-2xl font-display font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:brightness-110 transition-all text-xs"
+            >
+              <Gamepad2 size={14} /> Entrar em Modo Demo (Convidado Local)
+            </button>
+          )}
           
           <button 
             type="button"
