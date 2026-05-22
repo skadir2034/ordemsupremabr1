@@ -1,6 +1,6 @@
 {
-  "name": "Remix: Continuação site (Parte 3)",
-  "description": "",
+  "name": "Aliança Suprema Ordem",
+  "description": "Painel completo de controle, estatísticas, missões e gerenciamento para o clã Aliança Suprema Ordem.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
