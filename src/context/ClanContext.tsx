@@ -118,7 +118,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [isEcoMode, setIsEcoMode] = useState<boolean>(() => {
     const saved = localStorage.getItem('isEcoMode');
-    return saved === 'true';
+    return saved === null ? true : saved === 'true';
   });
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [theftReports, setTheftReports] = useState<TheftReport[]>([]);
@@ -742,6 +742,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await updateDoc(memberRef, finalData);
     } catch (err) {
       handleFirestoreError(err, OperationType.UPDATE, `clans/${DEFAULT_CLAN_ID}/members/${user.uid}`);
+      throw err;
     }
   };
 
