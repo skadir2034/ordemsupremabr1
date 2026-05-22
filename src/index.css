@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-  --color-gaming-bg: #090611;
-  --color-gaming-card: #120e1e;
-  --color-gaming-border: rgba(157, 128, 245, 0.12);
-  --color-gaming-gold: #e2b44d;
-  --color-gaming-purple: #9d80f5;
-  --color-gaming-accent: #e2b44d;
+  --color-gaming-bg: #04140e;
+  --color-gaming-card: #091e15;
+  --color-gaming-border: rgba(52, 211, 153, 0.15);
+  --color-gaming-gold: #fbbf24;
+  --color-gaming-purple: #3b82f6;
+  --color-gaming-accent: #10b981;
   
   --font-sans: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Outfit", "Oswald", "Plus Jakarta Sans", sans-serif;
   
-  --shadow-gaming: 0 0 16px rgba(226, 180, 77, 0.08);
-  --shadow-gaming-lg: 0 0 32px rgba(157, 128, 245, 0.12);
+  --shadow-gaming: 0 0 16px rgba(52, 211, 153, 0.08);
+  --shadow-gaming-lg: 0 0 32px rgba(59, 130, 246, 0.12);
 }
 
 @layer base {
@@ -75,40 +75,54 @@
   .hex-clip {
     clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
   }
+
+  /* GPU Compositing layer acceleration for weaker mobile devices */
+  .gpu-accelerate {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+    will-change: transform, opacity;
+  }
+
+  /* Lazy painting of offscreen lists (massive layout save on mobile) */
+  .content-visibility-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 500px;
+  }
 }
 
 [data-theme='neon'] {
-  --color-gaming-bg: #06050b;
-  --color-gaming-card: #0c0916;
-  --color-gaming-border: rgba(157, 128, 245, 0.1);
-  --color-gaming-gold: #f1cf7e;
-  --color-gaming-purple: #b39bf7;
-  --color-gaming-accent: #f1cf7e;
+  --color-gaming-bg: #03120a;
+  --color-gaming-card: #081b0f;
+  --color-gaming-border: rgba(16, 185, 129, 0.2);
+  --color-gaming-gold: #facc15;
+  --color-gaming-purple: #0ea5e9;
+  --color-gaming-accent: #10b981;
 }
 
 [data-theme='dark'] {
-  --color-gaming-bg: #090611;
-  --color-gaming-card: #120e1e;
-  --color-gaming-border: rgba(157, 128, 245, 0.12);
-  --color-gaming-gold: #e2b44d;
-  --color-gaming-purple: #9d80f5;
-  --color-gaming-accent: #e2b44d;
+  --color-gaming-bg: #04140e;
+  --color-gaming-card: #091e15;
+  --color-gaming-border: rgba(52, 211, 153, 0.15);
+  --color-gaming-gold: #fbbf24;
+  --color-gaming-purple: #3b82f6;
+  --color-gaming-accent: #10b981;
 }
 
 [data-theme='gold'] {
-  --color-gaming-bg: #0f0a05;
-  --color-gaming-card: #18110b;
-  --color-gaming-border: rgba(226, 180, 77, 0.12);
-  --color-gaming-gold: #e2b44d;
-  --color-gaming-purple: #a88ef5;
-  --color-gaming-accent: #e2b44d;
+  --color-gaming-bg: #0a0e05;
+  --color-gaming-card: #141b0b;
+  --color-gaming-border: rgba(234, 179, 8, 0.2);
+  --color-gaming-gold: #eab308;
+  --color-gaming-purple: #2563eb;
+  --color-gaming-accent: #eab308;
 }
 
 [data-theme='classic'] {
-  --color-gaming-bg: #060608;
-  --color-gaming-card: #101014;
-  --color-gaming-border: rgba(255, 255, 255, 0.05);
-  --color-gaming-gold: #ebd4a4;
-  --color-gaming-purple: #9fa7be;
-  --color-gaming-accent: #ebd4a4;
+  --color-gaming-bg: #030f0c;
+  --color-gaming-card: #0a1f1a;
+  --color-gaming-border: rgba(255, 255, 255, 0.1);
+  --color-gaming-gold: #ffd700;
+  --color-gaming-purple: #60a5fa;
+  --color-gaming-accent: #ffd700;
 }

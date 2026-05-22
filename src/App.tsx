@@ -11,10 +11,11 @@ import { NicknameSelector } from './components/NicknameSelector';
 import { useClan } from './context/ClanContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { useDevice } from './hooks/useDevice';
-import { Monitor, Smartphone, RefreshCw, Loader2, ShieldAlert, LogOut, Database, Key, AlertTriangle } from 'lucide-react';
+import { Loader2, ShieldAlert, LogOut, Database, Key, AlertTriangle, Gamepad2, RefreshCw } from 'lucide-react';
 import { LevelUpModal } from './components/LevelUpModal';
 import { db } from './lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import { BrazilianConfetti, ChampionsTicker, ChampionsNoticeCard } from './components/BrazilianCelebration';
 
 import { 
   CombateView, 
@@ -29,8 +30,8 @@ import {
 import { MissoesView } from './components/MissoesView';
 
 export default function App() {
-  const { isMobile, viewMode, setViewMode } = useDevice();
-  const { user, loading, clan, members, myMember, isOptimizing, isEcoMode, updateMemberData, logout, activeTab, setActiveTab, dbError, retryConnection, isGuest, guestTimeLeft } = useClan();
+  const { isMobile } = useDevice();
+  const { user, loading, clan, members, myMember, isOptimizing, isEcoMode, updateMemberData, logout, activeTab, setActiveTab, dbError, retryConnection, isGuest, guestTimeLeft, loginAsGuest } = useClan();
   const [initializing, setInitializing] = useState(false);
   const [isBanned, setIsBanned] = useState(false);
   
@@ -109,29 +110,8 @@ export default function App() {
             exit={!isEcoMode ? { opacity: 0, scale: 0.98 } : { opacity: 1 }}
             className={`flex flex-col gap-4 md:gap-6 flex-1`}
           >
-            {/* Banner Urgente de Guerra (Topo) */}
-            <motion.div 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="relative overflow-hidden group cursor-pointer"
-              onClick={() => setActiveTab('guia')}
-            >
-              <div className="absolute inset-0 bg-red-600/5 animate-pulse" />
-              <div className="relative border border-red-500/20 bg-red-950/20 backdrop-blur-md px-4 py-2 rounded-xl flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
-                  <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] text-red-500 italic">
-                    Prioridade Máxima: Convocação para Guerra de Servidores
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="hidden sm:inline text-[9px] uppercase font-bold text-white/40 group-hover:text-white transition-colors">
-                    Ver Estratégias
-                  </span>
-                  <ShieldAlert className="text-red-500" size={14} />
-                </div>
-              </div>
-            </motion.div>
+            {/* Champions Celebration Notice Banner */}
+            <ChampionsNoticeCard />
 
             {/* Top Section - Clan Info (Always visible on Inicio) */}
             <div className={isMobile ? 'w-full' : 'col-span-12'}>
@@ -322,6 +302,20 @@ export default function App() {
               >
                 Tentar Sincronizar Novamente
               </button>
+
+              <button
+                onClick={async () => {
+                  try {
+                    await logout();
+                    await loginAsGuest("Skadir");
+                  } catch (e) {
+                    console.error("Erro ao alternar para convidado:", e);
+                  }
+                }}
+                className="w-full py-3.5 bg-gradient-to-r from-gaming-purple to-pink-500 text-white rounded-lg font-display font-black uppercase tracking-widest hover:brightness-110 transition-all text-xs flex items-center justify-center gap-2"
+              >
+                <Gamepad2 size={14} /> Entrar em Modo Demo (Convidado Local)
+              </button>
               
               <button
                 onClick={() => logout()}
@@ -412,6 +406,7 @@ export default function App() {
       <NicknameSelector 
         onSelect={handleJoinClan} 
         loading={initializing} 
+        onSelectGuest={loginAsGuest}
       />
     );
   }
@@ -422,34 +417,11 @@ export default function App() {
       style={{ '--ui-opacity': (myMember?.opacityLevel || 80) / 100 } as React.CSSProperties}
       className={`flex min-h-screen bg-gaming-bg text-white selection:bg-gaming-gold/30 overflow-x-hidden font-sans ${isMobile ? 'flex-col' : 'flex-row'} ${isEcoMode ? 'eco-mode' : ''}`}
     >
-      {/* View Mode Toggle */}
-      <div className="fixed top-4 left-4 z-[100] flex gap-1 bg-gaming-card/80 backdrop-blur-md p-1 rounded-xl border border-gaming-border shadow-2xl">
-        <button 
-          onClick={() => setViewMode('auto')}
-          className={`p-2 rounded-lg transition-all ${viewMode === 'auto' ? 'bg-gaming-gold text-black shadow-[0_0_10px_rgba(251,191,36,0.5)]' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
-          title="Automático"
-        >
-          <RefreshCw size={16} />
-        </button>
-        <button 
-          onClick={() => setViewMode('desktop')}
-          className={`p-2 rounded-lg transition-all ${viewMode === 'desktop' ? 'bg-gaming-gold text-black shadow-[0_0_10px_rgba(251,191,36,0.5)]' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
-          title="Desktop"
-        >
-          <Monitor size={16} />
-        </button>
-        <button 
-          onClick={() => setViewMode('mobile')}
-          className={`p-2 rounded-lg transition-all ${viewMode === 'mobile' ? 'bg-gaming-gold text-black shadow-[0_0_10px_rgba(251,191,36,0.5)]' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
-          title="Celular"
-        >
-          <Smartphone size={16} />
-        </button>
-      </div>
-
+      <BrazilianConfetti />
       <Sidebar isMobile={isMobile} activeTab={activeTab} setActiveTab={setActiveTab} />
       
       <main className={`flex-1 flex flex-col gaming-gradient min-h-screen transition-all duration-500 ${!isMobile ? 'ml-16' : 'pb-20'}`}>
+        <ChampionsTicker />
         <Header isMobile={isMobile} />
         <InitialNotice onExplore={() => setActiveTab('guia')} />
         <UpdateRewardNotice />
