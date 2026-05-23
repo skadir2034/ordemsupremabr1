@@ -28,6 +28,7 @@ import {
   GuiaView
 } from './components/Views';
 import { MissoesView } from './components/MissoesView';
+import ManualHonraView from './components/ManualHonraView';
 
 export default function App() {
   const { isMobile } = useDevice();
@@ -138,6 +139,8 @@ export default function App() {
         );
       case 'combate':
         return <CombateView />;
+      case 'manual_honra':
+        return <ManualHonraView />;
       case 'mapa':
         return <MapaView />;
       case 'perfil':

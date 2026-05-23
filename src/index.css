@@ -29,10 +29,8 @@
   }
   
   .eco-mode, .eco-mode * {
-    animation-duration: 0s !important;
-    animation-delay: 0s !important;
-    transition-duration: 0s !important;
-    transition-delay: 0s !important;
+    animation: none !important;
+    transition: none !important;
     box-shadow: none !important;
     text-shadow: none !important;
     filter: none !important;
@@ -41,23 +39,24 @@
   }
 
   .eco-mode .gaming-gradient {
-    background: #090611 !important;
+    background: #04140e !important;
   }
 
   /* Replace heavy blurs with solid styling to avoid mobile GPU lag */
-  .eco-mode .bg-gaming-card\/30,
-  .eco-mode .bg-gaming-card\/40,
-  .eco-mode .bg-gaming-card\/60,
-  .eco-mode .bg-gaming-card\/80,
-  .eco-mode .bg-white\/5,
+  .eco-mode .bg-gaming-card/30,
+  .eco-mode .bg-gaming-card/40,
+  .eco-mode .bg-gaming-card/60,
+  .eco-mode .bg-gaming-card/80,
+  .eco-mode .bg-white/5,
   .eco-mode .backdrop-blur-sm,
   .eco-mode .backdrop-blur-md,
   .eco-mode .backdrop-blur-lg,
   .eco-mode .backdrop-blur-xl,
-  .eco-mode .backdrop-blur-2xl {
+  .eco-mode .backdrop-blur-2xl,
+  .eco-mode .backdrop-blur-3xl {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    background-color: #120e1e !important;
+    background-color: #091e15 !important;
   }
 
   .eco-mode .border-white\/10 {
@@ -126,3 +125,35 @@
   --color-gaming-purple: #60a5fa;
   --color-gaming-accent: #ffd700;
 }
+
+@keyframes fall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.8; }
+  90% { opacity: 0.8; }
+  100% { transform: translateY(340px) rotate(360deg); opacity: 0; }
+}
+
+@keyframes rise {
+  0% { transform: translateY(340px) scale(0.6); opacity: 0; }
+  15% { opacity: 1; mix-blend-mode: screen; }
+  85% { opacity: 1; }
+  100% { transform: translateY(-20px) scale(1.3); opacity: 0; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fall {
+  animation: fall linear infinite;
+}
+
+.animate-rise {
+  animation: rise linear infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
