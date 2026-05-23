@@ -95,6 +95,8 @@ interface ClanContextType {
   reportTheft: () => Promise<void>;
   claimUpdateReward: () => Promise<void>;
   distributeElixirXP: () => Promise<number>;
+  approveRatoReward: (userId: string) => Promise<void>;
+  approveElixirReward: (userId: string) => Promise<void>;
   theftReports: TheftReport[];
   clearTheftReport: (reportId: string) => Promise<void>;
   activeTab: string;
@@ -133,9 +135,9 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (saved) {
       try {
         const loaded: Member[] = JSON.parse(saved);
-        // Force donations to be 0 for all existing members in storage as requested ("Zere as doações")
-        if (loaded.some(m => m.donations !== 0)) {
-          const updated = loaded.map(m => ({ ...m, donations: 0 }));
+        // Force donations and trophies (insignias) to be 0 as requested ("Zere as doações e as insígnias de todos")
+        if (loaded.some(m => m.donations !== 0 || m.trophies !== 0)) {
+          const updated = loaded.map(m => ({ ...m, donations: 0, trophies: 0 }));
           localStorage.setItem('local_members', JSON.stringify(updated));
           return updated;
         }
@@ -145,14 +147,14 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
     
-    // Initialize with nice default members so the clan is populated
+    // Initialize with nice default members so the clã is populated
     const defaultMembers: Member[] = [
       {
         id: 'skadir_leader',
         userId: 'skadir_leader',
         name: 'Skadir',
         role: 'leader',
-        trophies: 4500,
+        trophies: 0,
         donations: 0,
         heroPower: 9200,
         diamonds: 1500,
@@ -170,7 +172,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
         userId: 'miyake_warrior',
         name: 'Miyake',
         role: 'warrior',
-        trophies: 2800,
+        trophies: 0,
         donations: 0,
         heroPower: 5400,
         diamonds: 200,
@@ -188,7 +190,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
         userId: 'riccardo_diplomat',
         name: 'Riccardo',
         role: 'diplomat',
-        trophies: 3400,
+        trophies: 0,
         donations: 0,
         heroPower: 7200,
         diamonds: 800,
@@ -206,7 +208,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
         userId: 'lobo_warrior',
         name: 'guerreiro lobo',
         role: 'warrior',
-        trophies: 1500,
+        trophies: 0,
         donations: 0,
         heroPower: 3100,
         diamonds: 50,
@@ -224,7 +226,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
         userId: 'riccelli_diplomat',
         name: 'Riccelli',
         role: 'diplomat',
-        trophies: 2100,
+        trophies: 0,
         donations: 0,
         heroPower: 4500,
         diamonds: 150,
@@ -1006,7 +1008,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const claimUpdateReward = async () => {
-    if (!user || !myMember || myMember.updateRewardClaimed) return;
+    if (!user || !myMember || isGuest || myMember.updateRewardClaimed) return;
     
     await updateMemberData({
       coins: (myMember.coins || 0) + 50,
@@ -1032,11 +1034,17 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
             else break;
           }
           calculatedLevel = Math.min(calculatedLevel, 10);
+          const completed = m.completedMissions || [];
+          const newCompleted = [...completed];
+          if (!newCompleted.includes('elixir_confirm')) {
+            newCompleted.push('elixir_confirm');
+          }
           return {
             ...m,
             xp: newXp,
             level: Math.max(m.level || 1, calculatedLevel),
-            combatGroupClaimed: true
+            combatGroupClaimed: true,
+            completedMissions: newCompleted
           };
         }
         return m;
@@ -1058,15 +1066,138 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       calculatedLevel = Math.min(calculatedLevel, 10);
 
+      const completed = m.completedMissions || [];
+      const newCompleted = [...completed];
+      if (!newCompleted.includes('elixir_confirm')) {
+        newCompleted.push('elixir_confirm');
+      }
+
       const memberRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'members', m.userId);
       await updateDoc(memberRef, {
         xp: newXp,
         level: Math.max(m.level || 1, calculatedLevel),
-        combatGroupClaimed: true
+        combatGroupClaimed: true,
+        completedMissions: newCompleted
       });
     }
 
     return count;
+  };
+
+  const approveRatoReward = async (userId: string) => {
+    if (!user || !myMember) return;
+    const thresholds = [0, 0, 100, 200, 400, 700, 1100, 1600, 2200, 2900, 3700];
+
+    if ((user as any).isGuest) {
+      const currentMembers = getLocalMembers();
+      const updated = currentMembers.map(m => {
+        if (m.userId === userId) {
+          const completed = m.completedMissions || [];
+          const cleanCompleted = completed.filter(s => s !== 'caca_rato_pending');
+          if (!cleanCompleted.includes('caca_rato_confirm')) {
+            cleanCompleted.push('caca_rato_confirm');
+          }
+          const newXp = (m.xp || 0) + 25;
+          let calculatedLevel = 1;
+          for (let i = 0; i < thresholds.length; i++) {
+            if (newXp >= thresholds[i]) calculatedLevel = i;
+            else break;
+          }
+          calculatedLevel = Math.min(calculatedLevel, 10);
+          return {
+            ...m,
+            xp: newXp,
+            level: Math.max(m.level || 1, calculatedLevel),
+            completedMissions: cleanCompleted
+          };
+        }
+        return m;
+      });
+      localStorage.setItem('local_members', JSON.stringify(updated));
+      setMembers(updated);
+      return;
+    }
+
+    const targetMember = members.find(m => m.userId === userId);
+    if (!targetMember) return;
+    const completed = targetMember.completedMissions || [];
+    const cleanCompleted = completed.filter(s => s !== 'caca_rato_pending');
+    if (!cleanCompleted.includes('caca_rato_confirm')) {
+      cleanCompleted.push('caca_rato_confirm');
+    }
+    const newXp = (targetMember.xp || 0) + 25;
+    let calculatedLevel = 1;
+    for (let i = 0; i < thresholds.length; i++) {
+      if (newXp >= thresholds[i]) calculatedLevel = i;
+      else break;
+    }
+    calculatedLevel = Math.min(calculatedLevel, 10);
+
+    const memberRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'members', userId);
+    await updateDoc(memberRef, {
+      xp: newXp,
+      level: Math.max(targetMember.level || 1, calculatedLevel),
+      completedMissions: cleanCompleted
+    });
+  };
+
+  const approveElixirReward = async (userId: string) => {
+    if (!user || !myMember) return;
+    const thresholds = [0, 0, 100, 200, 400, 700, 1100, 1600, 2200, 2900, 3700];
+
+    if ((user as any).isGuest) {
+      const currentMembers = getLocalMembers();
+      const updated = currentMembers.map(m => {
+        if (m.userId === userId) {
+          const completed = m.completedMissions || [];
+          const cleanCompleted = completed.filter(s => s !== 'elixir_pending');
+          if (!cleanCompleted.includes('elixir_confirm')) {
+            cleanCompleted.push('elixir_confirm');
+          }
+          const newXp = (m.xp || 0) + 50;
+          let calculatedLevel = 1;
+          for (let i = 0; i < thresholds.length; i++) {
+            if (newXp >= thresholds[i]) calculatedLevel = i;
+            else break;
+          }
+          calculatedLevel = Math.min(calculatedLevel, 10);
+          return {
+            ...m,
+            xp: newXp,
+            level: Math.max(m.level || 1, calculatedLevel),
+            completedMissions: cleanCompleted,
+            combatGroupClaimed: true
+          };
+        }
+        return m;
+      });
+      localStorage.setItem('local_members', JSON.stringify(updated));
+      setMembers(updated);
+      return;
+    }
+
+    const targetMember = members.find(m => m.userId === userId);
+    if (!targetMember) return;
+    const completed = targetMember.completedMissions || [];
+    const cleanCompleted = completed.filter(s => s !== 'elixir_pending');
+    if (!cleanCompleted.includes('elixir_confirm')) {
+      cleanCompleted.push('elixir_confirm');
+    }
+    const newXp = (targetMember.xp || 0) + 50;
+    let calculatedLevel = 1;
+    for (let i = 0; i < thresholds.length; i++) {
+      if (newXp >= thresholds[i]) calculatedLevel = i;
+      else break;
+    }
+    calculatedLevel = Math.min(calculatedLevel, 10);
+
+    const memberRef = doc(db, 'clans', DEFAULT_CLAN_ID, 'members', userId);
+    await updateDoc(memberRef, {
+      xp: newXp,
+      level: Math.max(targetMember.level || 1, calculatedLevel),
+      combatGroupClaimed: true,
+      completedMissions: cleanCompleted
+    });
   };
 
   const clearTheftReport = async (reportId: string) => {
@@ -1092,6 +1223,7 @@ export const ClanProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isEcoMode, toggleEcoMode, isOptimizing,
       reportTheft, theftReports, clearTheftReport,
       claimUpdateReward, distributeElixirXP,
+      approveRatoReward, approveElixirReward,
       activeTab, setActiveTab,
       dbError,
       retryConnection,
