@@ -7,7 +7,7 @@ export function BaseStats({ isMobile = false }: { isMobile?: boolean }) {
   
   const stats = [
     { label: 'Ranking Geral', value: `Top ${Math.min(100, Math.max(10, 500 - (myMember?.level || 1) * 10))}º`, icon: Trophy, color: 'text-yellow-500' },
-    { label: 'Conquistas Totais', value: `${(myMember?.trophies || 0).toLocaleString()} de 100`, icon: Star, color: 'text-gaming-gold' },
+    { label: 'Insígnias Totais', value: `${(myMember?.trophies || 0).toLocaleString()} de 100`, icon: Star, color: 'text-gaming-gold' },
     { label: 'Membros Ativos', value: `${members.length}`, icon: Users, color: 'text-gaming-purple' },
     { label: 'Poder de Herói', value: `${(myMember?.heroPower || 0).toLocaleString()}`, icon: Target, color: 'text-orange-400' },
     { label: 'Capacidade', value: `${members.length} / ${clan?.capacity && clan.capacity > 1 ? clan.capacity : 100}`, icon: Shield, color: 'text-blue-400', progress: (members.length / (clan?.capacity && clan.capacity > 1 ? clan.capacity : 100)) * 100 },

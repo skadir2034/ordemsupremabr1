@@ -21,6 +21,7 @@ import {
   Clock,
   Compass,
   Camera,
+  Calendar,
   ShoppingBag,
   CreditCard,
   Gift,
@@ -1280,7 +1281,7 @@ export function GuiaView() {
 
 // --- COMBATE VIEW ---
 export function CombateView() {
-  const { isGuest, myMember, members, updateMemberData, isEcoMode } = useClan();
+  const { isGuest, myMember, members, updateMemberData, isEcoMode, completeMission } = useClan();
   const [loading, setLoading] = useState(false);
 
   // Countdown support for Brasilia Time (GMT-3)
@@ -1311,8 +1312,20 @@ export function CombateView() {
     return () => clearInterval(timer);
   }, []);
 
+  // Complete Espírito Engajado mission instantly upon opening events page with a completed or pending registration
+  useEffect(() => {
+    const hasEventParticipation = myMember?.combatGroup || 
+      myMember?.completedMissions?.includes('caca_rato_pending') || 
+      myMember?.completedMissions?.includes('caca_rato_confirm');
+      
+    if (hasEventParticipation && !myMember?.completedMissions?.includes('open_missions_and_event')) {
+      completeMission('open_missions_and_event', 25);
+    }
+  }, [myMember?.combatGroup, myMember?.completedMissions, completeMission]);
+
   // Get active combat group
   const activeGroup = myMember?.combatGroup;
+  const [selectedEvent, setSelectedEvent] = useState<'elixir' | 'rato' | null>(null);
 
   const handleRegisterGroup = async (group: 'A' | 'B' | 'C') => {
     if (isGuest) {
@@ -1340,15 +1353,184 @@ export function CombateView() {
 
     setLoading(true);
     try {
+      const hasClaimedElixir = myMember.completedMissions?.includes('elixir_confirm');
+      if (hasClaimedElixir) {
+        alert("Sua participação na Luta pelo Elixir já foi liberada e creditada por um líder!");
+        return;
+      }
+      const isPending = myMember.completedMissions?.includes('elixir_pending');
+      let newCompleted = myMember.completedMissions || [];
+      if (!isPending) {
+        newCompleted = [...newCompleted, 'elixir_pending'];
+      }
+
       await updateMemberData({
         combatGroup: group,
-        combatGroupClaimed: myMember.combatGroupClaimed || false
+        combatGroupClaimed: false,
+        completedMissions: newCompleted
       });
       playConnectionSound(true);
-      alert("Operação confirmada sob juramento de sangue! Você receberá 50 XP após a conclusão do evento.");
+      alert(`Alistamento confirmado no Regimento ${group}! A sua participação foi registrada e aguarda confirmação final do Líder Supremo no Painel de Liderança para liberar seus 50 XP.`);
     } catch (err) {
       console.error(err);
       alert("Falha ao registrar regimento de combate.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRegisterRato = async () => {
+    if (isGuest) {
+      alert("Contas de convidado temporárias não podem participar de nenhum evento no modo combate!");
+      return;
+    }
+    if (!myMember) return;
+
+    const hasClaimedRato = myMember?.completedMissions?.includes('caca_rato_confirm');
+    if (hasClaimedRato) {
+      alert("Você já participou da Caça ao Rato e seus 25 XP já foram creditados!");
+      return;
+    }
+
+    const isPending = myMember?.completedMissions?.includes('caca_rato_pending');
+    if (isPending) {
+      alert("Você já está Ativo no evento Caça ao Rato (inicia diariamente às 22:00h)! Seu status é participante ativo, aguardando apenas o término do evento para que o Líder distribua as recompensas.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const newCompleted = [...(myMember.completedMissions || []), 'caca_rato_pending'];
+      
+      await updateMemberData({
+        completedMissions: newCompleted
+      });
+      playConnectionSound(true);
+      alert("Inscrição na Caça ao Rato realizada com sucesso! Você agora está ATIVO no evento (inicia diariamente às 22:00h). O bônus de 25 XP será enviado pelo Líder Supremo ao final do evento.");
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao confirmar presença.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const MAX_BAITS_TARGET = 100;
+
+  // Find inventory from completedMissions
+  const getBaitInventory = (): number => {
+    const record = myMember?.completedMissions?.find((s: string) => s.startsWith('ratbait_inv_'));
+    if (record) {
+      const val = parseInt(record.replace('ratbait_inv_', ''), 10);
+      return isNaN(val) ? 0 : val;
+    }
+    // Starter amount if not set
+    return 20;
+  };
+
+  // Find member-specific donated count from completedMissions
+  const getMemberDonated = (member: any): number => {
+    const record = member?.completedMissions?.find((s: string) => s.startsWith('ratbait_donated_'));
+    if (record) {
+      const val = parseInt(record.replace('ratbait_donated_', ''), 10);
+      return isNaN(val) ? 0 : val;
+    }
+    return 0;
+  };
+
+  // Total baits donated by the entire clan (reactive!)
+  const totalDonatedBaits = members.reduce((acc, m) => acc + getMemberDonated(m), 0);
+
+  // Multiplier formula: ranges from x1.0 up to x5.0 at MAX_BAITS_TARGET (100)
+  const calculateDamageMultiplier = () => {
+    if (totalDonatedBaits >= MAX_BAITS_TARGET) return 5.0;
+    const mult = 1.0 + (4.0 * (totalDonatedBaits / MAX_BAITS_TARGET));
+    return parseFloat(mult.toFixed(2));
+  };
+
+  const damageMultiplier = calculateDamageMultiplier();
+
+  const handleDonateBait = async (amount: number) => {
+    if (isGuest) {
+      alert("Contas de convidado temporárias não podem fazer doações de isca no modo combate!");
+      return;
+    }
+    if (!myMember) return;
+
+    const currentInv = getBaitInventory();
+    if (currentInv <= 0) {
+      alert("Você não possui Iscas de Rato disponíveis! Utilize a bancada de trabalho rúnica logo abaixo para fabricar mais.");
+      return;
+    }
+
+    const actualAmount = Math.min(amount, currentInv);
+    const totalDonated = totalDonatedBaits;
+    if (totalDonated >= MAX_BAITS_TARGET) {
+      alert("⚠️ AVISO CRÍTICO: A Armadilha de Rato já está no nível máximo (100 iscas com multiplicador x5)! Não desperdice seus recursos e guarde suas iscas para a próxima invasão!");
+      return;
+    }
+
+    const remainingSpace = MAX_BAITS_TARGET - totalDonated;
+    const actualAmountToDonate = Math.min(actualAmount, remainingSpace);
+
+    if (actualAmountToDonate <= 0) {
+      alert("A Armadilha já está completamente carregada no nível máximo!");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const currentDonated = getMemberDonated(myMember);
+      const newInv = currentInv - actualAmountToDonate;
+      const newDonated = currentDonated + actualAmountToDonate;
+
+      // Filter out old records to avoid duplicate array items
+      let cleanMissions = (myMember.completedMissions || []).filter(
+        (s: string) => !s.startsWith('ratbait_inv_') && !s.startsWith('ratbait_donated_')
+      );
+
+      // Push updated records
+      cleanMissions.push(`ratbait_inv_${newInv}`);
+      cleanMissions.push(`ratbait_donated_${newDonated}`);
+
+      await updateMemberData({
+        completedMissions: cleanMissions
+      });
+
+      playConnectionSound(true);
+      alert(`Doação executada! Você depositou ${actualAmountToDonate} Iscas de Rato na Armadilha da Aliança. Dano de aliança amplificado!`);
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao depositar iscas.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCraftBaits = async () => {
+    if (isGuest) {
+      alert("Contas de convidado temporárias não podem fabricar iscas!");
+      return;
+    }
+    if (!myMember) return;
+
+    setLoading(true);
+    try {
+      const currentInv = getBaitInventory();
+      const newInv = currentInv + 10;
+
+      let cleanMissions = (myMember.completedMissions || []).filter(
+        (s: string) => !s.startsWith('ratbait_inv_')
+      );
+      cleanMissions.push(`ratbait_inv_${newInv}`);
+
+      await updateMemberData({
+        completedMissions: cleanMissions
+      });
+      alert("Você fabricou +10 Iscas de Rato rúnicas adicionais com sucesso!");
+    } catch (err) {
+      console.error(err);
+      alert("Falha ao fabricar iscas.");
     } finally {
       setLoading(false);
     }
@@ -1415,441 +1597,718 @@ export function CombateView() {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-zinc-850 pb-4">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse shrink-0" />
-            <span className="text-[9px] uppercase font-black text-white/50 tracking-[0.4em] font-mono">OPERAÇÃO DE BRIEFING DA GUILDA</span>
+            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+            <span className="text-[9px] uppercase font-black text-white/50 tracking-[0.4em] font-mono">CENTRAL DE TORNEIOS & EVENTOS DA ALIANÇA</span>
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4.5xl font-display font-black uppercase italic tracking-tighter text-white leading-none">
             CENTRAL DE DEPLOY — <span className="text-gaming-gold text-shadow-gold text-nowrap">LUTA PELO ELIXIR</span>
           </h2>
         </div>
         
-        {/* Date Container with Countdown under it */}
-        <div className="bg-zinc-950/80 border border-zinc-800 px-4 py-2.5 rounded-2xl flex flex-col items-center justify-center shrink-0 lg:min-w-[220px] shadow-lg">
-          <span className="text-[8px] font-black uppercase text-zinc-400 tracking-wider font-mono">HORA DA INVASÃO (BRT)</span>
-          <span className="text-xs sm:text-sm font-mono font-black text-white italic">AMANHÃ • 22/05 às 23:00</span>
+        {/* Date Container with Countdown under it - SET TO POSTPONED */}
+        <div className="bg-zinc-950/80 border border-amber-500/20 px-4 py-2.5 rounded-2xl flex flex-col items-center justify-center shrink-0 lg:min-w-[220px] shadow-lg">
+          <span className="text-[8px] font-black uppercase text-zinc-400 tracking-wider font-mono">STATUS DO CONFRONTO</span>
+          <span className="text-xs sm:text-sm font-mono font-black text-amber-500 italic">⚠️ ADIADO / POSTERGADO</span>
           
-          {/* CRONÔMETRO DE BRASÍLIA */}
-          <div className="mt-1.5 pt-1.5 border-t border-zinc-800/80 w-full flex flex-col items-center">
-            <span className="text-[7px] font-black uppercase text-red-500 tracking-wider font-mono animate-pulse flex items-center gap-1 mb-1">
-              <Clock size={8} className="text-red-500" /> CONTAGEM REGRESSIVA
+          <div className="mt-1 pb-0.5 w-full flex flex-col items-center">
+            <span className="text-[8px] font-black uppercase text-amber-500 tracking-wider font-mono animate-pulse flex items-center gap-1">
+              INSCRIÇÕES PAUSADAS
             </span>
-            {!timeLeft.completed ? (
-              <div className="flex items-center gap-1 text-[11px] font-mono font-black">
-                <div className="flex flex-col items-center min-w-[32px] bg-red-950/30 border border-red-900/30 px-1 py-0.5 rounded">
-                  <span className="text-red-500 font-extrabold leading-none">{String(timeLeft.days).padStart(2, '0')}</span>
-                  <span className="text-[5px] text-white/40 mt-0.5 uppercase tracking-tighter leading-none">DIAS</span>
-                </div>
-                <span className="text-red-500/50 animate-pulse">:</span>
-                <div className="flex flex-col items-center min-w-[32px] bg-red-950/30 border border-red-900/30 px-1 py-0.5 rounded">
-                  <span className="text-red-500 font-extrabold leading-none">{String(timeLeft.hours).padStart(2, '0')}</span>
-                  <span className="text-[5px] text-white/40 mt-0.5 uppercase tracking-tighter leading-none">HORAS</span>
-                </div>
-                <span className="text-red-500/50 animate-pulse">:</span>
-                <div className="flex flex-col items-center min-w-[32px] bg-red-950/30 border border-red-900/30 px-1 py-0.5 rounded">
-                  <span className="text-red-500 font-extrabold leading-none">{String(timeLeft.minutes).padStart(2, '0')}</span>
-                  <span className="text-[5px] text-white/40 mt-0.5 uppercase tracking-tighter leading-none">MIN</span>
-                </div>
-                <span className="text-red-500/50 animate-pulse">:</span>
-                <div className="flex flex-col items-center min-w-[32px] bg-red-950/30 border border-red-900/30 px-1 py-0.5 rounded">
-                  <span className="text-red-500 font-extrabold leading-none">{String(timeLeft.seconds).padStart(2, '0')}</span>
-                  <span className="text-[5px] text-white/40 mt-0.5 uppercase tracking-tighter leading-none">SEG</span>
-                </div>
-              </div>
-            ) : (
-              <span className="text-[10px] font-black text-red-500 animate-pulse uppercase tracking-widest">EM CONFRONTO CORPO A CORPO!</span>
-            )}
           </div>
         </div>
       </div>
 
-      {/* CRITICAL ATTACK WAR ORDER - REMAINS RED (Very Important Alert) */}
-      <motion.div
-        initial={{ scale: 0.98, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="p-4 bg-red-950/30 border border-red-600/50 rounded-2xl shadow-[0_0_20px_rgba(239,68,68,0.1)] flex flex-col sm:flex-row items-center gap-4 relative overflow-hidden"
-      >
-        <div className="absolute top-0 right-0 p-1 bg-red-600/80 text-[7px] font-black uppercase text-white tracking-widest rounded-bl-xl font-mono animate-pulse">
-          DIRETÓRIO
-        </div>
-        <div className="w-10 h-10 rounded-xl bg-red-600/20 border border-red-600/40 flex items-center justify-center shrink-0">
-          <Sword className="text-red-400 animate-pulse" size={20} />
-        </div>
-        <div className="flex flex-col gap-0.5 w-full text-center sm:text-left">
-          <span className="text-[8px] uppercase font-black tracking-widest text-red-500 font-mono">AVISO RECURSAL URGENTE:</span>
-          <p className="text-[11px] text-white leading-normal font-bold uppercase italic">
-            "Ataque amanhã (22/05) às 23:00 BRT. Todos logados às 23:00 em ponto!"
-          </p>
-        </div>
-      </motion.div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* A) OPERATIONAL PROTOCOLS SECTION (Left Column) - REFINED TO GOLD/SLATE */}
-        <div className="lg:col-span-2 flex flex-col gap-6">
-          <div className="bg-zinc-900/20 border border-zinc-800/80 rounded-3xl p-5 md:p-6 flex flex-col gap-6 shadow-xl relative overflow-hidden">
-            <div className="absolute inset-0 bg-linear-to-b from-zinc-800/5 via-transparent to-transparent pointer-events-none" />
-            
-            <div className="flex items-center gap-2.5 border-b border-zinc-800/40 pb-3">
-              <Compass className="text-gaming-gold" size={20} />
-              <div>
-                <h3 className="font-display font-black uppercase text-base text-white tracking-wide">PLANEJAMENTO TÁTICO & PROTOCOLO</h3>
-                <p className="text-[8px] uppercase font-bold text-zinc-500 tracking-widest leading-none">
-                  LIGAÇÃO DIRECIONAL E LOGÍSTICA DE COMBATE
-                </p>
-              </div>
+      {/* PAINEL CENTRAL DE TORNEIOS DA ALIANÇA */}
+      <div className={`grid gap-4 ${selectedEvent ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
+        {/* Luta pelo Elixir Card */}
+        {(selectedEvent === null || selectedEvent === 'elixir') && (
+          <motion.div 
+            whileHover={!isEcoMode ? { scale: 1.015, y: -2 } : {}}
+            onClick={() => setSelectedEvent(selectedEvent === 'elixir' ? null : 'elixir')}
+            className={`cursor-pointer transition-all rounded-3xl p-5 relative overflow-hidden flex flex-col justify-between shadow-xl ${
+              selectedEvent === 'elixir'
+                ? 'bg-red-950/20 border-2 border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.15)]'
+                : 'bg-zinc-900/40 border border-white/5 hover:border-red-500/35'
+            }`}
+          >
+            <div className="absolute top-0 right-0 px-3 py-1 bg-red-500 text-black text-[9px] font-black uppercase tracking-widest rounded-bl-2xl">
+              OBRIGATÓRIO • RECOMPENSA: 50 XP
             </div>
-
-            <p className="text-[11px] text-white/80 leading-relaxed font-bold uppercase italic border-l-2 border-gaming-gold/40 pl-3">
-              "Para garantir a vitória da nossa aliança, precisamos de <strong className="text-gaming-gold font-extrabold text-shadow-gold animate-pulse">disciplina, coordenação e foco nos objetivos corretos</strong>. Não basta ter poder; é preciso inteligência."
-            </p>
-
-            <div className="flex flex-col gap-4 mt-1">
-              <h4 className="text-[10px] uppercase font-black text-gaming-gold tracking-widest flex items-center gap-1.5 border-b border-zinc-800/40 pb-1.5">
-                <Flame size={12} className="text-gaming-gold" /> FASES DO CONFRONTO (CRITICAL INFO)
-              </h4>
-
-              <div className="grid grid-cols-1 gap-3">
-                {/* Phase 1: Preparation */}
-                <div className="border border-indigo-950/60 bg-indigo-950/10 rounded-2xl p-3.5 border-l-4 border-l-indigo-500 transition-all hover:bg-indigo-950/15">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center font-mono font-black text-[10px] text-indigo-300">1</span>
-                    <h5 className="text-[11px] font-black uppercase text-indigo-200 tracking-wider">Preparação (Antes do Evento)</h5>
-                  </div>
-                  <p className="text-[10px] text-white/70 uppercase leading-relaxed font-bold font-mono">
-                    • <strong className="text-indigo-400">Escala de Guerra:</strong> O R5/R4 definirá os 20 membros do deploy e reservas.<br />
-                    • <strong className="text-indigo-400">Logística:</strong> Todos com exércitos curados e aceleradores prontos.
-                  </p>
+            <div>
+              <div className="flex items-center gap-2.5 mb-2.5">
+                <div className="w-9 h-9 rounded-xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-400">
+                  <Trophy size={18} />
                 </div>
-
-                {/* Phase 2: Gold Rush */}
-                <div className="border border-cyan-950/60 bg-cyan-950/10 rounded-2xl p-3.5 border-l-4 border-l-cyan-400 transition-all hover:bg-cyan-950/15">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="w-5 h-5 rounded-full bg-cyan-400/20 flex items-center justify-center font-mono font-black text-[10px] text-cyan-200">2</span>
-                    <h5 className="text-[11px] font-black uppercase text-cyan-300 tracking-wider">Fase Inicial (0 a 10 min) • "Corrida pelo Ouro"</h5>
-                  </div>
-                  <p className="text-[10px] text-white/70 uppercase leading-relaxed font-bold font-mono">
-                    • <strong className="text-cyan-400">Objetivo Primário:</strong> Capturar Oficinas de Alquimia.<br />
-                    • <strong className="text-cyan-400">Tática:</strong> Evite batalhas soltas. Segurar as duas Oficinas gera bônus imediato.
-                  </p>
-                </div>
-
-                {/* Phase 3: Castle Open */}
-                <div className="border border-amber-950/60 bg-amber-950/10 rounded-2xl p-3.5 border-l-4 border-l-amber-500 transition-all hover:bg-amber-950/15">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center font-mono font-black text-[10px] text-amber-300">3</span>
-                    <h5 className="text-[11px] font-black uppercase text-amber-300 tracking-wider">Fase Intermediária (10 a 13 min) • "Verdade"</h5>
-                  </div>
-                  <p className="text-[10px] text-white/70 uppercase leading-relaxed font-bold font-mono">
-                    • <strong className="text-amber-400">Castelo do Elixir:</strong> Abre exatamente aos 10 minutos.<br />
-                    • <strong className="text-amber-400">Tática de Domínio:</strong> Toda a guilda deve marchar junta ao centro.<br />
-                    • <strong className="text-amber-400">Altificação:</strong> Ocupe os Altares para ativar bônus de dano de tropa.
-                  </p>
-                </div>
-
-                {/* Phase 4: Final Crash */}
-                <div className="border border-red-950/60 bg-red-950/10 rounded-2xl p-3.5 border-l-4 border-l-red-500 transition-all hover:bg-red-950/15">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center font-mono font-black text-[10px] text-red-350">4</span>
-                    <h5 className="text-[11px] font-black uppercase text-red-300 tracking-wider">Fase Final (13 a 30 min) • "Defesa Crucial"</h5>
-                  </div>
-                  <p className="text-[10px] text-white/70 uppercase leading-relaxed font-bold font-mono">
-                    • <strong className="text-red-400">Forte e Kits:</strong> Enviem tropas rápidas para coletar ervas e manter o cerco.<br />
-                    • <strong className="text-red-400">Contenção Crítica:</strong> Garanta que o inimigo não colete os Kits Doutores!
-                  </p>
+                <div>
+                  <h3 className="text-sm font-display font-black uppercase text-white tracking-wide">Luta pelo Elixir</h3>
+                  <span className="text-[7.5px] uppercase font-bold text-zinc-400 tracking-wider">Torneio de Clãs de Alto Nível</span>
                 </div>
               </div>
+              <p className="text-[11px] text-zinc-400 leading-relaxed font-bold uppercase italic mb-4">
+                O principal confronto estratégico tático por depósitos de Elixir da aliança. O comparecimento é estritamente compulsório para todos os guerreiros listados.
+              </p>
             </div>
-
-            {/* Dicas de Combate using Zinc-Slate background */}
-            <div className="bg-zinc-950/30 border border-zinc-800/60 p-4 rounded-xl flex flex-col gap-3">
-              <h4 className="text-[10px] uppercase font-black text-gaming-gold tracking-widest flex items-center gap-1.5 font-mono">
-                <Target size={12} className="text-gaming-gold animate-pulse" /> DIRETRIZES RÁPIDAS DE DISPARO
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[9px] uppercase font-bold text-white/70">
-                <div className="flex gap-2">
-                  <span className="text-gaming-gold font-extrabold font-mono">01.</span>
-                  <span>Ataques Isolados Proibidos: O Ataque coordenado (rally) é a única ferramenta.</span>
-                </div>
-                <div className="flex gap-2">
-                  <span className="text-gaming-gold font-extrabold font-mono">02.</span>
-                  <span>Defesa de Tenda: Segure uma Tenda de Cura para repor guerreiros vivos.</span>
-                </div>
-                <div className="flex gap-2">
-                  <span className="text-gaming-gold font-extrabold font-mono">03.</span>
-                  <span>Portais: Marchas usando o Portal reduzem o deslocamento em 80%.</span>
-                </div>
-                <div className="flex gap-2">
-                  <span className="text-gaming-gold font-extrabold font-mono">04.</span>
-                  <span>Cadeia de Voz: Obedeça as ordens do R5/R4 no Discord em tempo real.</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* B) INTERACTIVE SECTION - THREE COHESIVE TRIPLE-COLORS */}
-        <div className="flex flex-col gap-6">
-          <div className="bg-zinc-900/30 border border-zinc-800 rounded-3xl p-6 flex flex-col gap-5 shadow-2xl relative overflow-hidden">
-            {isGuest && (
-              <div className="absolute inset-0 bg-black/95 backdrop-blur-lg z-20 flex flex-col items-center justify-center p-6 text-center">
-                <Skull className="text-red-600 mb-3 animate-pulse" size={40} />
-                <h4 className="text-sm font-display font-black uppercase text-red-500 tracking-wider mb-2">CONTA TEMPORÁRIA RESTRITA</h4>
-                <p className="text-[10px] uppercase font-bold text-white/70 max-w-xs leading-relaxed mb-4">
-                  Contas de convidado não têm autorização regulamentar para participar de eventos de combate da Aliança.
-                </p>
-                <div className="bg-red-950/40 border border-red-900/30 p-2 py-1 rounded-lg mb-4">
-                  <p className="text-[8px] text-red-500 uppercase font-black tracking-widest font-mono">
-                    SUA CONTA FECHA EM MENOS DE 24 HORAS
-                  </p>
-                </div>
-                <p className="text-[9px] text-zinc-500 uppercase font-bold max-w-xs leading-relaxed">
-                  Cadastre uma conta permanente para desbloquear todos os sistemas de combate tático!
-                </p>
-              </div>
-            )}
-            <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="text-gaming-gold animate-pulse" size={20} />
-                <h3 className="font-display font-black uppercase text-sm tracking-widest text-white">RECRUTAMENTO OPERACIONAL</h3>
-              </div>
-              <span className="text-[10px] bg-zinc-850 border border-zinc-800 px-2 py-1 rounded-md text-zinc-400 font-mono font-bold">
-                VAGAS TOTAIS: <span className="text-white font-black">{groupA.length + groupB.length + groupC.length} / 20</span>
+            <div className="flex flex-col gap-2 mt-auto border-t border-white/5 pt-3">
+              <span className="text-[9.5px] font-black text-amber-500 uppercase tracking-widest animate-pulse italic">
+                👉 {selectedEvent === 'elixir' ? 'APERTE PARA FECHAR OS PROTOCOLOS' : 'APERTE PARA SABER MAIS & ALISTAR-SE'}
               </span>
-            </div>
-            
-            <p className="text-[10px] uppercase font-bold text-white/70 leading-relaxed">
-              Assuma seu posto regulamentar de combate. A escolha de seu regimento estratégico de deploy libera materiais táticos fechados. <span className="text-gaming-gold font-bold italic block mt-1">Ao registrar-se, você receberá 50 XP após a validação pós-evento e confirmação da batalha.</span>
-            </p>
-
-            {/* Soldiers Units/Regiments Selection */}
-            <div className="flex flex-col gap-4 mt-2">
-              
-              {/* REGIMENTO A - RED STYLE FOR RAW POWER AND ELITE SPEED */}
-              <div className="flex flex-col gap-2">
-                <button
-                  disabled={loading}
-                  onClick={() => handleRegisterGroup('A')}
-                  className={`w-full p-4 rounded-xl text-left transition-all border outline-none cursor-pointer group relative overflow-hidden flex flex-col justify-between ${
-                    activeGroup === 'A'
-                      ? 'bg-red-500/10 border-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.25)]'
-                      : 'bg-white/5 border-white/5 hover:border-red-500/40 hover:bg-red-950/20 text-white/80'
-                  }`}
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center gap-2.5">
-                      <Skull size={16} className={activeGroup === 'A' ? "text-red-500" : "text-white/40 group-hover:text-red-500"} />
-                      <div className="flex flex-col">
-                        <span className="text-xs uppercase font-black tracking-wider">Regimento A - Elite de Assalto</span>
-                        <span className={`text-[9px] font-bold uppercase transition-colors ${7 - groupA.length <= 0 ? 'text-red-500 animate-pulse font-black' : 'text-zinc-400'}`}>
-                          {7 - groupA.length <= 0 ? '🚫 Vagas Esgotadas' : `Slots Disponíveis: ${7 - groupA.length} de 7`}
-                        </span>
-                      </div>
-                    </div>
-                    {activeGroup === 'A' && (
-                      <span className="text-[8px] bg-red-600 text-white px-2 py-0.5 rounded font-black uppercase tracking-widest font-mono">
-                        CONFIRMADO
-                      </span>
-                    )}
-                  </div>
-                </button>
-                {/* List registered */}
-                <div className="px-2">
-                  <span className="text-[8px] font-black uppercase text-white/40">GUERREIROS DO REGIMENTO ({groupA.length}):</span>
-                  {groupA.length > 0 ? (
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {groupA.map(m => (
-                        <span key={m.id} className="text-[9px] bg-red-950/30 border border-red-900/30 px-2 py-0.5 rounded-full text-red-100 uppercase font-bold">
-                          ⚔️ {m.name}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-[9px] lowercase font-light text-white/20 block font-mono">vazio</span>
-                  )}
-                </div>
-              </div>
-
-              {/* REGIMENTO B - GOLD STYLE FOR RECON, FAITH AND SHIELD BUFFS */}
-              <div className="flex flex-col gap-2">
-                <button
-                  disabled={loading}
-                  onClick={() => handleRegisterGroup('B')}
-                  className={`w-full p-4 rounded-xl text-left transition-all border outline-none cursor-pointer group relative overflow-hidden flex flex-col justify-between ${
-                    activeGroup === 'B'
-                      ? 'bg-gaming-gold/15 border-gaming-gold text-white shadow-[0_0_20px_rgba(251,191,36,0.25)]'
-                      : 'bg-white/5 border-white/5 hover:border-gaming-gold/40 hover:bg-amber-950/20 text-white/80'
-                  }`}
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center gap-2.5">
-                      <Shield size={16} className={activeGroup === 'B' ? "text-gaming-gold" : "text-white/40 group-hover:text-gaming-gold"} />
-                      <div className="flex flex-col">
-                        <span className="text-xs uppercase font-black tracking-wider">Regimento B - Suporte e Buffs</span>
-                        <span className={`text-[9px] font-bold uppercase transition-colors ${7 - groupB.length <= 0 ? 'text-red-500 animate-pulse font-black' : 'text-zinc-400'}`}>
-                          {7 - groupB.length <= 0 ? '🚫 Vagas Esgotadas' : `Slots Disponíveis: ${7 - groupB.length} de 7`}
-                        </span>
-                      </div>
-                    </div>
-                    {activeGroup === 'B' && (
-                      <span className="text-[8px] bg-gaming-gold text-black px-2 py-0.5 rounded font-black uppercase tracking-widest font-mono">
-                        CONFIRMADO
-                      </span>
-                    )}
-                  </div>
-                </button>
-                {/* List registered */}
-                <div className="px-2">
-                  <span className="text-[8px] font-black uppercase text-white/40">GUERREIROS DO REGIMENTO ({groupB.length}):</span>
-                  {groupB.length > 0 ? (
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {groupB.map(m => (
-                        <span key={m.id} className="text-[9px] bg-amber-950/35 border border-amber-900/30 px-2 py-0.5 rounded-full text-gaming-gold uppercase font-bold font-mono">
-                          🛡️ {m.name}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-[9px] lowercase font-light text-white/20 block font-mono">vazio</span>
-                  )}
-                </div>
-              </div>
-
-              {/* REGIMENTO C - CYAN/BLUE STYLE FOR HARVEST AND SPEED COOPERATIVE */}
-              <div className="flex flex-col gap-2">
-                <button
-                  disabled={loading}
-                  onClick={() => handleRegisterGroup('C')}
-                  className={`w-full p-4 rounded-xl text-left transition-all border outline-none cursor-pointer group relative overflow-hidden flex flex-col justify-between ${
-                    activeGroup === 'C'
-                      ? 'bg-blue-600/15 border-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.25)]'
-                      : 'bg-white/5 border-white/5 hover:border-blue-500/40 hover:bg-blue-950/20 text-white/80'
-                  }`}
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center gap-2.5">
-                      <Backpack size={16} className={activeGroup === 'C' ? "text-blue-400" : "text-white/40 group-hover:text-blue-400"} />
-                      <div className="flex flex-col">
-                        <span className="text-xs uppercase font-black tracking-wider">Regimento C - Logística e Coleta</span>
-                        <span className={`text-[9px] font-bold uppercase transition-colors ${6 - groupC.length <= 0 ? 'text-red-500 animate-pulse font-black' : 'text-zinc-400'}`}>
-                          {6 - groupC.length <= 0 ? '🚫 Vagas Esgotadas' : `Slots Disponíveis: ${6 - groupC.length} de 6`}
-                        </span>
-                      </div>
-                    </div>
-                    {activeGroup === 'C' && (
-                      <span className="text-[8px] bg-blue-500 text-white px-2 py-0.5 rounded font-black uppercase tracking-widest font-mono">
-                        CONFIRMADO
-                      </span>
-                    )}
-                  </div>
-                </button>
-                {/* List registered */}
-                <div className="px-2">
-                  <span className="text-[8px] font-black uppercase text-white/40">GUERREIROS DO REGIMENTO ({groupC.length}):</span>
-                  {groupC.length > 0 ? (
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {groupC.map(m => (
-                        <span key={m.id} className="text-[9px] bg-blue-950/30 border border-blue-900/30 px-2 py-0.5 rounded-full text-blue-200 uppercase font-black font-mono">
-                          📦 {m.name}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-[9px] lowercase font-light text-white/20 block font-mono">vazio</span>
-                  )}
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          {/* CHOPPING INTERNAL CONTENT FOR THE CHOSEN REGIMENT ADAPTS TO ACTIVE THEMATIC COLOR */}
-          {activeGroup ? (
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`border rounded-3xl p-6 flex flex-col gap-4 shadow-2xl relative overflow-hidden ${themeBgClass} ${themeBorderClass}`}
-            >
-              <div className="absolute inset-0 pointer-events-none opacity-20 bg-linear-to-b from-white/5 via-transparent to-transparent" />
-              
-              <div className="flex items-center gap-3 border-b border-zinc-800/80 pb-3">
-                <Target size={18} className={`${themeTextClass} animate-pulse`} />
-                <h4 className="font-display font-black uppercase text-xs text-white">REQUISITOS E MATERIAL ESTRATÉGICO</h4>
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <span className={`text-sm font-display font-black uppercase tracking-tight ${themeTextClass}`}>
-                  {strategicContent[activeGroup as 'A' | 'B' | 'C'].title}
+              <div className="flex items-center justify-between border-t border-white/5 pt-2 mt-1">
+                <span className="text-[8px] font-black uppercase text-red-500 bg-red-500/10 px-2 py-0.5 rounded font-mono">
+                  ⚠️ CATEGORIA: OBRIGATÓRIO (DIRETRIZ DE GUERRA)
                 </span>
+                <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest animate-pulse italic">
+                  Status: Adiado
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
-                <div className="bg-black/55 border border-zinc-800/80 p-4 rounded-2xl flex flex-col gap-3">
+        {/* Caça ao Rato Card */}
+        {(selectedEvent === null || selectedEvent === 'rato') && (
+          <motion.div 
+            whileHover={!isEcoMode ? { scale: 1.015, y: -2 } : {}}
+            onClick={() => setSelectedEvent(selectedEvent === 'rato' ? null : 'rato')}
+            className={`cursor-pointer transition-all rounded-3xl p-5 relative overflow-hidden flex flex-col justify-between shadow-xl ${
+              selectedEvent === 'rato'
+                ? 'bg-amber-950/20 border-2 border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.15)]'
+                : 'bg-zinc-900/40 border border-white/5 hover:border-amber-500/35'
+            }`}
+          >
+            <div className="absolute top-0 right-0 px-3 py-1 bg-amber-500 text-black text-[9px] font-black uppercase tracking-widest rounded-bl-2xl">
+              OPCIONAL • RECOMPENSA: 25 XP
+            </div>
+            <div>
+              <div className="flex items-center gap-2.5 mb-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/20 flex items-center justify-center text-amber-400">
+                  <Compass size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm font-display font-black uppercase text-white tracking-wide">Caça ao Rato</h3>
+                  <span className="text-[7.5px] uppercase font-bold text-zinc-400 tracking-wider">Incursão e Controle de Pragas</span>
+                </div>
+              </div>
+              <p className="text-[11px] text-zinc-400 leading-relaxed font-bold uppercase italic mb-4">
+                Invasão especial para abate rápido e coleta de recompensas em bônus individuais na Alcatéia. Use iscas de rato para ativar bônus!
+              </p>
+            </div>
+            <div className="flex flex-col gap-2 mt-auto border-t border-white/5 pt-3">
+              <span className="text-[9.5px] font-black text-amber-400 uppercase tracking-widest animate-pulse italic">
+                👉 {selectedEvent === 'rato' ? 'APERTE PARA FECHAR PROTOCOLOS' : 'APERTE PARA SABER MAIS & CONFIRMAR PRESENÇA'}
+              </span>
+              <div className="flex items-center justify-between border-t border-white/5 pt-2 mt-1 flex-wrap gap-2">
+                <span className="text-[8px] font-black uppercase text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded font-mono">
+                  👍 CATEGORIA: OPCIONAL (PARTICIPAÇÃO LIVRE)
+                </span>
+                <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest font-mono">
+                  ⏱️ FREQUÊNCIA: A CADA 2 DIAS
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </div>
+
+      {/* COMUNICADO OFICIAL DE ADIAMENTO - ONLY FOR ELIXIR */}
+      <AnimatePresence>
+        {selectedEvent === 'elixir' && (
+          <motion.div
+            initial={{ scale: 0.98, opacity: 0, height: 0 }}
+            animate={{ scale: 1, opacity: 1, height: 'auto' }}
+            exit={{ scale: 0.98, opacity: 0, height: 0 }}
+            className="p-4 bg-amber-950/20 border border-amber-500/40 rounded-2xl shadow-[0_0_20px_rgba(245,158,11,0.05)] flex flex-col sm:flex-row items-center gap-4 relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 p-1 bg-amber-600/80 text-[7px] font-black uppercase text-black tracking-widest rounded-bl-xl font-mono animate-pulse">
+              DIRETÓRIO
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0">
+              <Calendar className="text-amber-400 animate-pulse" size={20} />
+            </div>
+            <div className="flex flex-col gap-0.5 w-full text-center sm:text-left">
+              <span className="text-[8px] uppercase font-black tracking-widest text-amber-500 font-mono">AVISO DE ADIAMENTO E CALENDÁRIO:</span>
+              <p className="text-[11px] text-zinc-300 leading-normal font-bold uppercase italic">
+                "ATENÇÃO GUERREIROS: O evento Luta pelo Elixir foi ADIADO por tempo indeterminado. Fiquem de prontidão para novas atualizações da liderança!"
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence mode="wait">
+        {selectedEvent === 'elixir' && (
+          <motion.div
+            key="elixir-view"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+          >
+            {/* A) OPERATIONAL PROTOCOLS SECTION (Left Column) - REFINED TO GOLD/SLATE */}
+            <div className="lg:col-span-2 flex flex-col gap-6">
+              <div className="bg-zinc-900/20 border border-zinc-800/80 rounded-3xl p-5 md:p-6 flex flex-col gap-6 shadow-xl relative overflow-hidden">
+                <div className="absolute inset-0 bg-linear-to-b from-zinc-800/5 via-transparent to-transparent pointer-events-none" />
+                
+                <div className="flex items-center gap-2.5 border-b border-zinc-800/40 pb-3">
+                  <Compass className="text-gaming-gold" size={20} />
                   <div>
-                    <span className="text-[8px] font-black tracking-widest uppercase text-white/40 block mb-0.5 font-mono">Setor de Impacto:</span>
-                    <span className={`text-xs font-black uppercase tracking-wider ${themeTextClass}`}>{strategicContent[activeGroup as 'A' | 'B' | 'C'].focus}</span>
-                  </div>
-                  <div>
-                    <span className="text-[8px] font-black tracking-widest uppercase text-white/40 block mb-0.5 font-mono">Objetivo Principal do Regimento:</span>
-                    <p className="text-[10px] text-white/90 uppercase font-bold italic leading-relaxed">
-                      "{strategicContent[activeGroup as 'A' | 'B' | 'C'].action}"
+                    <h3 className="font-display font-black uppercase text-base text-white tracking-wide">PLANEJAMENTO TÁTICO & PROTOCOLO</h3>
+                    <p className="text-[8px] uppercase font-bold text-zinc-500 tracking-widest leading-none">
+                      LIGAÇÃO DIRECIONAL E LOGÍSTICA DE COMBATE
                     </p>
                   </div>
                 </div>
 
-                <div className="mt-2 flex flex-col gap-2">
-                  <span className="text-[8px] font-black tracking-widest uppercase text-white/45 font-mono font-bold">TAREFAS CRÍTICAS DE CAMPO:</span>
-                  <div className="flex flex-col gap-2">
-                    {strategicContent[activeGroup as 'A' | 'B' | 'C'].bullets.map((bullet, idx) => (
-                      <div key={idx} className="flex gap-2.5 items-start">
-                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 mt-1.5 ${themeAccentBg}`} />
-                        <span className="text-[10px] uppercase text-white/70 leading-normal font-bold">
-                          {bullet}
-                        </span>
+                <p className="text-[11px] text-white/80 leading-relaxed font-bold uppercase italic border-l-2 border-gaming-gold/40 pl-3">
+                  "Para garantir a vitória da nossa aliança, precisamos de <strong className="text-gaming-gold font-extrabold text-shadow-gold animate-pulse">disciplina, coordenação e foco nos objetivos corretos</strong>. Não basta ter poder; é preciso inteligência."
+                </p>
+
+                <div className="flex flex-col gap-4 mt-1">
+                  <h4 className="text-[10px] uppercase font-black text-gaming-gold tracking-widest flex items-center gap-1.5 border-b border-zinc-800/40 pb-1.5">
+                    <Flame size={12} className="text-gaming-gold" /> FASES DO CONFRONTO (CRITICAL INFO)
+                  </h4>
+
+                  <div className="grid grid-cols-1 gap-3">
+                    {/* Phase 1: Preparation */}
+                    <div className="border border-indigo-950/60 bg-indigo-950/10 rounded-2xl p-3.5 border-l-4 border-l-indigo-500 transition-all hover:bg-indigo-950/15">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center font-mono font-black text-[10px] text-indigo-300">1</span>
+                        <h5 className="text-[11px] font-black uppercase text-indigo-200 tracking-wider">Preparação (Antes do Evento)</h5>
                       </div>
-                    ))}
+                      <p className="text-[10px] text-white/70 uppercase leading-relaxed font-bold font-mono">
+                        • <strong className="text-indigo-400">Escala de Guerra:</strong> O R5/R4 definirá os 20 membros do deploy e reservas.<br />
+                        • <strong className="text-indigo-400">Logística:</strong> Todos com exércitos curados e aceleradores prontos.
+                      </p>
+                    </div>
+
+                    {/* Phase 2: Gold Rush */}
+                    <div className="border border-cyan-950/60 bg-cyan-950/10 rounded-2xl p-3.5 border-l-4 border-l-cyan-400 transition-all hover:bg-cyan-950/15">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="w-5 h-5 rounded-full bg-cyan-400/20 flex items-center justify-center font-mono font-black text-[10px] text-cyan-200">2</span>
+                        <h5 className="text-[11px] font-black uppercase text-cyan-300 tracking-wider">Fase Inicial (0 a 10 min) • "Corrida pelo Ouro"</h5>
+                      </div>
+                      <p className="text-[10px] text-white/70 uppercase leading-relaxed font-bold font-mono">
+                        • <strong className="text-cyan-400">Objetivo Primário:</strong> Capturar Oficinas de Alquimia.<br />
+                        • <strong className="text-cyan-400">Tática:</strong> Evite batalhas soltas. Segurar as duas Oficinas gera bônus imediato.
+                      </p>
+                    </div>
+
+                    {/* Phase 3: Castle Open */}
+                    <div className="border border-amber-950/60 bg-amber-950/10 rounded-2xl p-3.5 border-l-4 border-l-amber-500 transition-all hover:bg-amber-950/15">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center font-mono font-black text-[10px] text-amber-300">3</span>
+                        <h5 className="text-[11px] font-black uppercase text-amber-300 tracking-wider">Fase Intermediária (10 a 13 min) • "Verdade"</h5>
+                      </div>
+                      <p className="text-[10px] text-white/70 uppercase leading-relaxed font-bold font-mono">
+                        • <strong className="text-amber-400">Castelo do Elixir:</strong> Abre exatamente aos 10 minutos.<br />
+                        • <strong className="text-amber-400">Tática de Domínio:</strong> Toda a guilda deve marchar junta ao centro.<br />
+                        • <strong className="text-amber-400">Altificação:</strong> Ocupe os Altares para ativar bônus de dano de tropa.
+                      </p>
+                    </div>
+
+                    {/* Phase 4: Final Crash */}
+                    <div className="border border-red-950/60 bg-red-950/10 rounded-2xl p-3.5 border-l-4 border-l-red-500 transition-all hover:bg-red-950/15">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center font-mono font-black text-[10px] text-red-350">4</span>
+                        <h5 className="text-[11px] font-black uppercase text-red-300 tracking-wider">Fase Final (13 a 30 min) • "Defesa Crucial"</h5>
+                      </div>
+                      <p className="text-[10px] text-white/70 uppercase leading-relaxed font-bold font-mono">
+                        • <strong className="text-red-400">Forte e Kits:</strong> Enviem tropas rápidas para coletar ervas e manter o cerco.<br />
+                        • <strong className="text-red-400">Contenção Crítica:</strong> Garanta que o inimigo não colete os Kits Doutores!
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dicas de Combate using Zinc-Slate background */}
+                <div className="bg-zinc-950/30 border border-zinc-800/60 p-4 rounded-xl flex flex-col gap-3">
+                  <h4 className="text-[10px] uppercase font-black text-gaming-gold tracking-widest flex items-center gap-1.5 font-mono">
+                    <Target size={12} className="text-gaming-gold animate-pulse" /> DIRETRIZES RÁPIDAS DE DISPARO
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-[9px] uppercase font-bold text-white/70">
+                    <div className="flex gap-2">
+                      <span className="text-gaming-gold font-extrabold font-mono">01.</span>
+                      <span>Ataques Isolados Proibidos: O Ataque coordenado (rally) é a única ferramenta.</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="text-gaming-gold font-extrabold font-mono">02.</span>
+                      <span>Defesa de Tenda: Segure uma Tenda de Cura para repor guerreiros vivos.</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="text-gaming-gold font-extrabold font-mono">03.</span>
+                      <span>Portais: Marchas usando o Portal reduzem o deslocamento em 80%.</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="text-gaming-gold font-extrabold font-mono">04.</span>
+                      <span>Cadeia de Voz: Obedeça as ordens do R5/R4 no Discord em tempo real.</span>
+                    </div>
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* COMPANIONS LIST (SAME REGIMENT) */}
-              <div className="border-t border-zinc-800/80 pt-4 mt-2 flex flex-col gap-3">
-                <span className="text-[8px] font-black tracking-widest uppercase text-white/45 flex items-center gap-1.5 font-mono">
-                  <Users size={12} className={themeTextClass} /> COMBATENTES NO MESMO SETOR ({currentGroupAllies.length})
-                </span>
-                
-                {currentGroupAllies.length > 0 ? (
-                  <div className="flex flex-col gap-2 max-h-[160px] overflow-y-auto custom-scrollbar">
-                    {currentGroupAllies.map(member => (
-                      <div key={member.id} className="flex items-center gap-3 bg-black/40 border border-zinc-800/60 p-2 rounded-xl">
-                        <SafeAvatar
-                          src={member.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${member.userId}`}
-                          className={`w-7 h-7 rounded-full border ${themeBorderClass}`}
-                          alt={member.name}
-                          isEcoMode={isEcoMode}
-                        />
-                        <div className="flex flex-col">
-                          <span className="text-xs font-semibold text-white/90">{member.name}</span>
-                          <span className={`text-[7px] uppercase font-bold tracking-widest leading-none font-mono ${themeTextClass}`}>Poder de Tropa: {member.heroPower || 0}</span>
-                        </div>
-                      </div>
-                    ))}
+            {/* B) INTERACTIVE SECTION - THREE COHESIVE TRIPLE-COLORS */}
+            <div className="flex flex-col gap-6">
+              <div className="bg-zinc-900/30 border border-zinc-800 rounded-3xl p-6 flex flex-col gap-5 shadow-2xl relative overflow-hidden">
+                {isGuest && (
+                  <div className="absolute inset-0 bg-black/95 backdrop-blur-lg z-20 flex flex-col items-center justify-center p-6 text-center">
+                    <Skull className="text-red-600 mb-3 animate-pulse" size={40} />
+                    <h4 className="text-sm font-display font-black uppercase text-red-500 tracking-wider mb-2">CONTA TEMPORÁRIA RESTRITA</h4>
+                    <p className="text-[10px] uppercase font-bold text-white/70 max-w-xs leading-relaxed mb-4">
+                      Contas de convidado não têm autorização regulamentar para participar de eventos de combate da Aliança.
+                    </p>
+                    <div className="bg-red-950/40 border border-red-900/30 p-2 py-1 rounded-lg mb-4">
+                      <p className="text-[8px] text-red-500 uppercase font-black tracking-widest font-mono">
+                        SUA CONTA FECHA EM MENOS DE 24 HORAS
+                      </p>
+                    </div>
+                    <p className="text-[9px] text-zinc-500 uppercase font-bold max-w-xs leading-relaxed">
+                      Cadastre uma conta permanente para desbloquear todos os sistemas de combate tático!
+                    </p>
                   </div>
-                ) : (
-                  <span className="text-[9px] lowercase font-light text-white/20 block font-mono">vazio</span>
                 )}
+                <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="text-gaming-gold animate-pulse" size={20} />
+                    <h3 className="font-display font-black uppercase text-sm tracking-widest text-white">RECRUTAMENTO OPERACIONAL</h3>
+                  </div>
+                  <span className="text-[10px] bg-zinc-850 border border-zinc-800 px-2 py-1 rounded-md text-zinc-400 font-mono font-bold">
+                    VAGAS TOTAIS: <span className="text-white font-black">{groupA.length + groupB.length + groupC.length} / 20</span>
+                  </span>
+                </div>
+                
+                <p className="text-[10px] uppercase font-bold text-white/70 leading-relaxed">
+                  Assuma seu posto regulamentar de combate. A escolha de seu regimento estratégico de deploy libera materiais táticos fechados. <span className="text-gaming-gold font-bold italic block mt-1">Ao registrar-se, você receberá 50 XP após a validação pós-evento e confirmação da batalha.</span>
+                </p>
+
+                {/* ALERTA DE ADIAMENTO */}
+                <div className="bg-amber-950/25 border border-amber-500/30 rounded-2xl p-3.5 flex items-start gap-2.5 shadow-md">
+                  <span className="text-sm">⚠️</span>
+                  <div className="flex flex-col text-left">
+                    <span className="text-[9px] font-black uppercase text-amber-500 tracking-wider">RECRUTAMENTO E ALISTAMENTO SUSPENSOS</span>
+                    <p className="text-[9px] text-zinc-300 font-bold uppercase tracking-wide leading-relaxed mt-0.5">
+                      Os alistamentos de regimento estão congelados devido ao adiamento do Torneio do Elixir. Os guerreiros já inscritos continuam seguros na fila.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Soldiers Units/Regiments Selection */}
+                <div className="flex flex-col gap-4 mt-2">
+                  
+                  {/* REGIMENTO A - RED STYLE FOR RAW POWER AND ELITE SPEED */}
+                  <div className="flex flex-col gap-2">
+                    <button
+                      disabled={loading}
+                      onClick={() => handleRegisterGroup('A')}
+                      className={`w-full p-4 rounded-xl text-left transition-all border outline-none cursor-pointer group relative overflow-hidden flex flex-col justify-between ${
+                        activeGroup === 'A'
+                          ? 'bg-red-500/10 border-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.25)]'
+                          : 'bg-white/5 border-white/5 hover:border-red-500/40 hover:bg-red-950/20 text-white/80'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2.5">
+                          <Skull size={16} className={activeGroup === 'A' ? "text-red-500" : "text-white/40 group-hover:text-red-500"} />
+                          <div className="flex flex-col">
+                            <span className="text-xs uppercase font-black tracking-wider">Regimento A - Elite de Assalto</span>
+                            <span className={`text-[9px] font-bold uppercase transition-colors ${7 - groupA.length <= 0 ? 'text-red-500 animate-pulse font-black' : 'text-zinc-400'}`}>
+                              {7 - groupA.length <= 0 ? '🚫 Vagas Esgotadas' : `Slots Disponíveis: ${7 - groupA.length} de 7`}
+                            </span>
+                          </div>
+                        </div>
+                        {activeGroup === 'A' && (
+                          <span className={`text-[8px] px-2 py-0.5 rounded font-black uppercase tracking-widest font-mono ${
+                            myMember?.completedMissions?.includes('elixir_confirm')
+                              ? 'bg-green-600 text-white'
+                              : 'bg-orange-600 text-white animate-pulse'
+                          }`}>
+                            {myMember?.completedMissions?.includes('elixir_confirm') ? '✓ APROVADO' : '⏳ PENDENTE LÍDER'} (50 XP)
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                    {/* List registered */}
+                    <div className="px-2">
+                      <span className="text-[8px] font-black uppercase text-white/40">GUERREIROS DO REGIMENTO ({groupA.length}):</span>
+                      {groupA.length > 0 ? (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {groupA.map(m => (
+                            <span key={m.id} className="text-[9px] bg-red-950/30 border border-red-900/30 px-2 py-0.5 rounded-full text-red-100 uppercase font-bold">
+                              ⚔️ {m.name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-[9px] lowercase font-light text-white/20 block font-mono">vazio</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* REGIMENTO B - GOLD STYLE FOR RECON, FAITH AND SHIELD BUFFS */}
+                  <div className="flex flex-col gap-2">
+                    <button
+                      disabled={loading}
+                      onClick={() => handleRegisterGroup('B')}
+                      className={`w-full p-4 rounded-xl text-left transition-all border outline-none cursor-pointer group relative overflow-hidden flex flex-col justify-between ${
+                        activeGroup === 'B'
+                          ? 'bg-gaming-gold/15 border-gaming-gold text-white shadow-[0_0_20px_rgba(251,191,36,0.25)]'
+                          : 'bg-white/5 border-white/5 hover:border-gaming-gold/40 hover:bg-amber-950/20 text-white/80'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2.5">
+                          <Shield size={16} className={activeGroup === 'B' ? "text-gaming-gold" : "text-white/40 group-hover:text-gaming-gold"} />
+                          <div className="flex flex-col">
+                            <span className="text-xs uppercase font-black tracking-wider">Regimento B - Suporte e Buffs</span>
+                            <span className={`text-[9px] font-bold uppercase transition-colors ${7 - groupB.length <= 0 ? 'text-red-500 animate-pulse font-black' : 'text-zinc-400'}`}>
+                              {7 - groupB.length <= 0 ? '🚫 Vagas Esgotadas' : `Slots Disponíveis: ${7 - groupB.length} de 7`}
+                            </span>
+                          </div>
+                        </div>
+                        {activeGroup === 'B' && (
+                          <span className={`text-[8px] px-2 py-0.5 rounded font-black uppercase tracking-widest font-mono ${
+                            myMember?.completedMissions?.includes('elixir_confirm')
+                              ? 'bg-green-600 text-white'
+                              : 'bg-amber-500 text-black animate-pulse'
+                          }`}>
+                            {myMember?.completedMissions?.includes('elixir_confirm') ? '✓ APROVADO' : '⏳ PENDENTE LÍDER'} (50 XP)
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                    {/* List registered */}
+                    <div className="px-2">
+                      <span className="text-[8px] font-black uppercase text-white/40">GUERREIROS DO REGIMENTO ({groupB.length}):</span>
+                      {groupB.length > 0 ? (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {groupB.map(m => (
+                            <span key={m.id} className="text-[9px] bg-amber-950/35 border border-amber-900/30 px-2 py-0.5 rounded-full text-gaming-gold uppercase font-bold font-mono">
+                              🛡️ {m.name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-[9px] lowercase font-light text-white/20 block font-mono">vazio</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* REGIMENTO C - CYAN/BLUE STYLE FOR HARVEST AND SPEED COOPERATIVE */}
+                  <div className="flex flex-col gap-2">
+                    <button
+                      disabled={loading}
+                      onClick={() => handleRegisterGroup('C')}
+                      className={`w-full p-4 rounded-xl text-left transition-all border outline-none cursor-pointer group relative overflow-hidden flex flex-col justify-between ${
+                        activeGroup === 'C'
+                          ? 'bg-blue-600/15 border-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.25)]'
+                          : 'bg-white/5 border-white/5 hover:border-blue-500/40 hover:bg-blue-950/20 text-white/80'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2.5">
+                          <Backpack size={16} className={activeGroup === 'C' ? "text-blue-400" : "text-white/40 group-hover:text-blue-400"} />
+                          <div className="flex flex-col">
+                            <span className="text-xs uppercase font-black tracking-wider">Regimento C - Logística e Coleta</span>
+                            <span className={`text-[9px] font-bold uppercase transition-colors ${6 - groupC.length <= 0 ? 'text-red-500 animate-pulse font-black' : 'text-zinc-400'}`}>
+                              {6 - groupC.length <= 0 ? '🚫 Vagas Esgotadas' : `Slots Disponíveis: ${6 - groupC.length} de 6`}
+                            </span>
+                          </div>
+                        </div>
+                        {activeGroup === 'C' && (
+                          <span className={`text-[8px] px-2 py-0.5 rounded font-black uppercase tracking-widest font-mono ${
+                            myMember?.completedMissions?.includes('elixir_confirm')
+                              ? 'bg-green-600 text-white'
+                              : 'bg-blue-600 text-white animate-pulse'
+                          }`}>
+                            {myMember?.completedMissions?.includes('elixir_confirm') ? '✓ APROVADO' : '⏳ PENDENTE LÍDER'} (50 XP)
+                          </span>
+                        )}
+                      </div>
+                    </button>
+                    {/* List registered */}
+                    <div className="px-2">
+                      <span className="text-[8px] font-black uppercase text-white/40">GUERREIROS DO REGIMENTO ({groupC.length}):</span>
+                      {groupC.length > 0 ? (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {groupC.map(m => (
+                            <span key={m.id} className="text-[9px] bg-blue-950/30 border border-blue-900/30 px-2 py-0.5 rounded-full text-blue-200 uppercase font-black font-mono">
+                              📦 {m.name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-[9px] lowercase font-light text-white/20 block font-mono">vazio</span>
+                      )}
+                    </div>
+                  </div>
+
+                </div>
               </div>
 
-            </motion.div>
-          ) : (
-            <div className="bg-zinc-950/5 border border-zinc-800/60 rounded-3xl p-8 text-center flex flex-col items-center justify-center gap-3">
-              <Lock size={28} className="text-zinc-600/30" />
-              <span className="text-[9px] uppercase font-bold text-white/35 tracking-widest leading-relaxed">
-                STATUS BLOQUEADO: ASSUMA SEU REGIMENTO DIRETAMENTE ACIMA PARA OBTER ACESSO AO SISTEMA DE COORDENADAS.
-              </span>
+              {/* CHOPPING INTERNAL CONTENT FOR THE CHOSEN REGIMENT ADAPTS TO ACTIVE THEMATIC COLOR */}
+              {activeGroup ? (
+                <motion.div
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`border rounded-3xl p-6 flex flex-col gap-4 shadow-2xl relative overflow-hidden ${themeBgClass} ${themeBorderClass}`}
+                >
+                  <div className="absolute inset-0 pointer-events-none opacity-20 bg-linear-to-b from-white/5 via-transparent to-transparent" />
+                  
+                  <div className="flex items-center gap-3 border-b border-zinc-800/80 pb-3">
+                    <Target size={18} className={`${themeTextClass} animate-pulse`} />
+                    <h4 className="font-display font-black uppercase text-xs text-white">REQUISITOS E MATERIAL ESTRATÉGICO</h4>
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    <span className={`text-sm font-display font-black uppercase tracking-tight ${themeTextClass}`}>
+                      {strategicContent[activeGroup as 'A' | 'B' | 'C'].title}
+                    </span>
+
+                    <div className="bg-black/55 border border-zinc-800/80 p-4 rounded-2xl flex flex-col gap-3">
+                      <div>
+                        <span className="text-[8px] font-black tracking-widest uppercase text-white/40 block mb-0.5 font-mono">Setor de Impacto:</span>
+                        <span className={`text-xs font-black uppercase tracking-wider ${themeTextClass}`}>{strategicContent[activeGroup as 'A' | 'B' | 'C'].focus}</span>
+                      </div>
+                      <div>
+                        <span className="text-[8px] font-black tracking-widest uppercase text-white/40 block mb-0.5 font-mono">Objetivo Principal do Regimento:</span>
+                        <p className="text-[10px] text-white/90 uppercase font-bold italic leading-relaxed">
+                          "{strategicContent[activeGroup as 'A' | 'B' | 'C'].action}"
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-2 flex flex-col gap-2">
+                      <span className="text-[8px] font-black tracking-widest uppercase text-white/45 font-mono font-bold">TAREFAS CRÍTICAS DE CAMPO:</span>
+                      <div className="flex flex-col gap-2">
+                        {strategicContent[activeGroup as 'A' | 'B' | 'C'].bullets.map((bullet, idx) => (
+                          <div key={idx} className="flex gap-2.5 items-start">
+                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 mt-1.5 ${themeAccentBg}`} />
+                            <span className="text-[10px] uppercase text-white/70 leading-normal font-bold">
+                              {bullet}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* COMPANIONS LIST (SAME REGIMENT) */}
+                  <div className="border-t border-zinc-800/80 pt-4 mt-2 flex flex-col gap-3">
+                    <span className="text-[8px] font-black tracking-widest uppercase text-white/45 flex items-center gap-1.5 font-mono">
+                      <Users size={12} className={themeTextClass} /> COMBATENTES NO MESMO SETOR ({currentGroupAllies.length})
+                    </span>
+                    
+                    {currentGroupAllies.length > 0 ? (
+                      <div className="flex flex-col gap-2 max-h-[160px] overflow-y-auto custom-scrollbar">
+                        {currentGroupAllies.map(member => (
+                          <div key={member.id} className="flex items-center gap-3 bg-black/40 border border-zinc-800/60 p-2 rounded-xl">
+                            <SafeAvatar
+                              src={member.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${member.userId}`}
+                              className={`w-7 h-7 rounded-full border ${themeBorderClass}`}
+                              alt={member.name}
+                              isEcoMode={isEcoMode}
+                            />
+                            <div className="flex flex-col">
+                              <span className="text-xs font-semibold text-white/90">{member.name}</span>
+                              <span className={`text-[7px] uppercase font-bold tracking-widest leading-none font-mono ${themeTextClass}`}>Poder de Tropa: {member.heroPower || 0}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-[9px] lowercase font-light text-white/20 block font-mono">vazio</span>
+                    )}
+                  </div>
+
+                </motion.div>
+              ) : (
+                <div className="bg-zinc-950/5 border border-zinc-800/60 rounded-3xl p-8 text-center flex flex-col items-center justify-center gap-3">
+                  <Lock size={28} className="text-zinc-600/30" />
+                  <span className="text-[9px] uppercase font-bold text-white/35 tracking-widest leading-relaxed">
+                    STATUS BLOQUEADO: ASSUMA SEU REGIMENTO DIRETAMENTE ACIMA PARA OBTER ACESSO AO SISTEMA DE COORDENADAS.
+                  </span>
+                </div>
+              )}
+
             </div>
-          )}
+          </motion.div>
+        )}
 
-        </div>
+        {selectedEvent === 'rato' && (
+          <motion.div
+            key="rato-view"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            className="grid grid-cols-1 lg:grid-cols-12 gap-6"
+          >
+            {/* INVASÃO ESPECIAL: EVENT DETAILS & INFORMATION */}
+            <div className="lg:col-span-7 xl:col-span-8 flex flex-col gap-6">
+              <div className="bg-zinc-900/20 border border-zinc-800/80 rounded-3xl p-5 md:p-6 flex flex-col gap-5 shadow-xl relative overflow-hidden text-left">
+                <div className="absolute inset-0 bg-linear-to-b from-zinc-800/5 via-transparent to-transparent pointer-events-none" />
+                
+                <div className="flex items-center gap-2.5 border-b border-zinc-800/40 pb-3">
+                  <Compass className="text-amber-500" size={20} />
+                  <div>
+                    <h3 className="font-display font-black uppercase text-base text-white tracking-wide">CAÇA AO RATO: CONTROLE DE PRAGAS</h3>
+                    <p className="text-[8px] uppercase font-bold text-zinc-500 tracking-widest leading-none mt-0.5">
+                      DIRETRIZ DE INCURSÃO OPCIONAL & RECOMPENSA DE SEGUNDO SARGENTO/GUERREIROS
+                    </p>
+                  </div>
+                </div>
 
-      </div>
+                <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed font-bold uppercase italic border-l-2 border-amber-500/40 pl-3">
+                  "O controle de pragas garante o fluxo contínuo de suprimentos em nossa Alcatéia. A caçada de roedores é um dever sagrado militar de combate da guilda!"
+                </p>
+
+                {/* INFO BLOCKS FOR BAITS AND 22:00 INVOCATION */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1">
+                  <div className="border border-red-950/65 bg-red-950/15 rounded-2xl p-4 border-l-4 border-l-red-500">
+                    <h5 className="text-xs font-black uppercase text-red-300 tracking-wider flex items-center gap-1.5">
+                      <Clock size={14} className="text-red-400" />
+                      Invocação do Rato às 22:00
+                    </h5>
+                    <p className="text-[10px] text-zinc-300 uppercase leading-relaxed font-bold font-mono mt-1">
+                      O Rato Supremo da Alcatéia Suprema <strong className="text-white">será invocado impreterivelmente todos os dias às 22:00 horas</strong> (Horário de Brasília-3). Esteja totalmente online com seus combatentes sincronizados e preparados a este horário para o abate rápido em equipe.
+                    </p>
+                  </div>
+
+                  <div className="border border-amber-950/65 bg-amber-950/15 rounded-2xl p-4 border-l-4 border-l-amber-500">
+                    <h5 className="text-xs font-black uppercase text-amber-300 tracking-wider flex items-center gap-1.5">
+                      <Flame size={14} className="text-amber-400" />
+                      Funcionamento das Iscas
+                    </h5>
+                    <p className="text-[10px] text-zinc-300 uppercase leading-relaxed font-bold font-mono mt-1">
+                      Suas <strong className="text-white">Iscas de Rato</strong> são essenciais para erguer as armadilhas. Coletando e confirmando presença na varredura, ativamos o multiplicador de dano militar do clã! Este item aumenta massivamente o multiplicador da aliança, elevando o dano líquido total contra chefes e nas raids de guilda.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-[#1e1f22]/40 border border-white/5 rounded-2xl p-4 flex items-start gap-3 mt-1">
+                  <span className="text-lg">🔥</span>
+                  <div className="flex flex-col text-left">
+                    <span className="text-[9px] font-black uppercase text-amber-500 tracking-wider font-mono">DINÂMICA DE PROGRESSO ATUALIZADA</span>
+                    <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wide leading-relaxed mt-0.5">
+                      Como a totalidade do clã ativamente participa do mutirão, o limite máximo do multiplicador é alcançado extremamente rápido de forma instantânea. Logo, removemos os botões individuais de depósitos manuais repetitivos: sua contribuição e bônus integral agora são garantidos ao clicar em confirmar sua presença no painel lateral!
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-2xl p-4 flex items-start gap-3 mt-1">
+                  <span className="text-lg">💰</span>
+                  <div className="flex flex-col text-left">
+                    <span className="text-[9px] font-black uppercase text-emerald-400 tracking-wider font-mono">BÔNUS DE CONFIRMAÇÃO</span>
+                    <p className="text-[10.5px] text-zinc-300 font-bold uppercase tracking-wide leading-relaxed mt-0.5 animate-pulse">
+                      Garante +25 XP direto na guilda após aprovação dos oficiais. Cadastre sua presença ao lado para entrar na lista de convocação!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* PAINEL DE INSCRIÇÃO DA CAÇADA & CONFIRMADOS */}
+            <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-6 text-left">
+              <div className="bg-zinc-900/30 border border-zinc-800 rounded-3xl p-5 sm:p-6 flex flex-col gap-5 shadow-2xl relative overflow-hidden font-sans">
+                {isGuest && (
+                  <div className="absolute inset-0 bg-black/95 backdrop-blur-lg z-20 flex flex-col items-center justify-center p-6 text-center">
+                    <Skull className="text-red-600 mb-3 animate-pulse" size={40} />
+                    <h4 className="text-sm font-display font-black uppercase text-red-500 tracking-wider mb-2">CONTA TEMPORÁRIA RESTRITA</h4>
+                    <p className="text-[10px] uppercase font-bold text-white/70 max-w-xs leading-relaxed mb-4">
+                      Contas de convidado não têm autorização regulamentar para participar de eventos de combate da Aliança.
+                    </p>
+                    <div className="bg-red-950/40 border border-red-900/30 p-2 py-1 rounded-lg mb-4">
+                      <p className="text-[8px] text-red-500 uppercase font-black tracking-widest font-mono">
+                        SUA CONTA FECHA EM MENOS DE 24 HORAS
+                      </p>
+                    </div>
+                    <p className="text-[9px] text-zinc-500 uppercase font-bold max-w-xs leading-relaxed">
+                      Cadastre uma conta permanente para desbloquear todos os sistemas de combate tático!
+                    </p>
+                  </div>
+                )}
+                <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="text-amber-500 animate-pulse" size={20} />
+                    <h3 className="font-display font-black uppercase text-xs sm:text-sm tracking-widest text-white">REIVINDICAR PRESENÇA</h3>
+                  </div>
+                </div>
+
+                <p className="text-[10.5px] uppercase font-bold text-white/70 leading-relaxed">
+                  Confirme sua presença voluntária no mutirão de combate às pragas da Alcatéia Suprema.
+                </p>
+
+                <button
+                  disabled={loading || myMember?.completedMissions?.includes('caca_rato_confirm') || myMember?.completedMissions?.includes('caca_rato_pending')}
+                  onClick={handleRegisterRato}
+                  className={`w-full py-4 rounded-xl font-display font-black uppercase tracking-widest text-xs transition-all relative overflow-hidden cursor-pointer ${
+                    myMember?.completedMissions?.includes('caca_rato_confirm')
+                      ? 'bg-green-950/20 border border-green-500/20 text-green-500/80 cursor-not-allowed text-center'
+                      : myMember?.completedMissions?.includes('caca_rato_pending')
+                        ? 'bg-amber-500/10 border border-amber-500/30 text-amber-400 cursor-not-allowed text-center animate-pulse'
+                        : 'bg-amber-500 hover:bg-white text-black hover:shadow-[0_0_20px_rgba(245,158,11,0.25)] text-center'
+                  }`}
+                >
+                  {myMember?.completedMissions?.includes('caca_rato_confirm')
+                    ? "✓ XP COLETADO (RECOMPENSADO)"
+                    : myMember?.completedMissions?.includes('caca_rato_pending')
+                      ? "⚔️ INSCRIÇÃO ATIVA (AGUARDANDO FIM)"
+                      : "INSCREVER-SE NA CAÇADA & REQUISITAR XP"}
+                </button>
+              </div>
+
+              {/* LISTA DE INTEGRANTES CONFIRMADOS NA CAÇA AO RATO */}
+              <div className="bg-zinc-900/10 border border-zinc-850 rounded-3xl p-5 flex flex-col gap-4">
+                <div className="flex items-center justify-between border-b border-zinc-800/40 pb-2">
+                  <span className="text-[10px] font-black uppercase text-white/50 tracking-widest">
+                    GUERREIROS INTEGRANTES ({members.filter(m => m.completedMissions?.includes('caca_rato_pending') || m.completedMissions?.includes('caca_rato_confirm')).length})
+                  </span>
+                </div>
+                
+                {members.filter(m => m.completedMissions?.includes('caca_rato_pending') || m.completedMissions?.includes('caca_rato_confirm')).length > 0 ? (
+                  <div className="flex flex-col gap-2 max-h-[280px] overflow-y-auto pr-1 no-scrollbar">
+                    {members.filter(m => m.completedMissions?.includes('caca_rato_pending') || m.completedMissions?.includes('caca_rato_confirm')).map(m => {
+                      const isApproved = m.completedMissions?.includes('caca_rato_confirm');
+                      return (
+                        <div key={m.id} className="flex items-center justify-between bg-white/[0.02] border border-white/5 rounded-xl p-2.5">
+                          <span className="text-[11px] font-extrabold uppercase text-white tracking-wide truncate max-w-[130px]">{m.name}</span>
+                          <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${
+                            isApproved 
+                              ? 'bg-green-500/10 text-green-400 border border-green-500/20' 
+                              : 'bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse'
+                          }`}>
+                            {isApproved ? 'XP ENTREGUE' : 'ATIVO NO EVENTO'}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-[9px] uppercase font-bold text-white/20 italic text-center py-4">Nenhum guerreiro confirmado ainda. Seja o primeiro!</p>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {selectedEvent === null && (
+          <motion.div
+            key="empty-view"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            className="border border-white/5 bg-zinc-950/20 rounded-3xl p-8 text-center flex flex-col items-center justify-center gap-4 py-12 max-w-lg mx-auto shadow-2xl"
+          >
+            <div className="w-12 h-12 rounded-full bg-gaming-gold/10 flex items-center justify-center border border-gaming-gold/20 text-gaming-gold animate-bounce">
+              <Compass size={24} />
+            </div>
+            <div>
+              <h4 className="text-sm font-display font-black uppercase tracking-wider text-white">OPERAÇÕES TÁTICAS DE GUERRA</h4>
+              <p className="text-[10px] text-zinc-400 uppercase tracking-widest leading-relaxed mt-1 font-bold italic">
+                Selecione um dos eventos ou torneios listados acima para visualizar as diretrizes táticas oficiais, regras, alistamentos e garantir sua premiação de XP!
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -2223,7 +2682,7 @@ function DeprecatedPerfilView() {
   };
 
   const stats = [
-    { label: 'Conquistas', val: myMember?.trophies || 0, icon: Trophy, color: 'text-gaming-gold' },
+    { label: 'Insígnias', val: myMember?.trophies || 0, icon: Trophy, color: 'text-gaming-gold' },
     { label: 'Doações', val: myMember?.donations || 0, icon: Zap, color: 'text-blue-400' },
     { 
       label: 'Poder de Herói', 
@@ -2494,7 +2953,7 @@ function DeprecatedPerfilView() {
                     <div className="h-[1px] bg-white/[0.04] w-full" />
 
                     <div className="flex flex-col gap-1 flex-wrap">
-                      <span className="text-[7.5px] uppercase font-black text-white/35 tracking-wider font-sans mb-1">CONQUISTAS DO CLÃ</span>
+                      <span className="text-[7.5px] uppercase font-black text-white/35 tracking-wider font-sans mb-1">INSÍGNIAS DO CLÃ</span>
                       <div className="flex gap-1 flex-wrap">
                         {myMember?.title && (
                           <span className="px-2 py-0.5 bg-gaming-gold/10 text-gaming-gold border border-gaming-gold/25 rounded-md text-[7px] font-black uppercase tracking-[0.15em]">
@@ -2874,7 +3333,7 @@ function DeprecatedPerfilView() {
 
       <div className="bg-gaming-card/40 border border-gaming-border rounded-3xl p-8 flex flex-col items-center justify-center min-h-[200px] border-dashed">
          <Trophy size={48} className="text-white/10 mb-4" />
-         <h4 className="font-display font-black uppercase text-lg text-white/20">Registro de Conquistas</h4>
+         <h4 className="font-display font-black uppercase text-lg text-white/20">Registro de Insígnias</h4>
          <p className="text-[10px] text-white/10 uppercase font-black tracking-[0.3em] mt-2">Em Desenvolvimento</p>
       </div>
     </div>
@@ -3121,11 +3580,16 @@ export function ConfiguracoesView() {
 
 // --- REWARDS VIEW ---
 export function RewardsView() {
-  const { myMember, updateMemberData, isEcoMode } = useClan();
+  const { isGuest, myMember, updateMemberData, isEcoMode } = useClan();
 
   const [purchaseStatus, setPurchaseStatus] = useState<{ id: string, message: string, type: 'success' | 'error' } | null>(null);
 
   const handleClaimReward = (reward: any) => {
+    if (isGuest) {
+      alert("Contas de convidado temporárias não podem resgatar recompensas na Loja da Aliança!");
+      return;
+    }
+
     if (reward.inDevelopment) {
       setPurchaseStatus({ id: reward.id, message: "Este item está em desenvolvimento!", type: 'error' });
       setTimeout(() => setPurchaseStatus(null), 3000);
@@ -3196,95 +3660,109 @@ export function RewardsView() {
   ];
 
   return (
-    <div className="flex flex-col gap-5 sm:gap-6 p-3 sm:p-5 md:p-8">
-        <div className={`flex flex-col md:flex-row md:items-end justify-between gap-4`}>
+    <div className="flex flex-col gap-4 sm:gap-5 p-3 sm:p-4 md:p-6 pb-20">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-4">
         <div>
-           <span className="text-[9px] uppercase font-black text-gaming-gold tracking-[0.4em] mb-1 block">Mercado Negro</span>
-           <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-black uppercase italic tracking-tighter">
-             Central de <span className="text-gaming-gold">Recompensas</span>
+           <span className="text-[8px] uppercase font-black text-gaming-gold tracking-[0.3em] mb-0.5 block">LOJA DA ALIANÇA</span>
+           <h2 className="text-xl sm:text-2xl md:text-3xl font-display font-black uppercase italic tracking-tighter">
+             Central de <span className="text-gaming-gold">Resgates</span>
            </h2>
         </div>
-        <div className={`flex items-center gap-2.5 bg-white/5 border border-white/10 px-4 py-2 rounded-xl ${isEcoMode ? '' : 'backdrop-blur-md'}`}>
-           <Gem size={18} className="text-gaming-gold animate-pulse" />
-           <div className="flex flex-col">
-              <span className="text-[8px] uppercase font-black text-white/30 tracking-widest">Seu Saldo</span>
-              <span className="font-mono font-black text-gaming-gold text-base sm:text-lg leading-none">{myMember?.diamonds || 0}</span>
+        <div className={`flex items-center gap-2 bg-zinc-950/50 border border-white/10 px-3 py-1.5 rounded-lg self-start sm:self-auto ${isEcoMode ? '' : 'backdrop-blur-md'}`}>
+           <Gem size={14} className="text-gaming-gold animate-pulse" />
+           <div className="flex flex-col text-left">
+              <span className="text-[7px] uppercase font-black text-white/30 tracking-widest leading-none">Seu Saldo</span>
+              <span className="font-mono font-black text-gaming-gold text-sm sm:text-base leading-none mt-0.5">{myMember?.diamonds || 0}</span>
            </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+      {isGuest && (
+        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-start gap-3 text-left">
+          <ShieldAlert size={18} className="text-red-500 shrink-0 mt-0.5 animate-pulse" />
+          <div className="flex-1 flex flex-col gap-0.5">
+            <span className="text-[10px] uppercase font-mono font-black text-red-500 tracking-wider">Acesso de ResGATE Restrito</span>
+            <span className="text-[9px] uppercase font-bold text-red-400 leading-normal">
+              Contas de convidado não podem resgatar recompensas na loja ou ativar o Passe Premium. Registre uma conta permanente para começar a pontuar e adquirir mimos!
+            </span>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
          {rewards.map((reward) => (
            <motion.div 
             key={reward.id}
-            whileHover={!isEcoMode ? { y: -3 } : {}}
-            className={`group relative bg-gaming-card/40 border border-gaming-border rounded-2xl p-4 sm:p-5 flex flex-col gap-4 overflow-hidden transition-all hover:bg-gaming-card/60 hover:border-gaming-gold/30 ${isEcoMode ? '' : 'backdrop-blur-md'}`}
+            whileHover={!isEcoMode ? { y: -2 } : {}}
+            className={`group relative bg-zinc-900/40 border border-white/5 rounded-xl p-3 sm:p-4 flex flex-col justify-between overflow-hidden transition-all hover:bg-zinc-900/60 hover:border-gaming-gold/20 ${isEcoMode ? '' : 'backdrop-blur-md'}`}
            >
               {reward.inDevelopment && (
-                <div className={`absolute inset-0 bg-black/60 z-20 flex items-center justify-center rotate-[-15deg] scale-125 pointer-events-none ${isEcoMode ? '' : 'backdrop-blur-[2px]'}`}>
-                   <span className="bg-gaming-gold text-black px-6 py-1.5 font-black uppercase tracking-[0.3em] text-[8px] sm:text-[9px] shadow-2xl">Em Desenvolvimento</span>
+                <div className={`absolute inset-0 bg-black/75 z-20 flex items-center justify-center rotate-[-12deg] scale-110 pointer-events-none ${isEcoMode ? '' : 'backdrop-blur-[1px]'}`}>
+                   <span className="bg-gaming-gold text-black px-4 py-0.5 font-black uppercase tracking-[0.2em] text-[7px] sm:text-[8px] shadow-lg">Breve</span>
                 </div>
               )}
 
-              <div className="relative z-10">
-                 <div className="flex justify-between items-start mb-4">
-                    <div className={`p-3 rounded-xl bg-white/5 border border-white/10 text-white group-hover:text-gaming-gold group-hover:border-gaming-gold/50 transition-all shadow-inner`}>
-                       <reward.icon size={24} />
+              <div className="relative z-10 flex flex-col gap-2">
+                 <div className="flex justify-between items-center mb-1">
+                    <div className="p-2 rounded-lg bg-white/5 border border-white/5 text-white/70 group-hover:text-gaming-gold group-hover:border-gaming-gold/30 transition-all shadow-inner">
+                       <reward.icon size={16} />
                     </div>
-                    <span className="text-[7px] sm:text-[8px] font-black uppercase tracking-widest px-2.5 py-0.5 bg-white/5 rounded-full border border-white/5 text-white/40">{reward.rarity}</span>
+                    <span className="text-[6.5px] font-black uppercase tracking-widest px-1.5 py-0.5 bg-white/5 rounded-md border border-white/5 text-white/40">{reward.rarity}</span>
                  </div>
 
-                 <h4 className="font-display font-black uppercase text-lg sm:text-xl mb-1.5 leading-tight group-hover:text-gaming-gold transition-colors truncate">{reward.title}</h4>
-                 <p className="text-[9px] sm:text-[10px] text-white/40 font-bold uppercase leading-relaxed tracking-wider min-h-[36px] italic">{reward.desc}</p>
+                 <div>
+                    <h4 className="font-display font-black uppercase text-xs sm:text-sm leading-tight text-white group-hover:text-gaming-gold transition-colors truncate">{reward.title}</h4>
+                    <p className="text-[8px] sm:text-[9.5px] text-zinc-400 font-bold uppercase leading-relaxed tracking-wide min-h-[32px] mt-1 line-clamp-2 italic">{reward.desc}</p>
+                 </div>
               </div>
 
-              <div className="mt-auto relative z-10 pt-4 border-t border-white/5 flex flex-col gap-3">
+              <div className="relative z-10 pt-3 border-t border-white/5 flex flex-col gap-2 mt-4">
                  <div className="flex items-center justify-between">
-                    <span className="text-[8px] sm:text-[9px] font-black uppercase text-white/20 tracking-widest">Valor</span>
-                    <div className="flex items-center gap-1.5">
-                       <Gem size={12} className="text-gaming-gold" />
-                       <span className="font-mono font-black text-gaming-gold text-sm sm:text-base">{reward.price}</span>
+                    <span className="text-[7.5px] font-black uppercase text-white/20 tracking-widest">Valor</span>
+                    <div className="flex items-center gap-1">
+                       <Gem size={10} className="text-gaming-gold" />
+                       <span className="font-mono font-black text-gaming-gold text-xs sm:text-sm">{reward.price}</span>
                     </div>
                  </div>
                  <button 
                   onClick={() => handleClaimReward(reward)}
-                  className={`w-full py-2.5 sm:py-3 rounded-xl font-display font-black uppercase tracking-[0.2em] text-[10px] sm:text-xs transition-all relative overflow-hidden ${
-                    reward.inDevelopment 
+                  className={`w-full py-1.5 sm:py-2 rounded-lg font-display font-black uppercase tracking-[0.15em] text-[8.5px] sm:text-[10px] transition-all relative overflow-hidden ${
+                    reward.inDevelopment || isGuest
                       ? 'bg-white/5 text-white/20 cursor-not-allowed' 
-                      : 'bg-white text-black hover:bg-gaming-gold hover:shadow-[0_0_20px_rgba(251,191,36,0.4)] active:scale-95'
+                      : 'bg-white text-black hover:bg-gaming-gold hover:shadow-[0_0_15px_rgba(251,191,36,0.3)] active:scale-95 cursor-pointer'
                   }`}
                  >
-                   <AnimatePresence mode="wait">
-                     {purchaseStatus?.id === reward.id ? (
-                       <motion.span 
-                        key="status"
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        exit={{ y: -20, opacity: 0 }}
-                        className={`absolute inset-0 flex items-center justify-center text-[8px] sm:text-[9px] px-2 text-center text-wrap ${purchaseStatus.type === 'success' ? 'bg-green-500 text-black' : 'bg-red-500 text-white'}`}
-                       >
-                         {purchaseStatus.message}
-                       </motion.span>
-                     ) : (
-                       <motion.span key="label">Resgatar</motion.span>
-                     )}
-                   </AnimatePresence>
+                    <AnimatePresence mode="wait">
+                      {purchaseStatus?.id === reward.id ? (
+                        <motion.span 
+                         key="status"
+                         initial={{ y: 20, opacity: 0 }}
+                         animate={{ y: 0, opacity: 1 }}
+                         exit={{ y: -20, opacity: 0 }}
+                         className={`absolute inset-0 flex items-center justify-center text-[7.5px] sm:text-[8.5px] px-1 text-center font-bold ${purchaseStatus.type === 'success' ? 'bg-green-500 text-black' : 'bg-red-500 text-white'}`}
+                        >
+                          {purchaseStatus.message}
+                        </motion.span>
+                      ) : (
+                        <motion.span key="label">Resgatar</motion.span>
+                      )}
+                    </AnimatePresence>
                  </button>
               </div>
 
               {/* Decorative Background Icon */}
-              {!isEcoMode && <reward.icon size={80} className="absolute -right-6 -bottom-6 text-white/[0.02] -rotate-12 group-hover:scale-110 transition-transform duration-700" />}
+              {!isEcoMode && <reward.icon size={50} className="absolute -right-4 -bottom-4 text-white/[0.01] -rotate-12 group-hover:scale-110 transition-transform duration-700 pointer-events-none" />}
            </motion.div>
          ))}
       </div>
 
-      <div className="bg-linear-to-r from-gaming-purple/10 to-transparent border border-gaming-purple/20 rounded-2xl p-5 flex items-center gap-4 mt-2">
-         <div className="hidden md:flex w-14 h-14 bg-gaming-purple/20 rounded-full items-center justify-center text-gaming-purple flex-shrink-0 animate-pulse border border-gaming-purple/30">
-            <Gift size={28} />
+      <div className="bg-linear-to-r from-gaming-purple/5 to-transparent border border-gaming-purple/10 rounded-xl p-3.5 sm:p-4 flex items-center gap-3 mt-1.5">
+         <div className="hidden sm:flex w-10 h-10 bg-gaming-purple/15 rounded-full items-center justify-center text-gaming-purple flex-shrink-0 animate-pulse border border-gaming-purple/20">
+            <Gift size={20} />
          </div>
          <div>
-            <h5 className="font-display font-black uppercase text-base mb-1 italic">Eventos de Recarga</h5>
-            <p className="text-[10px] sm:text-xs text-white/50 uppercase font-black tracking-widest leading-relaxed">Fique atento ao nosso Whatsapp para eventos especiais onde você pode ganhar diamantes em dobro e recompensas exclusivas por tempo limitado.</p>
+            <h5 className="font-display font-black uppercase text-xs mb-0.5 italic text-white/80">Eventos de Recarga</h5>
+            <p className="text-[8px] sm:text-[9.5px] text-zinc-400 uppercase font-bold tracking-wider leading-relaxed">Fique atento ao nosso Whatsapp para eventos especiais onde você pode ganhar diamantes em dobro e recompensas exclusivas por tempo limitado.</p>
          </div>
       </div>
     </div>
@@ -3297,7 +3775,7 @@ export function DevelopmentView({ tab, progress = 65 }: { tab: string, progress?
   const [tacticalLog, setTacticalLog] = useState<string[]>(['Iniciando telemetria operacional...']);
   
   const tabNames: Record<string, string> = {
-    combate: 'Modo Combate',
+    combate: 'Torneios & Eventos',
     missoes: 'Quadro de Missões',
     social: 'Área Social',
     territorios: 'Territórios',
@@ -3419,7 +3897,7 @@ export function DevelopmentView({ tab, progress = 65 }: { tab: string, progress?
         {/* Grade de Territórios Interativos */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <div className="md:col-span-2 bg-gaming-card border border-gaming-border p-5 rounded-2xl flex flex-col gap-4">
-            <span className="text-[10px] font-black uppercase text-white/40 tracking-widest border-b border-white/5 pb-2 block">Matriz de Conquistas da Ordem Suprema</span>
+            <span className="text-[10px] font-black uppercase text-white/40 tracking-widest border-b border-white/5 pb-2 block">Matriz de Insígnias da Ordem Suprema</span>
             <div className="grid grid-cols-4 gap-2 py-2">
               {['A-1', 'A-2', 'A-3', 'A-4', 'B-1', 'B-2', 'B-3', 'B-4', 'C-1', 'C-2', 'C-3', 'C-4'].map(coord => {
                 const isDominated = ['A-1', 'B-2', 'C-3', 'A-4'].includes(coord);
@@ -3508,10 +3986,10 @@ export function DevelopmentView({ tab, progress = 65 }: { tab: string, progress?
           <h2 className="text-xl sm:text-2xl md:text-3xl font-display font-black uppercase italic tracking-tighter">
             Histórico de <span className="text-gaming-gold">Guerras</span>
           </h2>
-          <p className="text-[10px] text-white/50 uppercase font-black tracking-widest italic mt-1">Conquistas imortais gravadas de forma definitiva na aliança</p>
+          <p className="text-[10px] text-white/50 uppercase font-black tracking-widest italic mt-1">Insígnias imortais gravadas de forma definitiva na aliança</p>
         </div>
 
-        {/* Lista de Conquistas */}
+        {/* Lista de Insígnias */}
         <div className="flex flex-col gap-3">
           {[
             { opponent: '⚔️ Necros Guild (NECS)', result: 'vitoria', score: '300x120', date: '18/05/2026', desc: 'Batalha pela ponte celestial no Quadrante Leste.', reward: '+500 Troféus' },
@@ -3574,8 +4052,25 @@ export function DevelopmentView({ tab, progress = 65 }: { tab: string, progress?
 
 // --- GERENCIA VIEW ---
 export function GerenciaView() {
-  const { user, members, myMember, deleteMember, banMember, updateMemberRole, updateClanLoginLogoImage, clan, theftReports, clearTheftReport, isEcoMode, distributeElixirXP } = useClan();
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const { 
+    user, 
+    members, 
+    myMember, 
+    deleteMember, 
+    banMember, 
+    updateMemberRole, 
+    clan, 
+    theftReports, 
+    clearTheftReport, 
+    isEcoMode, 
+    distributeElixirXP, 
+    approveRatoReward, 
+    approveElixirReward 
+  } = useClan();
+
+  const [activeTab, setActiveTab] = useState<'membros' | 'eventos' | 'ouvidoria'>('membros');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [settling, setSettling] = useState(false);
 
@@ -3595,6 +4090,7 @@ export function GerenciaView() {
           alert(`O traidor ${name} foi banido definitivamente!`);
         } else {
           await deleteMember(memberId);
+          alert(`O combatente ${name} foi expulso.`);
         }
       } catch (err) {
         console.error('Erro ao excluir membro:', err);
@@ -3605,34 +4101,9 @@ export function GerenciaView() {
     }
   };
 
-  const handlePromotion = async (memberId: string, currentRole: string) => {
-    if (!isLeader) return;
-    
-    let newRole = 'warrior';
-    let actionLabel = '';
-
-    if (currentRole === 'warrior') {
-      newRole = 'diplomat';
-      actionLabel = 'PROMOVER A DIPLOMATA';
-    } else if (currentRole === 'diplomat') {
-      newRole = 'warrior';
-      actionLabel = 'REBAIXAR A GUERREIRO';
-    } else {
-      return; 
-    }
-
-    if (confirm(`Deseja realmente ${actionLabel} este guerreiro?`)) {
-      try {
-        await updateMemberRole(memberId, newRole);
-      } catch (err) {
-        alert('Erro ao alterar cargo.');
-      }
-    }
-  };
-
   const getRoleLabel = (role: string) => {
     switch (role) {
-      case 'leader': return 'Líder';
+      case 'leader': return 'Líder Supremo';
       case 'diplomat': return 'Diplomata';
       case 'military_leader': return 'Líder Militar';
       case 'recruiter': return 'Recrutador';
@@ -3644,393 +4115,525 @@ export function GerenciaView() {
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
-      case 'leader': return 'text-gaming-gold';
-      case 'diplomat': return 'text-gaming-purple';
-      case 'military_leader': return 'text-red-500';
-      case 'recruiter': return 'text-green-500';
-      case 'muse': return 'text-pink-400';
-      case 'warrior': return 'text-blue-400';
-      default: return 'text-white/60';
+      case 'leader': return 'text-amber-400 bg-amber-500/10 border-amber-500/20';
+      case 'diplomat': return 'text-purple-400 bg-purple-500/10 border-purple-500/20';
+      case 'military_leader': return 'text-red-400 bg-red-500/10 border-red-500/20';
+      case 'recruiter': return 'text-green-400 bg-green-500/10 border-green-500/20';
+      case 'muse': return 'text-pink-400 bg-pink-500/10 border-pink-500/20';
+      case 'warrior': return 'text-blue-400 bg-blue-500/10 border-blue-500/20';
+      default: return 'text-zinc-400 bg-zinc-550/10 border-zinc-500/10';
     }
   };
 
   if (!isLeader) {
     return (
-      <div className="flex flex-col items-center justify-center p-20 gap-6 opacity-40">
-        <ShieldAlert size={64} className="text-red-500" />
+      <div className="flex flex-col items-center justify-center p-20 gap-6 opacity-45 min-h-[60vh]">
+        <ShieldAlert size={64} className="text-red-500 animate-pulse" />
         <div className="flex flex-col items-center text-center gap-2">
-          <h2 className="text-2xl font-display font-black uppercase italic text-white tracking-tighter">Acesso Negado</h2>
-          <p className="text-[10px] font-black uppercase tracking-widest text-red-500/60 max-w-[200px]">Somente o Líder Supremo com o e-mail autorizado pode acessar as tecnologias de gestão de clã.</p>
+          <h2 className="text-2xl font-display font-black uppercase italic text-white tracking-tighter">Acesso Restrito</h2>
+          <p className="text-[10px] font-black uppercase tracking-widest text-red-500/60 max-w-sm leading-relaxed">
+            Área reservada aos líderes e administradores da Ordem Suprema. Entre em contato com a guilda para reivindicar as credenciais do Alto Comando.
+          </p>
         </div>
       </div>
     );
   }
 
+  // Filter and search members
+  const filteredMembers = members.filter(m => {
+    const matchesSearch = m.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          getRoleLabel(m.role).toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = roleFilter === 'all' || m.role === roleFilter;
+    return matchesSearch && matchesFilter;
+  });
+
   return (
-    <div className="flex flex-col gap-8 p-4 md:p-8 max-w-6xl mx-auto w-full pb-20">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div className="flex flex-col">
-           <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-red-500/20 rounded-lg text-red-500 border border-red-500/30">
-                 <ShieldAlert size={16} />
-              </div>
-              <span className="text-[10px] uppercase font-black text-red-500 tracking-[0.4em]">Painel de Alto Comando</span>
-           </div>
-           <h2 className="text-4xl md:text-6xl font-display font-black uppercase italic tracking-tighter leading-none">
-             Gestão de <span className="text-gaming-gold">Membros</span>
-           </h2>
+    <div className="flex-1 flex flex-col gap-6 p-4 md:p-8 max-w-6xl mx-auto w-full pb-24 text-left font-sans text-white">
+      {/* Dashboard Leadership Header */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b border-zinc-800 pb-6">
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 bg-red-500/10 border border-red-500/20 rounded-md text-red-500">
+              <ShieldAlert size={14} />
+            </span>
+            <span className="text-[10px] uppercase font-bold text-red-400 tracking-widest">
+              Sala de Guerra • Controle Militar de Elite
+            </span>
+          </div>
+          <h2 className="text-3xl md:text-4xl font-display font-black uppercase text-white tracking-tight leading-none mt-1">
+            ALTO COMANDO <span className="text-gaming-gold">SUPREMO</span>
+          </h2>
+          <p className="text-xs text-zinc-400 max-w-xl leading-relaxed mt-1">
+            Gerencie os guerreiros, conceda promoções de patentes diplomáticas e militares, libere as recompensas dos eventos rúnicos e atenda à Ouvidoria de Furtos.
+          </p>
+        </div>
+
+        {/* Global Stats mini grid */}
+        <div className="grid grid-cols-3 gap-3 w-full lg:w-auto shrink-0">
+          <div className="bg-zinc-950/40 border border-zinc-800 p-3 px-4 rounded-xl flex flex-col items-center text-center min-w-[90px]">
+            <span className="text-white font-black text-sm">{members.length} / 30</span>
+            <span className="text-[8px] font-mono font-bold text-zinc-500 uppercase tracking-widest mt-1">Membros</span>
+          </div>
+          <div className="bg-zinc-950/40 border border-zinc-800 p-3 px-4 rounded-xl flex flex-col items-center text-center min-w-[90px]">
+            <span className={`font-black text-sm ${theftReports.length > 0 ? 'text-red-500' : 'text-zinc-400'}`}>
+              {theftReports.length}
+            </span>
+            <span className="text-[8px] font-mono font-bold text-zinc-500 uppercase tracking-widest mt-1">Furtos</span>
+          </div>
+          <div className="bg-zinc-950/40 border border-amber-500/20 p-3 px-4 rounded-xl flex flex-col items-center text-center min-w-[90px]">
+            <span className="text-gaming-gold font-black text-sm">
+              {members.filter(m => m.combatGroup !== undefined).length}
+            </span>
+            <span className="text-[8px] font-mono font-bold text-zinc-500 uppercase tracking-widest mt-1">Guerra</span>
+          </div>
         </div>
       </div>
 
-      {/* Reports Section */}
-      {theftReports.length > 0 && (
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-2 px-2">
-            <AlertTriangle className="text-red-500" size={20} />
-            <h3 className="text-lg font-display font-black uppercase italic text-red-500">Denúncias de Furto Pendentes ({theftReports.length})</h3>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <AnimatePresence>
-              {theftReports.map(report => (
-                <motion.div 
-                  key={report.id}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9, x: -20 }}
-                  className="bg-red-500/5 border border-red-500/20 rounded-2xl p-5 flex flex-col gap-3 relative overflow-hidden group"
+      {/* Internal Functional Navigation Sub-Tabs */}
+      <div className="flex border-b border-zinc-850 p-1 bg-zinc-950/30 rounded-2xl w-full sm:w-fit gap-2">
+        <button
+          onClick={() => setActiveTab('membros')}
+          className={`px-5 py-2.5 rounded-xl font-display font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 ${
+            activeTab === 'membros' 
+              ? 'bg-gaming-gold text-black shadow-lg shadow-amber-500/5' 
+              : 'text-zinc-400 hover:text-white hover:bg-white/[0.02]'
+          }`}
+        >
+          <Users size={14} />
+          Membros & Hierarquia
+        </button>
+        <button
+          onClick={() => setActiveTab('eventos')}
+          className={`px-5 py-2.5 rounded-xl font-display font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 relative ${
+            activeTab === 'eventos' 
+              ? 'bg-gaming-gold text-black shadow-lg shadow-amber-500/5' 
+              : 'text-zinc-400 hover:text-white hover:bg-white/[0.02]'
+          }`}
+        >
+          <Trophy size={14} />
+          Eventos & Conclusões
+          {(members.filter(m => m.completedMissions?.includes('caca_rato_pending')).length > 0 ||
+            members.filter(m => m.combatGroup && !m.combatGroupClaimed).length > 0) && (
+            <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-450 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab('ouvidoria')}
+          className={`px-5 py-2.5 rounded-xl font-display font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 relative ${
+            activeTab === 'ouvidoria' 
+              ? 'bg-gaming-gold text-black shadow-lg shadow-amber-500/5' 
+              : 'text-zinc-400 hover:text-white hover:bg-white/[0.02]'
+          }`}
+        >
+          <AlertTriangle size={14} />
+          Ouvidoria de Furtos
+          {theftReports.length > 0 && (
+            <span className="bg-red-500 text-white font-mono text-[9px] font-black px-1.5 py-0.5 rounded-full">
+              {theftReports.length}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Main Tab Render Grid */}
+      <div className="grid grid-cols-1 gap-6">
+        
+        {/* TAB 1: MEMBROS E HIERARQUIA */}
+        {activeTab === 'membros' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            {/* Filter and Search Panel */}
+            <div className="lg:col-span-12 bg-gaming-card/30 border border-gaming-border p-4 sm:p-5 rounded-3xl flex flex-col md:flex-row justify-between items-center gap-4">
+              
+              {/* Left Search input */}
+              <div className="relative w-full md:max-w-md">
+                <input
+                  type="text"
+                  placeholder="Buscar guerreiro pelo nome ou patente..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-black/40 border border-zinc-800 focus:border-gaming-gold/65 text-white rounded-xl p-3 pl-10 text-xs placeholder-zinc-500 outline-hidden transition-all font-mono font-bold"
+                />
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500">🔍</span>
+              </div>
+
+              {/* Right Filter Dropdown */}
+              <div className="flex items-center gap-2 w-full md:w-auto shrink-0 justify-end">
+                <span className="text-[10px] font-black uppercase text-zinc-400 font-mono tracking-widest hidden sm:inline">Filtrar Patente:</span>
+                <select
+                  value={roleFilter}
+                  onChange={(e) => setRoleFilter(e.target.value)}
+                  className="bg-black/40 border border-zinc-800 text-white rounded-xl p-2.5 px-4 text-xs outline-hidden cursor-pointer font-bold uppercase"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase text-red-400">Denunciado por:</span>
-                    <button 
-                      onClick={() => clearTheftReport(report.id)}
-                      className="p-1.5 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-black transition-all"
+                  <option value="all">TODOS OS INTEGRANTES</option>
+                  <option value="leader">Líder Supremo</option>
+                  <option value="diplomat">Diplomata</option>
+                  <option value="military_leader">Líder Militar</option>
+                  <option value="recruiter">Recrutador</option>
+                  <option value="muse">Musa</option>
+                  <option value="warrior">Guerreiro</option>
+                </select>
+              </div>
+
+            </div>
+
+            {/* Members Grid list */}
+            <div className="lg:col-span-12 bg-gaming-card/40 border border-gaming-border rounded-3xl p-5 md:p-6">
+              <h3 className="font-display font-black text-xs text-white uppercase tracking-widest border-b border-zinc-800 pb-3 mb-5 flex items-center justify-between">
+                <span>RELAÇÃO OFICIAL DE INTEGRANTES ({filteredMembers.length})</span>
+                <span className="text-[9px] text-zinc-500 font-mono">EDITAR HIERARQUIAS EM TEMPO REAL</span>
+              </h3>
+
+              <div className="flex flex-col gap-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                <AnimatePresence mode="popLayout">
+                  {filteredMembers.map((m) => (
+                    <motion.div
+                      key={m.id}
+                      layout
+                      initial={{ opacity: 0, scale: 0.98 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, x: -30 }}
+                      className="bg-zinc-950/20 border border-zinc-900/40 hover:border-zinc-800 rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all group"
                     >
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-center text-red-500">
-                      <User size={20} />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-black uppercase text-white">{report.reporterName}</h4>
-                      <p className="text-[8px] font-mono font-bold text-white/30">{new Date(report.timestamp).toLocaleString('pt-BR')}</p>
-                    </div>
-                  </div>
-                  <div className="text-[9px] font-bold text-white/50 uppercase italic leading-relaxed">
-                    Relatou ocorrência de furto de caravana/recursos. Verificar logs do jogo.
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        </div>
-      )}
-
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-           <span className="text-[10px] uppercase font-black text-red-500 tracking-[0.4em] mb-1 block">Acesso Restrito</span>
-           <h2 className="text-4xl font-display font-black uppercase italic tracking-tighter">
-             Gestão de <span className="text-gaming-gold">Liderança</span>
-           </h2>
-        </div>
-        <div className="flex items-center gap-3 bg-red-500/10 border border-red-500/20 px-6 py-3 rounded-2xl">
-           <ShieldCheck size={20} className="text-red-500" />
-           <div className="flex flex-col">
-              <span className="text-[8px] uppercase font-black text-white/30 tracking-widest">Status</span>
-              <span className="font-display font-black text-red-500 text-xs leading-none uppercase">Admin Ativo</span>
-           </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 flex flex-col gap-4">
-           <div className="bg-gaming-card/40 border border-gaming-border rounded-3xl p-6 flex flex-col gap-6">
-              <div className="flex items-center justify-between">
-                 <h4 className="font-display font-black uppercase text-sm tracking-widest italic">Integrantes ({members.length})</h4>
-                 <div className="flex items-center gap-2">
-                    <span className="text-[9px] text-white/20 font-bold uppercase tracking-widest">ID Aliança: ORDM</span>
-                 </div>
-              </div>
-              
-              <div className="flex flex-col gap-1 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
-                 <AnimatePresence mode="popLayout">
-                   {members.filter(m => m.userId !== myMember?.userId).map(m => (
-                      <motion.div 
-                        key={m.id} 
-                        layout
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, x: -100, filter: 'blur(10px)' }}
-                        transition={{ duration: 0.3 }}
-                        className="bg-white/5 border border-white/5 hover:border-white/10 rounded-xl p-4 flex items-center justify-between transition-all group"
-                      >
-                       <div className="flex items-center gap-4">
-                          <SafeAvatar 
-                            src={m.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${m.userId}`} 
-                            className="w-10 h-10 rounded-full border border-white/10 object-cover" 
-                            alt={m.name}
-                            isEcoMode={isEcoMode}
-                          />
-                          <div className="flex flex-col">
-                             <div className="flex items-center gap-2">
-                                <span className="text-sm font-bold text-white group-hover:text-gaming-gold transition-colors">{m.name}</span>
-                             </div>
-                             <span className={`text-[8px] font-black uppercase tracking-widest ${getRoleBadgeColor(m.role)}`}>{getRoleLabel(m.role)}</span>
+                      {/* Left: Avatar + Details */}
+                      <div className="flex items-center gap-4">
+                        <SafeAvatar 
+                          src={m.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${m.userId}`} 
+                          className="w-11 h-11 rounded-full border border-zinc-800 object-cover group-hover:border-gaming-gold/20 transition-all shadow-inner" 
+                          alt={m.name}
+                          isEcoMode={isEcoMode}
+                        />
+                        <div className="flex flex-col text-left">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-black text-white group-hover:text-gaming-gold transition-colors font-mono">{m.name}</span>
+                            {m.userId === myMember?.userId && (
+                              <span className="text-[8px] bg-amber-500/10 text-amber-500 font-black px-1.5 py-0.5 rounded border border-amber-500/20 uppercase tracking-widest font-mono">Você</span>
+                            )}
                           </div>
-                       </div>
-                       
-                       <div className="flex items-center gap-2">
-                         <select 
-                           value={m.role}
-                           onChange={(e) => updateMemberRole(m.id, e.target.value as any)}
-                           className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white outline-none hover:border-gaming-gold/40 transition-all cursor-pointer"
-                         >
-                           <option value="diplomat" className="bg-gaming-card">Diplomata</option>
-                           <option value="military_leader" className="bg-gaming-card">Líder Militar</option>
-                           <option value="recruiter" className="bg-gaming-card">Recrutador</option>
-                           <option value="muse" className="bg-gaming-card">Musa</option>
-                           <option value="warrior" className="bg-gaming-card">Guerreiro</option>
-                         </select>
-
-                          <button 
-                             disabled={deletingId === m.id}
-                             onClick={() => handleDeleteMember(m.id, m.name, true)}
-                             className="p-2 bg-red-500/10 text-red-500 border border-red-500/20 rounded-lg hover:bg-red-500 hover:text-white transition-all disabled:opacity-50"
-                             title="Remover Membro"
-                           >
-                              <Trash2 size={16} />
-                           </button>
-                        </div>
-                     </motion.div>
-                  ))}
-                 </AnimatePresence>
-                 {members.length <= 1 && (
-                   <div className="py-24 text-center flex flex-col items-center gap-4 opacity-20">
-                      <Users size={48} />
-                      <div className="text-[10px] uppercase font-black tracking-widest">
-                        Nenhum outro guerreiro na aliança para gerenciar.
-                      </div>
-                   </div>
-                 )}
-              </div>
-           </div>
-        </div>
-
-        <div className="flex flex-col gap-6">
-           <div className="bg-gaming-card/40 border border-gaming-border rounded-3xl p-6 flex flex-col gap-6">
-              <h4 className="font-display font-black uppercase text-sm tracking-widest italic border-b border-white/5 pb-4">Ações Estratégicas</h4>
-              
-              <div className="space-y-3">
-                 <button 
-                   onClick={() => {
-                     const target = prompt('Digite o nome exato do jogador:');
-                     if (target) {
-                       const member = members.find(m => m.name.toLowerCase().trim() === target.toLowerCase().trim());
-                       if (member) {
-                         setEditingId(member.id);
-                       } else {
-                         alert('Membro não encontrado.');
-                       }
-                     }
-                   }}
-                   className="w-full py-4 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center gap-3 hover:bg-white hover:text-black transition-all font-display font-black uppercase text-[10px] tracking-widest"
-                 >
-                    <UserPlus size={16} /> Buscar Guerreiro
-                 </button>
-                 
-                 <button 
-                   onClick={() => setEditingId(editingId === 'all' ? null : 'all')}
-                   className={`w-full py-4 border rounded-xl flex items-center justify-center gap-3 transition-all font-display font-black uppercase text-[10px] tracking-widest ${editingId === 'all' ? 'bg-gaming-gold text-black border-gaming-gold shadow-[0_0_20px_rgba(251,191,36,0.3)]' : 'bg-white/5 border-white/10 text-white hover:bg-white/5'}`}
-                 >
-                    <Edit2 size={16} /> {editingId === 'all' ? 'Finalizar Edição' : 'Gerenciar Todos'}
-                 </button>
-              </div>
-           </div>
-
-            {/* Gerenciamento de Logo do Login de Todos */}
-            <div className="bg-gaming-card/40 border border-gaming-border rounded-3xl p-6 flex flex-col gap-6">
-              <div className="flex items-center gap-2 border-b border-white/5 pb-4">
-                <Palette className="text-gaming-gold animate-pulse" size={18} />
-                <h4 className="font-display font-black uppercase text-sm tracking-widest italic">Logo do Login para Todos</h4>
-              </div>
-
-              <div className="flex flex-col gap-4">
-                <p className="text-[10px] text-white/50 leading-relaxed font-bold uppercase italic">
-                  Altere a foto do logo em todas as telas de login oficiais da Suprema Ordem.
-                </p>
-
-                {/* Previsualização em Tempo Real */}
-                <div className="flex items-center justify-center p-4 bg-black/40 rounded-2xl border border-white/5">
-                  <div className="flex flex-col items-center gap-2">
-                    <span className="text-[8px] uppercase tracking-widest text-white/20 font-black">Visualização Atual:</span>
-                    <div className="w-16 h-16 hex-clip bg-linear-to-br from-gaming-gold/20 to-gaming-purple/20 border border-gaming-gold/30 flex items-center justify-center shadow-[0_0_20px_rgba(251,191,36,0.2)]">
-                      <img 
-                        src={clan?.loginLogoImage || "/src/assets/images/supreme_order_gold_logo_1778976451328.png"} 
-                        alt="Logo Preview" 
-                        className="w-10 h-10 object-contain drop-shadow-[0_0_5px_rgba(251,191,36,0.5)]"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Inputs do Logo */}
-                <div className="flex flex-col gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-[9px] uppercase font-black text-white/40 tracking-widest">Opção 1: Upload de Arquivo</span>
-                    <label className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-all font-display font-black uppercase text-[9px] tracking-widest text-white/80 shrink-0 select-none">
-                      <Camera size={14} className="text-gaming-gold" /> Escolher Foto...
-                      <input 
-                        type="file" 
-                        className="hidden" 
-                        accept="image/*" 
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
                           
-                          const reader = new FileReader();
-                          reader.onload = async (event) => {
-                            if (event.target?.result) {
-                              try {
-                                 await updateClanLoginLogoImage(event.target.result as string);
-                                 alert("Logo do login atualizado com sucesso para todos!");
-                              } catch (err: any) {
-                                 console.error("Erro ao salvar loginLogo:", err);
-                                 alert("Não foi possível persistir no Firestore. Lembre-se de aceitar/adicionar as regras de segurança.");
-                              }
-                            }
-                          };
-                          reader.readAsDataURL(file);
-                        }}
-                      />
-                    </label>
-                  </div>
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            <span className={`text-[8.5px] font-black uppercase tracking-wider px-2 py-0.5 rounded border ${getRoleBadgeColor(m.role)}`}>
+                              {getRoleLabel(m.role)}
+                            </span>
+                            <span className="text-[8.5px] text-zinc-500 font-bold uppercase">
+                              Nível {Math.floor((m.xp || 0) / 100) + 1} ({m.xp || 0} XP)
+                            </span>
+                          </div>
+                        </div>
+                      </div>
 
-                  <div className="flex flex-col gap-1.5 pt-1">
-                    <span className="text-[9px] uppercase font-black text-white/40 tracking-widest">Opção 2: URL de Imagem da Web</span>
-                    <div className="flex gap-2">
-                      <input 
-                        type="text" 
-                        placeholder="https://exemplo.com/sua-logo.png" 
-                        className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-[11px] font-bold text-white outline-none focus:border-gaming-gold/40 transition-all placeholder-white/20"
-                        onKeyDown={async (e) => {
-                          if (e.key === 'Enter') {
-                            const val = e.currentTarget.value.trim();
-                            if (val) {
-                              try {
-                                await updateClanLoginLogoImage(val);
-                                e.currentTarget.value = "";
-                                alert("Logo alterado com sucesso!");
-                              } catch (err) {
-                                alert("Erro ao salvar.");
-                              }
-                            }
-                          }
-                        }}
-                      />
-                      <button 
-                        onClick={async (e) => {
-                          const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                          const val = input?.value?.trim();
-                          if (val) {
-                            try {
-                              await updateClanLoginLogoImage(val);
-                              input.value = "";
-                              alert("Logo alterado com sucesso!");
-                            } catch (err) {
-                              alert("Erro ao salvar.");
-                            }
-                          }
-                        }}
-                        className="px-3 py-2 bg-gaming-gold text-black rounded-xl font-display font-black uppercase text-[10px] tracking-widest hover:bg-gaming-gold/80 transition-all"
-                      >
-                        Salvar
-                      </button>
+                      {/* Right: Actions */}
+                      <div className="flex items-center gap-3 w-full md:w-auto shrink-0 border-t border-zinc-900 md:border-t-0 pt-3 md:pt-0">
+                        {m.role !== 'leader' ? (
+                          <>
+                            <div className="flex flex-col gap-1 w-full md:w-auto">
+                              <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500 font-mono md:hidden">Patente Militar:</span>
+                              <select 
+                                value={m.role}
+                                onChange={(e) => updateMemberRole(m.id, e.target.value as any)}
+                                className="bg-black/50 border border-zinc-800 text-white rounded-xl px-3 py-2 text-xs font-bold uppercase cursor-pointer hover:border-gaming-gold/40 transition-all outline-none"
+                              >
+                                <option value="diplomat">Diplomata</option>
+                                <option value="military_leader">Líder Militar</option>
+                                <option value="recruiter">Recrutador</option>
+                                <option value="muse">Musa</option>
+                                <option value="warrior">Guerreiro</option>
+                              </select>
+                            </div>
+
+                            <button
+                              disabled={deletingId === m.id}
+                              onClick={() => handleDeleteMember(m.id, m.name, false)}
+                              className="px-3.5 py-2.5 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-black border border-red-500/20 rounded-xl transition-all text-xs font-bold uppercase flex items-center gap-1.5 shrink-0"
+                              title="Expulsar do Clã"
+                            >
+                              <Trash2 size={13} />
+                              <span className="md:hidden lg:inline">Expulsar</span>
+                            </button>
+                            <button
+                              disabled={deletingId === m.id}
+                              onClick={() => handleDeleteMember(m.id, m.name, true)}
+                              className="px-2.5 py-2.5 bg-red-950/20 hover:bg-black text-red-400 border border-red-900/40 rounded-xl transition-all text-xs font-mono font-black"
+                              title="Banir de Vez"
+                            >
+                              Banir
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-[10px] uppercase font-black tracking-widest text-zinc-500 bg-zinc-90 w-full md:w-auto text-center px-4 py-2 border border-zinc-800/20 rounded-xl">
+                            👑 Liderança Inviolável
+                          </span>
+                        )}
+                      </div>
+
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+
+                {filteredMembers.length === 0 && (
+                  <div className="py-16 text-center flex flex-col items-center gap-3 opacity-25">
+                    <span className="text-3xl">🛡️</span>
+                    <div className="text-xs uppercase font-black tracking-widest text-white">
+                      Nenhum guerreiro corresponde aos filtros especificados.
                     </div>
                   </div>
-
-                  {/* Restaurar Logo Padrão */}
-                  <button 
-                    onClick={async () => {
-                      if (confirm("Deseja mesmo restaurar o logo oficial padrão da Suprema Ordem?")) {
-                        try {
-                          await updateClanLoginLogoImage("");
-                          alert("Logo oficial restaurado!");
-                        } catch (err) {
-                          alert("Erro ao restaurar.");
-                        }
-                      }
-                    }}
-                    className="w-full py-2 bg-red-400/5 hover:bg-red-400/15 border border-red-500/10 hover:border-red-500/30 text-red-400 rounded-xl font-display font-black uppercase text-[9px] tracking-widest transition-all"
-                  >
-                    Restaurar Logo Padrão
-                  </button>
-                </div>
+                )}
               </div>
             </div>
 
-            {/* Luta pelo Elixir - Consolidação do Evento */}
-            <div className="bg-gaming-card/40 border border-gaming-border rounded-3xl p-6 flex flex-col gap-4">
-              <div className="flex items-center gap-2 border-b border-white/5 pb-3">
-                <Trophy className="text-gaming-gold animate-pulse" size={18} />
-                <h4 className="font-display font-black uppercase text-sm tracking-widest italic">Luta pelo Elixir — Consolidação</h4>
+          </div>
+        )}
+
+        {/* TAB 2: CONSOLIDAÇÕES & EVENTOS MILITARES */}
+        {activeTab === 'eventos' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            {/* General Events Status and XP distribution */}
+            <div className="lg:col-span-12 bg-gaming-card/30 border border-gaming-border rounded-3xl p-5 md:p-6 flex flex-col gap-5">
+              <div className="flex items-center gap-2 border-b border-zinc-850 pb-3">
+                <Trophy className="text-gaming-gold animate-bounce shrink-0" size={20} />
+                <div className="flex flex-col text-left">
+                  <h4 className="font-display font-black uppercase text-sm tracking-wider">LUTA PELO ELIXIR (CONSOLIDAÇÃO EM MASSA)</h4>
+                  <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest mt-0.5">Distribua 50 XP instantaneamente de forma coletiva aos inscritos</span>
+                </div>
               </div>
 
-              <div className="flex flex-col gap-3">
-                <span className="text-[10px] text-white/50 underline uppercase font-black tracking-wider leading-relaxed">
-                  Status de Inscrições dos Guerreiros:
-                </span>
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="bg-white/5 p-2 rounded-xl border border-white/5">
-                    <span className="text-[8px] font-bold text-white/30 uppercase block mb-1">Grupo A</span>
-                    <span className="text-base font-black text-red-500">{members.filter(m => m.combatGroup === 'A').length} / 7</span>
-                  </div>
-                  <div className="bg-white/5 p-2 rounded-xl border border-white/5">
-                    <span className="text-[8px] font-bold text-white/30 uppercase block mb-1">Grupo B</span>
-                    <span className="text-base font-black text-gaming-gold">{members.filter(m => m.combatGroup === 'B').length} / 7</span>
-                  </div>
-                  <div className="bg-white/5 p-2 rounded-xl border border-white/5">
-                    <span className="text-[8px] font-bold text-white/30 uppercase block mb-1">Grupo C</span>
-                    <span className="text-base font-black text-blue-400">{members.filter(m => m.combatGroup === 'C').length} / 6</span>
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center mt-1">
+                <div className="bg-zinc-950/40 p-4 rounded-2xl border border-zinc-800 relative overflow-hidden">
+                  <span className="text-[9px] font-black text-red-500 uppercase tracking-widest block mb-1">REGIMENTO ALFA (GRUPO A)</span>
+                  <span className="text-2xl font-black text-white">{members.filter(m => m.combatGroup === 'A').length} / 7</span>
+                  <div className="text-[8px] text-zinc-500 font-bold uppercase mt-1">Combatentes Escalados</div>
+                </div>
+                
+                <div className="bg-zinc-950/40 p-4 rounded-2xl border border-zinc-800 relative overflow-hidden">
+                  <span className="text-[9px] font-black text-gaming-gold uppercase tracking-widest block mb-1">REGIMENTO BRAVO (GRUPO B)</span>
+                  <span className="text-2xl font-black text-white">{members.filter(m => m.combatGroup === 'B').length} / 7</span>
+                  <div className="text-[8px] text-zinc-500 font-bold uppercase mt-1">Combatentes Escalados</div>
                 </div>
 
-                {/* Eligible participants waiting for validation */}
-                <div className="mt-2 flex flex-col gap-1.5 text-[10px] font-bold uppercase text-white/70">
-                  <p>Inscritos Totais: <span className="text-white font-extrabold">{members.filter(m => m.combatGroup !== undefined).length} / 20</span></p>
-                  <p>Aguardando XP (50): <span className="text-gaming-gold font-extrabold">{members.filter(m => m.combatGroup !== undefined && m.combatGroupClaimed !== true).length}</span></p>
+                <div className="bg-zinc-950/40 p-4 rounded-2xl border border-zinc-800 relative overflow-hidden">
+                  <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest block mb-1">REGIMENTO COBRA (GRUPO C)</span>
+                  <span className="text-2xl font-black text-white">{members.filter(m => m.combatGroup === 'C').length} / 6</span>
+                  <div className="text-[8px] text-zinc-500 font-bold uppercase mt-1">Combatentes Escalados</div>
+                </div>
+              </div>
+
+              {/* Status information wrapper */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4.5 bg-zinc-950/50 rounded-2xl border border-zinc-900 mt-2 font-mono">
+                <div className="flex flex-col gap-1 text-left text-xs text-zinc-300 font-semibold">
+                  <div>🔥 GUERREIROS INSCRITOS DIRETAMENTE: <span className="text-white font-extrabold">{members.filter(m => m.combatGroup !== undefined).length} / 20</span></div>
+                  <div>⏳ AGUARDANDO LIBERAÇÃO COLETIVA DE RECOMPENSAS: <span className="text-gaming-gold font-extrabold">{members.filter(m => m.combatGroup !== undefined && m.combatGroupClaimed !== true).length} membros</span></div>
                 </div>
 
                 <button
                   disabled={settling}
                   onClick={async () => {
-                    if (confirm("Confirmar a conclusão da Luta pelo Elixir e conceder 50 XP para todos os guerreiros inscritos nas Unidades de Combate?")) {
+                    const outstanding = members.filter(m => m.combatGroup !== undefined && m.combatGroupClaimed !== true).length;
+                    if (outstanding === 0) {
+                      alert("Nenhum inscrito com recompensa pendente encontrado.");
+                      return;
+                    }
+                    if (confirm(`Confirmar a liberação coletiva do Luta pelo Elixir e creditar 50 XP para os ${outstanding} guerreiros pendentes nas pastas militares?`)) {
                       setSettling(true);
                       try {
                         const rewarded = await distributeElixirXP();
-                        alert(`Sucesso! Conclusão do Luta pelo Elixir confirmada e 50 XP distribuídos para ${rewarded} guerreiros participantes.`);
+                        alert(`Sucesso! Relatórios aprovados e +50 XP do passe distribuídos para todos os integrantes envolvidos.`);
                       } catch (err) {
                         console.error(err);
-                        alert("Erro ao consolidar evento.");
+                        alert("Falha na gravação remota do comando.");
                       } finally {
                         setSettling(false);
                       }
                     }
                   }}
-                  className="w-full mt-2 py-3 bg-gaming-gold hover:bg-white text-black hover:text-black rounded-xl font-display font-black uppercase text-[10px] tracking-widest transition-all shadow-[0_0_20px_rgba(251,191,36,0.15)] disabled:opacity-50 cursor-pointer"
+                  className="bg-gaming-gold hover:bg-white text-black font-display font-black uppercase text-xs tracking-wider py-3.5 px-6 rounded-xl transition-all shadow-lg shadow-amber-500/10 cursor-pointer disabled:opacity-50 shrink-0 uppercase tracking-widest"
                 >
-                  {settling ? "Processando..." : "Confirmar Conclusão & Conceder 50 XP"}
+                  {settling ? "PROCESSANDO..." : "CONSOLIDAR EVENTO & EXECUTAR PAGAMENTO"}
                 </button>
               </div>
             </div>
 
-           <div className="bg-gaming-card/40 border border-gaming-border rounded-3xl p-6 flex flex-col gap-4">
-              <h4 className="text-[10px] font-black uppercase text-white/20 tracking-widest">Aviso Importante</h4>
-              <p className="text-[10px] text-white/50 leading-relaxed font-bold uppercase italic">
-                Ao expulsar um integrante, seu acesso à Supremacia será revogado imediatamente. Transferir a liderança é uma ação irreversível.
-              </p>
-           </div>
-        </div>
+            {/* Individual actions validations */}
+            <div className="lg:col-span-12 bg-gaming-card/40 border border-gaming-border rounded-3xl p-5 md:p-6 text-left">
+              <h3 className="font-display font-black text-xs text-white uppercase tracking-widest border-b border-zinc-800 pb-3 mb-4 flex items-center justify-between">
+                <span>APROVAÇÃO MANUAL DE CONQUISTAS INDIVIDUAIS</span>
+                <span className="text-[9px] text-red-500 font-mono animate-pulse">LIBERAÇÃO ASSINADA</span>
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                {/* Caça ao Rato section */}
+                <div className="bg-zinc-950/15 border border-zinc-850 p-4 rounded-2xl flex flex-col gap-3">
+                  <div className="flex items-center gap-1.5 border-b border-zinc-850 pb-2">
+                    <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-ping" />
+                    <span className="text-[10px] uppercase font-black text-amber-500 tracking-wider">CAÇA AO RATO • PEDIDOS (+25 XP)</span>
+                  </div>
+
+                  <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto no-scrollbar">
+                    {members.filter(m => m.completedMissions?.includes('caca_rato_pending')).length > 0 ? (
+                      members.filter(m => m.completedMissions?.includes('caca_rato_pending')).map(m => (
+                        <div key={m.id} className="flex items-center justify-between bg-zinc-950/40 p-3 rounded-xl border border-zinc-900 hover:border-zinc-800">
+                          <span className="text-[11px] font-black text-white uppercase font-mono">{m.name}</span>
+                          <button
+                            onClick={async () => {
+                              if (confirm(`Aprovar a insígnia de Caça ao Rato e creditar +25 XP para o perfil militar de ${m.name}?`)) {
+                                await approveRatoReward(m.userId);
+                                alert(`XP creditado para ${m.name}!`);
+                              }
+                            }}
+                            className="px-3 py-1.5 bg-amber-500 hover:bg-white text-zinc-950 font-mono text-[9px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer"
+                          >
+                            Conceder
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="py-8 text-center text-zinc-550 uppercase font-bold text-[9px] tracking-widest">
+                        Nenhum pedido de Caça ao Rato pendente.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Individual Elixir section */}
+                <div className="bg-zinc-950/15 border border-zinc-850 p-4 rounded-2xl flex flex-col gap-3 font-mono">
+                  <div className="flex items-center gap-1.5 border-b border-zinc-850 pb-2">
+                    <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping" />
+                    <span className="text-[10px] uppercase font-bold text-red-500 tracking-wider">LUTA PELO ELIXIR • CRÉDITO INDIVIDUAL (+50 XP)</span>
+                  </div>
+
+                  <div className="flex flex-col gap-2 max-h-[220px] overflow-y-auto no-scrollbar">
+                    {members.filter(m => m.combatGroup && !m.combatGroupClaimed).length > 0 ? (
+                      members.filter(m => m.combatGroup && !m.combatGroupClaimed).map(m => (
+                        <div key={m.id} className="flex items-center justify-between bg-zinc-950/40 p-3 rounded-xl border border-zinc-900 hover:border-zinc-800 text-xs">
+                          <div className="flex flex-col text-left">
+                            <span className="font-black text-white uppercase">{m.name}</span>
+                            <span className="text-[8px] text-zinc-500 uppercase tracking-widest mt-0.5">Grupo {m.combatGroup}</span>
+                          </div>
+                          <button
+                            onClick={async () => {
+                              if (confirm(`Aprovar participação isolada de ${m.name} na Luta pelo Elixir e somar +50 XP ao perfil?`)) {
+                                await approveElixirReward(m.userId);
+                                alert(`XP de Elixir creditado de forma individual para ${m.name}!`);
+                              }
+                            }}
+                            className="px-3 py-1.5 bg-red-650 hover:bg-white text-white hover:text-black font-mono text-[9px] font-black uppercase tracking-wider rounded-lg transition-all cursor-pointer"
+                          >
+                            Aprovar
+                          </button>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="py-8 text-center text-zinc-550 uppercase font-bold text-[9px] tracking-widest">
+                        Nenhum pedido de Elixir pendente.
+                      </div>
+                    )}
+                  </div>
+
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+        )}
+
+        {/* TAB 3: OUVIDORIA E CONTROLE DE FURTOS */}
+        {activeTab === 'ouvidoria' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            <div className="lg:col-span-12 bg-gaming-card/40 border border-gaming-border rounded-3xl p-5 md:p-6 text-left">
+              <div className="flex items-center justify-between border-b border-zinc-800 pb-3 mb-5">
+                <div className="flex items-center gap-2">
+                  <ShieldAlert className="text-red-500" size={18} />
+                  <h3 className="font-display font-black text-xs text-white uppercase tracking-widest">OUVIDORIA DE DENÚNCIAS FORMALIZADAS ({theftReports.length})</h3>
+                </div>
+                <span className="text-[9px] font-black text-red-500 bg-red-500/10 border border-red-500/20 px-2.5 py-1 rounded-md uppercase tracking-widest">CONTRATERRA SEGURO</span>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                {theftReports.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <AnimatePresence mode="popLayout">
+                      {theftReports.map((report) => (
+                        <motion.div
+                          key={report.id}
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, y: -20 }}
+                          className="bg-zinc-950/30 border border-zinc-850 hover:border-red-500/20 rounded-2xl p-4.5 flex flex-col gap-3 relative overflow-hidden transition-all group"
+                        >
+                          {/* Code background stripe */}
+                          <div className="absolute top-0 right-0 py-1 px-2.5 text-[7px] font-mono font-bold bg-zinc-800 text-zinc-400 uppercase tracking-widest rounded-bl-lg">
+                            SIGILOSO
+                          </div>
+
+                          <div className="flex items-center gap-3 border-b border-zinc-900 pb-2.5">
+                            <div className="w-9 h-9 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl flex items-center justify-center shrink-0">
+                              <ShieldAlert size={18} />
+                            </div>
+                            <div className="text-left">
+                              <span className="text-[8px] font-black text-zinc-500 uppercase block tracking-wider font-mono">RELATOR:</span>
+                              <span className="text-xs font-black text-white hover:text-gaming-gold transition-colors block uppercase">{report.reporterName || 'Anônimo'}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col gap-1.5 text-xs text-zinc-400 text-left font-semibold">
+                            <div>
+                              <span className="text-zinc-500">INFRATOR:</span>{' '}
+                              <span className="text-red-400 font-extrabold font-mono uppercase tracking-wider">{report.accusedName}</span>
+                            </div>
+                            <div>
+                              <span className="text-zinc-500">RECURSO:</span>{' '}
+                              <span className="text-zinc-200 uppercase tracking-wide">
+                                {report.caravanType === 'caravana_ur' ? 'Caravana Suprema (UR)' : 
+                                 report.caravanType === 'caravana_legendary' ? 'Caravana Lendária' : 
+                                 report.caravanType === 'caravana_epic' ? 'Caravana Épica' : 'Caixote / Cargas'}
+                              </span>
+                            </div>
+                            <div className="bg-black/30 p-2.5 rounded-xl border border-zinc-900 text-[10.5px] italic text-zinc-300 mt-1 lowercase first-letter:uppercase leading-relaxed select-all">
+                              "{report.evidence}"
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between border-t border-zinc-900 pt-3 mt-1 pr-1">
+                            <span className="text-[8px] font-mono font-bold text-zinc-500">
+                              {report.timestamp ? new Date(report.timestamp).toLocaleString('pt-BR') : 'Sem data'}
+                            </span>
+
+                            <button
+                              onClick={() => {
+                                if (confirm("Deseja marcar essa ocorrência como RESOLVIDA e arquivar o relatório?")) {
+                                  clearTheftReport(report.id);
+                                }
+                              }}
+                              className="px-2.5 py-1.5 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-zinc-900 hover:border-emerald-550 border border-emerald-500/20 rounded-lg text-[9px] font-display font-black uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer"
+                            >
+                              ✓ RESOLVIDO
+                            </button>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center p-16 text-center bg-zinc-950/10 border border-zinc-850 rounded-2xl border-dashed py-20">
+                    <span className="text-4xl mb-3">🕊️</span>
+                    <h5 className="text-xs font-display font-black uppercase text-white tracking-widest">Sem Ocorrências no Sistema</h5>
+                    <p className="text-[10px] text-zinc-500 uppercase font-bold mt-1 max-w-sm leading-relaxed">
+                      Todas as caravanas e caixotes seguiram sob trégua e respeito mútuo. Nenhuma denúncia registrada nas bases.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+          </div>
+        )}
+
       </div>
     </div>
   );

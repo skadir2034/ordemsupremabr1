@@ -279,7 +279,7 @@ export function Header({ isMobile = false }: { isMobile?: boolean }) {
                       </div>
                       <div className="flex items-start gap-3">
                         <div className="w-2 h-2 rounded-full bg-gaming-gold mt-1 shrink-0" />
-                        <p className="text-[10px] text-white/60 font-bold uppercase leading-relaxed tracking-wider">Troque diamantes por itens raros no Mercado Negro (em breve).</p>
+                        <p className="text-[10px] text-white/60 font-bold uppercase leading-relaxed tracking-wider">Troque diamantes por itens raros na Loja de Resgates.</p>
                       </div>
                     </div>
                   </>

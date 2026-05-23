@@ -7,7 +7,7 @@ import { auth } from '../lib/firebase';
 
 export function ClanProfile({ 
   isMobile = false,
-  activeTab = 'conquistas',
+  activeTab = 'insignias',
   setActiveTab
 }: { 
   isMobile?: boolean;

@@ -4,15 +4,18 @@ import { Gift, Sparkles, X, ChevronRight, Gem, Coins } from 'lucide-react';
 import { useClan } from '../context/ClanContext';
 
 export function UpdateRewardNotice() {
-  const { myMember, claimUpdateReward, isEcoMode } = useClan();
+  const { myMember, claimUpdateReward, isEcoMode, isGuest } = useClan();
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
+    if (isGuest) return;
     if (myMember && !myMember.updateRewardClaimed) {
       const timer = setTimeout(() => setIsOpen(true), 3000); // Show after a bit
       return () => clearTimeout(timer);
     }
-  }, [myMember?.updateRewardClaimed, myMember?.userId]);
+  }, [myMember?.updateRewardClaimed, myMember?.userId, isGuest]);
+
+  if (isGuest) return null;
 
   const handleClaim = async () => {
     await claimUpdateReward();

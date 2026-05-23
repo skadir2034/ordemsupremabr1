@@ -4,22 +4,17 @@ import {
   GoogleAuthProvider, 
   setPersistence, 
   browserLocalPersistence, 
-  signInWithRedirect, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword 
+  signInWithRedirect 
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { useClan } from '../context/ClanContext';
 import { motion } from 'motion/react';
-import { LogIn, RefreshCw, AlertCircle, Mail, Lock, UserPlus, ShieldAlert, Gamepad2 } from 'lucide-react';
+import { LogIn, RefreshCw, AlertCircle, ShieldAlert, Gamepad2, Crown, Sparkles, Trophy } from 'lucide-react';
 
 export function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [authMode, setAuthMode] = useState<'google' | 'email' | 'guest'>('guest');
-  const [isRegistering, setIsRegistering] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [authMode, setAuthMode] = useState<'google' | 'guest'>('guest');
   const [guestNickname, setGuestNickname] = useState('');
   const { loginAsGuest, clan } = useClan();
   const loginLogo = clan?.loginLogoImage || "/src/assets/images/supreme_order_gold_logo_1778976451328.png";
@@ -49,294 +44,261 @@ export function Login() {
     } catch (err: any) {
       console.error('Login failed', err);
       if (err.code === 'auth/popup-blocked') {
-        setError('O popup foi bloqueado pelo seu navegador. Por favor, permita popups para este site ou tente novamente com E-mail.');
+        setError('O popup de login foi bloqueado pelo seu navegador. Por favor, libere popups para este site ou utilize um navegador compatível.');
       } else if (err.code === 'auth/popup-closed-by-user') {
-        setError('Login cancelado. Você fechou a janela de autenticação.');
+        setError('Login cancelado. Você fechou a janela de autenticação da Google.');
       } else {
-        setError('Erro ao entrar: ' + (err.message || 'Erro desconhecido'));
-      }
-      setLoading(false);
-    }
-  };
-
-  const handleEmailAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) {
-      setError('Por favor, preencha todos os campos.');
-      return;
-    }
-    if (password.length < 6) {
-      setError('A senha deve conter pelo menos 6 caracteres.');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
-    try {
-      await setPersistence(auth, browserLocalPersistence);
-      if (isRegistering) {
-        const result = await createUserWithEmailAndPassword(auth, email, password);
-        console.log('Registro bem-sucedido!', result.user.uid);
-      } else {
-        const result = await signInWithEmailAndPassword(auth, email, password);
-        console.log('Login bem-sucedido!', result.user.uid);
-      }
-    } catch (err: any) {
-      console.error('Email authentication factor failed', err);
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-        setError('E-mail ou senha inválidos.');
-      } else if (err.code === 'auth/email-already-in-use') {
-        setError('Este endereço de e-mail já está sendo utilizado.');
-      } else if (err.code === 'auth/invalid-email') {
-        setError('Formato de e-mail inválido.');
-      } else {
-        setError(err.message || 'Erro de autenticação.');
+        setError('Erro ao entrar com Google: ' + (err.message || 'Erro de rede ou permissão.'));
       }
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gaming-bg text-white p-6 relative overflow-hidden">
-      {/* Background elements */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-gaming-gold/5 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-gaming-purple/5 rounded-full blur-[120px]" />
+    <div className="min-h-screen flex flex-col justify-between bg-gaming-bg text-white p-4 sm:p-6 relative overflow-x-hidden overflow-y-auto font-sans select-none select-none">
+      {/* Glows styled after the Brazilian Flag Concept: Green, Yellow & Starry Night Blue */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        {/* Deep Green Rainforest Aurora Glow */}
+        <div className="absolute top-[-25%] left-[-20%] w-[80%] h-[70%] sm:w-[55%] sm:h-[55%] bg-emerald-700/15 rounded-full blur-[100px] sm:blur-[130px] animate-pulse" style={{ animationDuration: '8s' }} />
+        {/* Supreme Gold Aurora Glow */}
+        <div className="absolute bottom-[-20%] right-[-20%] w-[80%] h-[70%] sm:w-[55%] sm:h-[55%] bg-amber-500/10 rounded-full blur-[100px] sm:blur-[130px] animate-pulse" style={{ animationDuration: '6s' }} />
+        {/* Blue Starry Night Core Aura */}
+        <div className="absolute top-[35%] left-[10%] w-[60%] h-[50%] sm:w-[40%] sm:h-[40%] bg-blue-600/5 rounded-full blur-[120px] sm:blur-[140px]" />
       </div>
 
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="w-full max-w-md bg-gaming-card/40 backdrop-blur-3xl border border-gaming-border/50 rounded-[3rem] p-8 md:p-12 text-center shadow-2xl relative z-10 overflow-hidden"
-      >
-        <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-gaming-gold to-transparent shadow-[0_0_25px_rgba(251,191,36,0.5)]" />
-        
+      {/* Decorative Top Ticker / Header for Mobile spacing */}
+      <div className="w-full text-center py-2 z-10 opacity-75 sm:opacity-100 mb-2">
+        <span className="text-[8px] sm:text-[9.5px] uppercase font-black tracking-[0.4em] font-mono text-emerald-400">
+          📍 ORDEM • PROGRESSO • COMPREENSÃO🇧🇷
+        </span>
+      </div>
+
+      <div className="flex-1 flex items-center justify-center w-full max-w-md mx-auto z-10 py-2">
         <motion.div 
-          initial={{ rotate: -10 }}
-          animate={{ rotate: 0 }}
-          transition={{ duration: 0.8, type: 'spring' }}
-          className="w-20 h-20 hex-clip bg-linear-to-br from-gaming-gold/20 to-gaming-purple/20 border border-gaming-gold/30 flex items-center justify-center mx-auto mb-6 shadow-[0_0_40px_rgba(251,191,36,0.3)] relative group"
+          initial={{ opacity: 0, scale: 0.97, y: 15 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          className="w-full bg-gaming-card/60 backdrop-blur-3xl border border-emerald-500/20 rounded-3xl sm:rounded-[2.5rem] p-5 sm:p-10 text-center shadow-[0_0_50px_rgba(16,185,129,0.08)] relative overflow-hidden"
         >
-           <div className="absolute inset-0 bg-gaming-gold/20 animate-ping rounded-full scale-50 opacity-0 group-hover:opacity-100 transition-opacity" />
-           <span className="text-4xl relative z-10 drop-shadow-[0_0_12px_rgba(251,191,36,0.6)] select-none">🐺</span>
-        </motion.div>
-
-         <h1 className="text-3xl md:text-4xl font-display font-black uppercase tracking-tighter mb-2 italic leading-tight">
-          Aliança Suprema <br />
-          <span className="text-gaming-gold drop-shadow-[0_0_15px_rgba(251,191,36,0.3)]">Ordem</span>
-         </h1>
-        
-        <p className="text-white/40 uppercase text-[9px] tracking-[0.3em] font-bold mb-8 px-4">
-          O portal definitivo para a gestão da sua guilda e glória militar.
-        </p>
-
-        {/* Auth Method Selector Tabs */}
-        <div className="flex bg-white/5 border border-white/10 rounded-2xl p-1 mb-8 gap-0.5">
-          <button 
-            type="button"
-            onClick={() => {
-              setAuthMode('guest');
-              setError('');
-            }}
-            className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${authMode === 'guest' ? 'bg-gaming-gold text-black' : 'text-white/50 hover:text-white'}`}
-          >
-            Convidado
-          </button>
-          <button 
-            type="button"
-            onClick={() => {
-              setAuthMode('google');
-              setError('');
-            }}
-            className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${authMode === 'google' ? 'bg-gaming-gold text-black' : 'text-white/50 hover:text-white'}`}
-          >
-            Google
-          </button>
-          <button 
-            type="button"
-            onClick={() => {
-              setAuthMode('email');
-              setError('');
-            }}
-            className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${authMode === 'email' ? 'bg-gaming-gold text-black' : 'text-white/50 hover:text-white'}`}
-          >
-            E-mail
-          </button>
-        </div>
-
-        {error && (
-          <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-[10px] font-black uppercase tracking-widest leading-relaxed flex items-center gap-3 text-left"
-          >
-            <AlertCircle size={18} className="shrink-0" />
-            <div className="flex-1">{error}</div>
-          </motion.div>
-        )}
-
-        {authMode === 'guest' ? (
-          <form 
-            onSubmit={async (e) => {
-              e.preventDefault();
-              if (!guestNickname.trim()) {
-                setError('Por favor, informe seu nickname para entrar.');
-                return;
-              }
-              setLoading(true);
-              setError('');
-              try {
-                await loginAsGuest(guestNickname.trim());
-              } catch (err: any) {
-                setError('Erro ao entrar como convidado: ' + (err.message || String(err)));
-                setLoading(false);
-              }
-            }}
-            className="space-y-4 text-left"
-          >
-            <div className="relative group">
-              <span className="absolute inset-y-0 left-4 flex items-center text-white/30 group-focus-within:text-gaming-gold transition-colors">
-                <Gamepad2 size={18} />
-              </span>
-              <input 
-                type="text"
-                value={guestNickname}
-                onChange={(e) => setGuestNickname(e.target.value)}
-                placeholder="Seu Nickname na Ordem"
-                maxLength={16}
-                className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-12 pr-4 text-xs font-bold focus:outline-none focus:border-gaming-gold/40 focus:bg-white/15 transition-all text-white placeholder-white/30"
-                required
-              />
-            </div>
-
-            <div className="p-3.5 bg-red-500/10 border border-red-500/30 rounded-xl flex items-start gap-3">
-              <ShieldAlert size={18} className="text-red-500 shrink-0 mt-0.5 animate-pulse" />
-              <div className="flex-1 flex flex-col gap-0.5">
-                <span className="text-[9px] uppercase font-mono font-black text-red-500 tracking-wider">Aviso Restrição Temporária</span>
-                <span className="text-[8px] uppercase font-bold text-red-400 leading-normal">
-                  Contas de convidado são temporárias e serão excluídas permanentemente em 24h. Além disso, convidados estão bloqueados de participar de eventos de combate e decisivos da guilda!
-                </span>
-              </div>
-            </div>
-
-            <button 
-              type="submit"
-              disabled={loading}
-              className="w-full relative group overflow-hidden rounded-xl mt-2"
-            >
-              <div className="absolute inset-0 bg-white group-hover:bg-gaming-gold transition-colors duration-300" />
-              <div className="relative py-4 font-display font-black uppercase tracking-widest flex items-center justify-center gap-3 text-black transition-transform group-active:scale-95 text-xs">
-                {loading ? (
-                  <RefreshCw size={18} className="animate-spin" />
-                ) : (
-                  <LogIn size={18} />
-                )}
-                {loading ? 'Entrando na Ordem...' : 'Entrar na Guilda'}
-              </div>
-            </button>
-            <p className="text-[9px] text-white/30 uppercase font-bold tracking-widest leading-relaxed text-center px-4 pt-1">
-              Sem senhas ou cadastros. Entre instantaneamente para jogar!
-            </p>
-          </form>
-        ) : authMode === 'google' ? (
-          <div className="space-y-4">
-            <button 
-              onClick={handleGoogleLogin}
-              disabled={loading}
-              className="w-full relative group overflow-hidden rounded-xl"
-            >
-              <div className="absolute inset-0 bg-white group-hover:bg-gaming-gold transition-colors duration-300" />
-              <div className="relative py-4 font-display font-black uppercase tracking-widest flex items-center justify-center gap-3 text-black transition-transform group-active:scale-95">
-                {loading ? (
-                  <RefreshCw size={20} className="animate-spin" />
-                ) : (
-                  <LogIn size={20} className="group-hover:translate-x-1 transition-transform" />
-                )}
-                {loading ? 'Sincronizando...' : 'Entrar com Google'}
-              </div>
-            </button>
-            <p className="text-[9px] text-white/30 uppercase font-bold tracking-widest leading-relaxed px-4">
-              Opção recomendada para sincronização instantânea de conta Google.
-            </p>
+          {/* Tech decorative bar in National Colors */}
+          <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-emerald-500 via-amber-400 to-blue-500 shadow-[0_0_20px_rgba(251,191,36,0.5)]" />
+          
+          {/* 100% Brazilian Badge */}
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-emerald-950/80 via-zinc-900/90 to-amber-950/80 border border-emerald-500/20 rounded-full mb-4 sm:mb-6 mx-auto shadow-inner text-emerald-400">
+            <span className="text-[8.5px] sm:text-[9.5px] uppercase font-black tracking-wider font-mono flex items-center gap-1">
+              🇧🇷 CLÃ OFICIAL SUPREMA ORDEM
+            </span>
           </div>
-        ) : (
-          <form onSubmit={handleEmailAuth} className="space-y-4 text-left">
-            <div className="space-y-3">
-              <div className="relative group">
-                <span className="absolute inset-y-0 left-4 flex items-center text-white/30 group-focus-within:text-gaming-gold transition-colors">
-                  <Mail size={16} />
-                </span>
-                <input 
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Seu endereço de e-mail"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-xs font-bold focus:outline-none focus:border-gaming-gold/40 focus:bg-white/15 transition-all text-white placeholder-white/30"
-                  required
-                />
-              </div>
 
-              <div className="relative group">
-                <span className="absolute inset-y-0 left-4 flex items-center text-white/30 group-focus-within:text-gaming-gold transition-colors">
-                  <Lock size={16} />
-                </span>
-                <input 
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Sua senha de segurança"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-xs font-bold focus:outline-none focus:border-gaming-gold/40 focus:bg-white/15 transition-all text-white placeholder-white/30"
-                  required
-                />
-              </div>
+          {/* Logo Container with Golden Orbit Glowing Ring - Responsive sizing */}
+          <motion.div 
+            initial={{ scale: 0.9, rotate: -2 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ duration: 0.8, type: 'spring' }}
+            className="relative w-24 h-24 sm:w-28 sm:h-28 mx-auto mb-4 sm:mb-5 group flex items-center justify-center"
+          >
+            {/* Neon spinning background layers */}
+            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-emerald-500/10 via-amber-400/25 to-blue-600/10 animate-spin" style={{ animationDuration: '12s' }} />
+            <div className="absolute -inset-1 rounded-full border border-dashed border-amber-400/30 scale-95 group-hover:scale-100 transition-transform duration-500" />
+            
+            <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-zinc-950/95 border-2 border-amber-400/50 p-1.5 sm:p-2 flex items-center justify-center shadow-[0_0_30px_rgba(251,191,36,0.35)] overflow-hidden">
+              <span className="text-4xl sm:text-5xl select-none filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] animate-pulse" style={{ animationDuration: '4s' }}>🐺</span>
             </div>
+          </motion.div>
 
-            <button 
-              type="submit"
-              disabled={loading}
-              className="w-full relative group overflow-hidden rounded-xl mt-2"
-            >
-              <div className="absolute inset-0 bg-white group-hover:bg-gaming-gold transition-colors duration-300" />
-              <div className="relative py-3.5 font-display font-black uppercase tracking-widest flex items-center justify-center gap-3 text-black transition-transform group-active:scale-95 text-xs">
-                {loading ? (
-                  <RefreshCw size={18} className="animate-spin" />
-                ) : isRegistering ? (
-                  <UserPlus size={18} />
-                ) : (
-                  <LogIn size={18} />
-                )}
-                {loading ? 'Processando...' : isRegistering ? 'Criar Nova Conta' : 'Entrar com E-mail'}
-              </div>
-            </button>
+          {/* Epic Brazilian Styled Headings - Optimized mobile line-height and sizes */}
+          <h1 className="text-2xl sm:text-4xl font-display font-black uppercase tracking-tighter mb-1 sm:mb-2 leading-tight">
+            Aliança <br className="hidden sm:inline" />
+            <span className="bg-gradient-to-r from-amber-400 via-yellow-300 to-emerald-400 bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(251,191,36,0.3)]">
+              Suprema Ordem
+            </span>
+          </h1>
+          
+          <p className="text-emerald-400/80 uppercase text-[9px] sm:text-[10px] tracking-[0.25em] font-black font-mono mb-6 sm:mb-8 max-w-xs mx-auto leading-relaxed">
+            ⚡ FORTALEÇA NOSSA HIERARQUIA, JOGUE COM HONRA 🇧🇷
+          </p>
 
+          {/* Auth Method Selector Tabs (ONLY Google and Guest) - Larger touch area for mobile */}
+          <div className="grid grid-cols-2 bg-zinc-950/60 border border-zinc-800 rounded-2xl p-1 mb-5 sm:mb-6 gap-1 relative z-10">
             <button 
               type="button"
               onClick={() => {
-                setIsRegistering(!isRegistering);
+                setAuthMode('guest');
                 setError('');
               }}
-              className="w-full text-center text-[10px] font-black uppercase tracking-widest text-gaming-gold/60 hover:text-gaming-gold transition-colors pt-2 block"
+              className={`flex items-center justify-center gap-1.5 py-3.5 sm:py-3 text-[9.5px] sm:text-[10.5px] font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer select-none active:scale-98 ${
+                authMode === 'guest' 
+                  ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-black font-black shadow-[0_4px_12px_rgba(16,185,129,0.2)]' 
+                  : 'text-zinc-500 hover:text-white/80'
+              }`}
             >
-              {isRegistering ? 'Já possui uma conta? Entre com seus dados' : 'Novo por aqui? Criar conta de membro'}
+              <Gamepad2 size={14} />
+              CONVIDADO
             </button>
-          </form>
-        )}
-
-        <div className="mt-10 pt-6 border-t border-white/5">
-          <div className="flex justify-center gap-4 text-[9px] font-black text-white/20 uppercase tracking-widest italic">
-            <span>Batalhe</span>
-            <span className="w-1 h-1 bg-white/20 rounded-full my-auto" />
-            <span>Conquiste</span>
-            <span className="w-1 h-1 bg-white/20 rounded-full my-auto" />
-            <span>Domine</span>
+            
+            <button 
+              type="button"
+              onClick={() => {
+                setAuthMode('google');
+                setError('');
+              }}
+              className={`flex items-center justify-center gap-1.5 py-3.5 sm:py-3 text-[9.5px] sm:text-[10.5px] font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer select-none active:scale-98 ${
+                authMode === 'google' 
+                  ? 'bg-gradient-to-r from-amber-400 to-amber-500 text-black font-black shadow-[0_4px_12px_rgba(245,158,11,0.2)]' 
+                  : 'text-zinc-500 hover:text-white/80'
+              }`}
+            >
+              <Crown size={13} />
+              ⭐ GOOGLE
+            </button>
           </div>
-        </div>
-      </motion.div>
+
+          {error && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="mb-5 p-3.5 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-[10px] sm:text-[10.5px] font-black uppercase tracking-wide leading-relaxed flex items-start gap-2 text-left font-sans"
+            >
+              <AlertCircle size={15} className="shrink-0 mt-0.5" />
+              <div className="flex-1">{error}</div>
+            </motion.div>
+          )}
+
+          {/* Guest Authentication Tab Content */}
+          {authMode === 'guest' ? (
+            <form 
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!guestNickname.trim()) {
+                  setError('Por favor, defina um nickname brasileiro de combate!');
+                  return;
+                }
+                setLoading(true);
+                setError('');
+                try {
+                  await loginAsGuest(guestNickname.trim());
+                } catch (err: any) {
+                  setError('Falha ao registrar convidado: ' + (err.message || String(err)));
+                  setLoading(false);
+                }
+              }}
+              className="space-y-4 text-left font-sans"
+            >
+              {/* Field Wrapper for extra comfort */}
+              <div className="relative group">
+                <span className="absolute inset-y-0 left-4 flex items-center text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
+                  <Gamepad2 size={16} />
+                </span>
+                <input 
+                  type="text"
+                  value={guestNickname}
+                  onChange={(e) => setGuestNickname(e.target.value)}
+                  placeholder="Seu Nickname na Suprema Ordem"
+                  maxLength={16}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="words"
+                  spellCheck={false}
+                  className="w-full bg-zinc-950/50 border border-zinc-800 focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20 rounded-xl py-3.5 sm:py-4 pl-11 pr-4 text-xs font-bold focus:outline-none focus:bg-zinc-950 transition-all text-white placeholder-zinc-600 font-sans"
+                  required
+                />
+              </div>
+
+              {/* Warning regarding limits - Compact on mobile */}
+              <div className="p-3 bg-red-950/20 border border-red-900/20 rounded-xl flex items-start gap-2.5">
+                <ShieldAlert size={15} className="text-red-500 shrink-0 mt-0.5" />
+                <div className="flex-1 flex flex-col gap-0.5">
+                  <span className="text-[8.5px] sm:text-[9.5px] uppercase font-black text-red-500 tracking-wider font-mono">⚠️ RESTRIÇÕES DA CONTA</span>
+                  <span className="text-[8px] sm:text-[9px] uppercase font-bold text-red-400/95 leading-normal font-sans">
+                    Como Convidado, você expira em 24h e não pode realizar missões, comprar na loja ou ingressar no Combate e no Caça ao Rato!
+                  </span>
+                </div>
+              </div>
+
+              <button 
+                type="submit"
+                disabled={loading}
+                className="w-full relative group overflow-hidden rounded-xl mt-1 cursor-pointer active:scale-[0.99] touch-manipulation select-none"
+              >
+                <div className="absolute inset-0 bg-emerald-500 group-hover:bg-emerald-400 transition-colors duration-300" />
+                <div className="relative py-3.5 sm:py-4 font-display font-black uppercase tracking-[0.15em] flex items-center justify-center gap-2 text-black text-xs">
+                  {loading ? (
+                    <RefreshCw size={14} className="animate-spin" />
+                  ) : (
+                    <LogIn size={14} />
+                  )}
+                  {loading ? 'Entrando como Convidado...' : 'Acessar modo Convidado'}
+                </div>
+              </button>
+              
+              <p className="text-[8.5px] sm:text-[9px] text-zinc-500 uppercase font-black tracking-widest text-center pt-0.5 font-mono">
+                ⚡ TESTE RÁPIDO • SEM DADOS SALVOS NO DISPOSITIVO
+              </p>
+            </form>
+          ) : (
+            /* Google Authentication Tab Content */
+            <div className="space-y-4 font-sans text-center">
+              {/* Benefits Badge list in PT-BR - Compacted padding for mobile screens */}
+              <div className="bg-zinc-950/40 border border-zinc-900 rounded-2xl p-3.5 sm:p-4 text-left flex flex-col gap-2.5">
+                <span className="text-[8.5px] sm:text-[9.5px] uppercase font-mono font-black text-amber-400 tracking-wider">💡 BENEFÍCIOS DO MEMBRO REGISTRADO</span>
+                <div className="flex items-center gap-2 text-[9px] sm:text-[10px] text-zinc-300 font-bold uppercase leading-tight">
+                  <Trophy size={11} className="text-amber-400 shrink-0" />
+                  <span>PARTICIPAÇÃO EXCLUSIVA NO EVENTO CAÇA AO RATO</span>
+                </div>
+                <div className="flex items-center gap-2 text-[9px] sm:text-[10px] text-zinc-300 font-bold uppercase leading-tight">
+                  <Sparkles size={11} className="text-emerald-400 shrink-0" />
+                  <span>PREMIADOS COM PASSES DE ELIXIR E ITENS DA LOJA</span>
+                </div>
+                <div className="flex items-center gap-2 text-[9px] sm:text-[10px] text-zinc-300 font-bold uppercase leading-tight">
+                  <Crown size={11} className="text-amber-400 shrink-0" />
+                  <span>PONTO DE EVENTOS E NOME OFICIAL DA GUILDA 🇧🇷</span>
+                </div>
+              </div>
+
+              <button 
+                onClick={handleGoogleLogin}
+                disabled={loading}
+                className="w-full relative group overflow-hidden rounded-xl cursor-pointer active:scale-[0.99] touch-manipulation select-none"
+              >
+                <div className="absolute inset-0 bg-amber-400 group-hover:bg-amber-300 transition-colors duration-200" />
+                <div className="relative py-3.5 sm:py-4 font-display font-black uppercase tracking-[0.15em] flex items-center justify-center gap-2 text-black text-xs">
+                  {loading ? (
+                    <RefreshCw size={14} className="animate-spin" />
+                  ) : (
+                    <LogIn size={14} />
+                  )}
+                  {loading ? 'Acessando Aliança...' : 'Entrar Oficialmente com Google'}
+                </div>
+              </button>
+              
+              <p className="text-[8.5px] sm:text-[9px] text-zinc-500 uppercase font-black tracking-widest leading-relaxed">
+                ⭐ INTEGRADO COM SISTEMA DE SEGURANÇA GOOGLE OAUTH
+              </p>
+            </div>
+          )}
+
+          {/* Patriotic footer accent inside the card */}
+          <div className="mt-6 sm:mt-8 pt-4 sm:pt-5 border-t border-zinc-900">
+            <div className="flex justify-center gap-3 text-[8px] sm:text-[9.5px] font-black text-zinc-500 uppercase tracking-[0.2em] italic font-mono">
+              <span>UNIDOS</span>
+              <span className="w-1 h-1 bg-emerald-500/40 rounded-full my-auto" />
+              <span>FORTES</span>
+              <span className="w-1 h-1 bg-amber-400/40 rounded-full my-auto" />
+              <span>BRASIL 🇧🇷</span>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Decorative footer message at bottom of viewport */}
+      <div className="w-full text-center py-2 z-10 opacity-60">
+        <span className="text-[8px] uppercase font-bold tracking-[0.25em] text-zinc-500">
+          ALIANÇA SUPREMA ORDEM DE GUERREIROS © 2026 • TODOS OS DIREITOS RESERVADOS
+        </span>
+      </div>
 
       {/* Grid Pattern Background */}
-      <div className="fixed inset-0 pointer-events-none -z-10 opacity-20">
-        <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0)', backgroundSize: '40px 40px' }} />
+      <div className="fixed inset-0 pointer-events-none -z-10 opacity-15">
+        <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(16,185,129,0.06) 1px, transparent 0)', backgroundSize: '30px 30px' }} />
       </div>
     </div>
   );

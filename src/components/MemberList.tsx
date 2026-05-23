@@ -1,18 +1,32 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Circle, UserPlus, Users, LogOut, Edit2, Trash2 } from 'lucide-react';
+import { Circle, UserPlus, Users, LogOut, Edit2, Trash2, X } from 'lucide-react';
 import { useClan } from '../context/ClanContext';
 import { SafeAvatar } from './SafeAvatar';
 
 export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
   const [activeSubTab, setActiveSubTab] = useState('membros');
+  const [selectedMember, setSelectedMember] = useState<any | null>(null);
   const { members, loading, logout, myMember, deleteMember, updateMemberRole, isEcoMode } = useClan();
   
   const sortedMembers = useMemo(() => {
     return [...members].sort((a, b) => {
-      if (b.level !== a.level) {
-        return (b.level || 0) - (a.level || 0);
+      // Prioridade 1: Eventos feitos (elixir_confirm e caca_rato_confirm)
+      const eventsA = (a.completedMissions || []).filter(id => id === 'elixir_confirm' || id === 'caca_rato_confirm').length;
+      const eventsB = (b.completedMissions || []).filter(id => id === 'elixir_confirm' || id === 'caca_rato_confirm').length;
+      
+      if (eventsB !== eventsA) {
+        return eventsB - eventsA;
       }
+      
+      // Prioridade 2: Insígnias (trophies)
+      const trophiesA = a.trophies || 0;
+      const trophiesB = b.trophies || 0;
+      if (trophiesB !== trophiesA) {
+        return trophiesB - trophiesA;
+      }
+      
+      // Prioridade 3: Poder de herói
       return (b.heroPower || 0) - (a.heroPower || 0);
     });
   }, [members]);
@@ -198,7 +212,7 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
           onClick={() => setActiveSubTab('membros')}
           className={`text-[10px] uppercase font-medium tracking-[0.2em] relative py-1 shrink-0 transition-colors ${activeSubTab === 'membros' ? 'text-white' : 'text-white/40 hover:text-white/70'}`}
         >
-          Participantes
+          Ranking Geral
           {activeSubTab === 'membros' && <motion.div layoutId="memberTab" className="absolute -bottom-2 left-0 right-0 h-[2px] bg-gaming-gold shadow-[0_0_8px_rgba(251,191,36,0.5)]" />}
         </button>
       </div>
@@ -243,7 +257,8 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0, x: -20 }}
-                      className="group hover:bg-white/5 transition-colors"
+                      onClick={() => setSelectedMember(m)}
+                      className="group hover:bg-white/5 transition-colors cursor-pointer"
                     >
                     <td className="px-6 py-4">
                       <div className="w-7 h-7 flex items-center justify-center text-[10px] font-bold text-white/30 border border-white/10 rounded-lg group-hover:border-gaming-gold/50 group-hover:text-gaming-gold transition-all">
@@ -324,7 +339,8 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.8, x: -50 }}
-                    className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center justify-between gap-4"
+                    onClick={() => setSelectedMember(m)}
+                    className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center justify-between gap-4 cursor-pointer hover:bg-white/10 transition-colors gpu-accelerate"
                   >
                   <div className="flex items-center gap-4">
                     <div className="relative group/avatar">
@@ -409,6 +425,118 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
           </button>
         ))}
       </div>
+
+      {/* FLOATING MEMBER PROFILE VIEW MODAL */}
+      <AnimatePresence>
+        {selectedMember && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md" onClick={() => setSelectedMember(null)}>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="w-full max-w-[340px] rounded-3xl bg-[#111214] text-[#dbdee1] overflow-hidden border border-zinc-800/60 shadow-[0_30px_80px_rgba(0,0,0,0.9)] relative text-left"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Dynamic profile banner */}
+              <div className="h-28 w-full bg-cover bg-center relative" style={{ backgroundImage: `url(${selectedMember.profileBg || 'https://cdnb.artstation.com/p/assets/images/images/017/680/475/small/andrej-otepka-square-04-tmp04web.jpg?1556922748'})` }}>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#111214] via-transparent to-black/30" />
+                <button 
+                  onClick={() => setSelectedMember(null)}
+                  className="absolute top-3 right-3 p-1.5 rounded-full bg-black/40 hover:bg-black/60 text-white/50 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+
+              {/* Avatar overlapping banner */}
+              <div className="px-5 pb-5 relative flex flex-col">
+                <div className="relative -mt-10 mb-3 self-start">
+                  <SafeAvatar 
+                    src={selectedMember.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedMember.userId}`}
+                    className={`w-20 h-20 rounded-full object-cover bg-zinc-900 border-4 border-[#111214] ${getBorderClasses(selectedMember.profileBorder)}`}
+                    isEcoMode={isEcoMode}
+                    alt={selectedMember.name}
+                  />
+                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-gaming-gold rounded-full flex items-center justify-center border-2 border-[#111214] shadow-[0_0_12px_rgba(251,191,36,0.6)] z-10 font-black text-black text-[9px]">
+                    {selectedMember.level || 0}
+                  </div>
+                </div>
+
+                {/* User Info */}
+                <div className="flex flex-col mb-4">
+                  <div className="flex items-center gap-2">
+                    <h1 className={`text-lg font-black tracking-tight ${getNicknameColorClass(selectedMember.nicknameColor)}`}>
+                      {selectedMember.name}
+                    </h1>
+                    {selectedMember.title && (
+                      <span className="bg-gaming-gold/10 text-gaming-gold text-[7px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border border-gaming-gold/25 font-sans">
+                        {selectedMember.title}
+                      </span>
+                    )}
+                  </div>
+                  <span className={`text-[8.5px] uppercase font-black tracking-widest mt-0.5 ${getRoleBadgeColor(selectedMember.role)}`}>
+                    {getRoleIcon(selectedMember.role)} {getRoleLabel(selectedMember.role)}
+                  </span>
+                  {selectedMember.status === 'online' ? (
+                    <span className="text-[7.5px] text-green-500 font-extrabold uppercase tracking-wider mt-1 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" /> Ativo Agora
+                    </span>
+                  ) : (
+                    <span className="text-[7.5px] text-zinc-500 font-bold uppercase tracking-wider mt-1 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 bg-[#4e5058] rounded-full" /> Não Conectado
+                    </span>
+                  )}
+                </div>
+
+                {/* Custom status message */}
+                {selectedMember.customStatus && (
+                  <div className="bg-[#1e1f22] border border-white/5 rounded-xl p-3 mb-4 text-[#dbdee1] flex items-start gap-2">
+                    <span className="text-xs">💬</span>
+                    <div className="flex flex-col text-left">
+                      <span className="text-[7px] font-black uppercase text-[#949ba4] tracking-wider font-sans">STATUS CUSTOMIZADO</span>
+                      <p className="text-[9.5px] text-zinc-300 font-bold tracking-wide leading-relaxed mt-0.5">
+                        {selectedMember.customStatus}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="h-[1px] bg-white/[0.04] w-full mb-4" />
+
+                {/* Statistics panel */}
+                <div className="flex flex-col gap-1 text-left mb-6">
+                  <span className="text-[7.5px] uppercase font-black text-[#949ba4] tracking-widest font-sans">ESTATÍSTICAS DO GUERREIRO</span>
+                  <div className="grid grid-cols-2 gap-2 mt-1.5">
+                    <div className="bg-white/5 border border-white/5 rounded-xl p-2 text-center flex flex-col gap-0.5">
+                      <span className="text-[8px] font-bold text-[#949ba4] uppercase">Poder de Herói</span>
+                      <span className="text-xs font-mono font-black text-red-400">{(selectedMember.heroPower || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="bg-white/5 border border-white/5 rounded-xl p-2 text-center flex flex-col gap-0.5">
+                      <span className="text-[8px] font-bold text-[#949ba4] uppercase">Insígnias</span>
+                      <span className="text-xs font-mono font-black text-gaming-gold">{(selectedMember.trophies || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="bg-white/5 border border-white/5 rounded-xl p-2 text-center flex flex-col gap-0.5">
+                      <span className="text-[8px] font-bold text-[#949ba4] uppercase">Doações</span>
+                      <span className="text-xs font-mono font-black text-blue-400">{(selectedMember.donations || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="bg-white/5 border border-white/5 rounded-xl p-2 text-center flex flex-col gap-0.5">
+                      <span className="text-[8px] font-bold text-[#949ba4] uppercase">Membro Desde</span>
+                      <span className="text-[8px] font-black text-zinc-400 capitalize">{selectedMember.joinedAt || '---'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => setSelectedMember(null)}
+                  className="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-display font-black uppercase text-[9px] tracking-widest rounded-xl transition-colors cursor-pointer"
+                >
+                  CONFIRMAR & FECHAR
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
