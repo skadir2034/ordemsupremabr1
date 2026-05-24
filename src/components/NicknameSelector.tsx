@@ -129,7 +129,7 @@ export function NicknameSelector({ onSelect, loading, onSelectGuest }: NicknameS
 
         <div className="mt-8 pt-8 border-t border-white/5 flex flex-col items-center gap-3">
           <div className="flex items-center gap-2 text-white/20">
-            <Check size={12} className="text-green-500/50" />
+            <Check size={12} className="text-gaming-gold/60" />
             <span className="text-[9px] font-bold uppercase tracking-widest">Identidade Protegida</span>
           </div>
           <p className="text-[8px] text-white/20 uppercase font-bold tracking-widest">Você poderá alterar seu nick futuramente se o líder permitir.</p>

@@ -103,12 +103,7 @@ export function PerfilView() {
   ];
 
   const backgrounds = [
-    { id: 'padrão', title: 'Alcatéia Alfa', desc: 'Fundo clássico rúnico de lobos.', price: 0, url: 'https://cdnb.artstation.com/p/assets/images/images/017/680/475/small/andrej-otepka-square-04-tmp04web.jpg?1556922748' },
-    { id: 'cibernética', title: 'Hacker Cyber', desc: 'Terminal em neon azul.', price: 15, url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070' },
-    { id: 'guerra', title: 'Campo de Batalha', desc: 'Solo devastado de guerra.', price: 20, url: 'https://images.unsplash.com/photo-1599394022918-6c276a570aba?q=80&w=2070' },
-    { id: 'moderna', title: 'Neon Moderna', desc: 'Fluido moderno e futurista.', price: 25, url: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=2070' },
-    { id: 'cosmos', title: 'Nebula Profunda', desc: 'Cosmos absoluto galáctico.', price: 35, url: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=2070' },
-    { id: 'vulcao', title: 'Magma Vulcânico', desc: 'Lava ardente de destruição.', price: 45, url: 'https://images.unsplash.com/photo-1610296669228-602fa827fc1f?q=80&w=2070' }
+    { id: 'padrão', title: 'Alcatéia Alfa', desc: 'Fundo clássico rúnico de lobos.', price: 0, url: 'https://cdnb.artstation.com/p/assets/images/images/017/680/475/small/andrej-otepka-square-04-tmp04web.jpg?1556922748' }
   ];
 
   const effects = [
@@ -122,7 +117,7 @@ export function PerfilView() {
     { id: 'color_red', title: 'Fúria do Alfa', desc: 'Tom carmesim escuro e imponente.', price: 10, textClass: 'text-[#b25d62] font-semibold drop-shadow-[0_0_6px_rgba(178,93,98,0.3)]' },
     { id: 'color_cyan', title: 'Prata da Geada', desc: 'Misty azul-gélido das montanhas.', price: 12, textClass: 'text-[#93c5fd] font-semibold drop-shadow-[0_0_6px_rgba(147,197,253,0.3)]' },
     { id: 'color_pink', title: 'Rosé de Inverno', desc: 'Toque místico de orquídea e névoa.', price: 15, textClass: 'text-[#c084fc] font-semibold drop-shadow-[0_0_6px_rgba(192,132,252,0.3)]' },
-    { id: 'color_emerald', title: 'Sálvia do Bosque', desc: 'Verde sutil das florestas antigas.', price: 15, textClass: 'text-[#a7f3d0] font-semibold drop-shadow-[0_0_6px_rgba(167,243,208,0.3)]' },
+    { id: 'color_emerald', title: 'Safira Serena', desc: 'Azul-safira sutil das águas místicas.', price: 15, textClass: 'text-[#7dd3fc] font-semibold drop-shadow-[0_0_6px_rgba(125,211,252,0.3)]' },
     { id: 'color_purple', title: 'Névoa Cósmica', desc: 'Aura suave de lavanda do crepúsculo.', price: 12, textClass: 'text-[#c0a9df] font-semibold drop-shadow-[0_0_6px_rgba(192,169,223,0.3)]' },
     { id: 'color_rgb', title: 'Espírito Lunar', desc: 'Degradê suave do luar com prata e safira.', price: 30, textClass: 'text-transparent bg-clip-text bg-gradient-to-r from-[#e2e8f0] via-[#c5a059] to-[#93c5fd] font-extrabold drop-shadow-[0_0_4px_rgba(226,232,240,0.3)]' }
   ];
@@ -297,7 +292,7 @@ export function PerfilView() {
         case 'color_red': return 'text-[#b25d62] font-semibold';
         case 'color_cyan': return 'text-[#93c5fd] font-semibold';
         case 'color_pink': return 'text-[#c084fc] font-semibold';
-        case 'color_emerald': return 'text-[#a7f3d0] font-semibold';
+        case 'color_emerald': return 'text-[#7dd3fc] font-semibold';
         case 'color_purple': return 'text-[#c0a9df] font-semibold';
         case 'color_rgb': return 'text-gaming-gold font-extrabold';
         default: return 'text-white';
@@ -308,7 +303,7 @@ export function PerfilView() {
       case 'color_red': return 'text-[#b25d62] font-semibold drop-shadow-[0_0_8px_rgba(178,93,98,0.3)]';
       case 'color_cyan': return 'text-[#93c5fd] font-semibold drop-shadow-[0_0_8px_rgba(147,197,253,0.3)]';
       case 'color_pink': return 'text-[#c084fc] font-semibold drop-shadow-[0_0_8px_rgba(192,132,252,0.3)]';
-      case 'color_emerald': return 'text-[#a7f3d0] font-semibold drop-shadow-[0_0_8px_rgba(167,243,208,0.3)]';
+      case 'color_emerald': return 'text-[#7dd3fc] font-semibold drop-shadow-[0_0_8px_rgba(125,211,252,0.3)]';
       case 'color_purple': return 'text-[#c0a9df] font-semibold drop-shadow-[0_0_8px_rgba(192,169,223,0.3)]';
       case 'color_rgb': return 'bg-gradient-to-r from-[#e2e8f0] via-[#c5a059] to-[#93c5fd] bg-clip-text text-transparent font-extrabold drop-shadow-[0_0_4px_rgba(226,232,240,0.3)]';
       default: return 'text-white';
@@ -418,7 +413,7 @@ export function PerfilView() {
 
   const compressImage = (base64: string, maxWidth = 300, maxHeight = 300, cropToSquare = false): Promise<string> => {
     return new Promise((resolve) => {
-      const img = new Image();
+      const img = new window.Image();
       // DO NOT set crossOrigin on base64 local data URLs as it triggers security blocks in many web environments
       if (!base64.startsWith('data:')) {
         img.crossOrigin = 'anonymous';
@@ -541,6 +536,7 @@ export function PerfilView() {
       if (!isGif) {
         const compressed = await compressImage(dataUrl, 500, 250);
         setTempBannerUrl(compressed);
+        setSelectedBg(compressed);
         setPurchaseStatus({ id: 'banner_preview_success', message: 'Visualização do banner carregada! Clique em Confirmar no topo para salvar.', type: 'success' });
         setTimeout(() => setPurchaseStatus(null), 3000);
       } else {
@@ -549,6 +545,7 @@ export function PerfilView() {
         
         const compressed = await compressGif(dataUrl, 450, 200);
         setTempBannerUrl(compressed);
+        setSelectedBg(compressed);
         
         const finalSizeKb = Math.round((compressed.length * 3) / 4 / 1024);
         setPurchaseStatus({ id: 'banner_preview_success', message: `Banner GIF otimizado com sucesso (${finalSizeKb} KB)!`, type: 'success' });
@@ -755,7 +752,7 @@ export function PerfilView() {
 
   const sidebarItems = [
     { id: 'nick', group: 'DADOS GERAIS', label: '1. Nick & Dados', icon: User, isDev: false },
-    { id: 'borders', group: 'ESTILOS', label: '2. Moldura Dinâmica', icon: Shield, isDev: true },
+    { id: 'borders', group: 'ESTILOS', label: '2. Moldura Dinâmica', icon: Shield, isDev: false },
     { id: 'effects', group: 'ESTILOS', label: '3. Efeito de Entrada', icon: Flame, isDev: true },
     { id: 'background', group: 'ESTILOS', label: '4. Banner de Fundo', icon: Image, isDev: false },
     { id: 'nicknameColor', group: 'ESTILOS', label: '5. Cor do Apelido', icon: Palette, isDev: true },
@@ -1183,14 +1180,28 @@ export function PerfilView() {
                 <span className="text-[10px] font-mono font-black text-gaming-gold uppercase tracking-widest">Estúdio de Customização</span>
                 <h1 className="text-xl sm:text-2xl font-display font-black text-white uppercase tracking-tight">Ateliê da Aliança</h1>
               </div>
-              <button
-                type="button"
-                onClick={() => setIsEditing(false)}
-                disabled={isSaving}
-                className="px-4 py-2 bg-[#4e5058] hover:bg-[#6d6f78] text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 flex items-center gap-1.5 shadow"
-              >
-                <X size={12} /> Fechar Estúdio
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSaveChanges}
+                  disabled={isSaving}
+                  className="px-4 py-2 bg-gaming-gold hover:bg-white text-black rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 flex items-center gap-1.5 shadow-[0_0_15px_rgba(251,191,36,0.2)]"
+                >
+                  {isSaving ? (
+                    <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 border-2 border-black border-t-transparent rounded-full animate-spin"></span> Gravando...</span>
+                  ) : (
+                    <>✔ Confirmar e Salvar Tudo</>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  disabled={isSaving}
+                  className="px-4 py-2 bg-[#4e5058] hover:bg-[#6d6f78] text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 flex items-center gap-1.5 shadow"
+                >
+                  <X size={12} /> Fechar / Cancelar
+                </button>
+              </div>
             </div>
 
             {/* TWO COLUMNS DUAL LAYOUT: Desktop Split Preview & Form Store */}
@@ -1201,7 +1212,7 @@ export function PerfilView() {
                 <div className="bg-[#111214] p-5 rounded-2xl border border-white/5 flex flex-col gap-4 shadow-xl">
                   <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
                     <span className="text-[10px] uppercase font-black text-[#949ba4] tracking-widest font-mono">Live Preview</span>
-                    <span className="text-[9px] bg-emerald-500/10 text-emerald-400 font-extrabold uppercase px-2 py-0.5 rounded animate-pulse">Ativo</span>
+                    <span className="text-[9px] bg-gaming-gold/10 text-gaming-gold font-extrabold uppercase px-2 py-0.5 rounded animate-pulse">Ativo</span>
                   </div>
                   
                   <div className="flex justify-center w-full">
@@ -1232,11 +1243,11 @@ export function PerfilView() {
                         }}
                         className={`flex items-center justify-center md:justify-start gap-2 px-3 py-3 md:px-4 md:py-2.5 rounded-xl border text-[10px] md:text-[11px] font-black tracking-wider uppercase transition-all duration-150 relative cursor-pointer ${
                           isActive 
-                            ? 'bg-gaming-gold text-black border-gaming-gold shadow-[0_4px_12px_rgba(251,191,36,0.25)] scale-[1.01]' 
+                            ? 'bg-gradient-to-r from-purple-900 to-indigo-950 border-gaming-gold text-white shadow-[0_0_20px_rgba(168,85,247,0.4)] scale-[1.01]' 
                             : 'bg-[#1e1f22]/30 border-white/5 text-zinc-400 hover:text-white hover:bg-[#1e1f22]/60 hover:border-white/10'
                         }`}
                       >
-                        <Icon size={12} className={isActive ? 'text-black font-extrabold' : 'text-zinc-500'} />
+                        <Icon size={12} className={isActive ? 'text-gaming-gold font-extrabold animate-pulse' : 'text-zinc-500'} />
                         <span className="flex items-center gap-1.5 truncate">
                           {item.label.split('. ')[1] || item.label}
                           {item.isDev && (
@@ -1371,22 +1382,11 @@ export function PerfilView() {
                         <span className="text-[8.5px] text-[#949ba4] uppercase font-bold">* Clique para salvar as mudanças principais de identidade rúnica.</span>
                         <button
                           type="button"
-                          onClick={async () => {
-                            setIsSaving(true);
-                            await updateMemberData({
-                              name: tempName,
-                              customStatus: tempStatus,
-                              heroPower: tempPower,
-                              customBio: tempBio,
-                              avatarUrl: tempAvatarUrl
-                            });
-                            setIsSaving(false);
-                            setPurchaseStatus({ id: 'nick_only_save', message: 'Identidade militar gravada com sucesso!', type: 'success' });
-                            setTimeout(() => setPurchaseStatus(null), 2500);
-                          }}
-                          className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shadow-md"
+                          onClick={handleSaveChanges}
+                          disabled={isSaving}
+                          className="px-5 py-2.5 bg-gaming-gold hover:bg-white active:scale-95 text-black rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shadow-[0_0_15px_rgba(251,191,36,0.2)] font-display"
                         >
-                          Salvar Alterações
+                          {isSaving ? "Sincronizando..." : "Confirmar e Salvar Tudo"}
                         </button>
                       </div>
                     </div>
@@ -1585,7 +1585,7 @@ export function PerfilView() {
                                         : isCurrentlyEquipped
                                           ? 'bg-zinc-700 text-zinc-100'
                                           : isOwned
-                                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md'
+                                            ? 'bg-gaming-purple hover:bg-gaming-purple/85 text-white shadow-md hover:scale-105'
                                             : 'bg-[#5865f2] hover:bg-[#4752c4] text-white shadow-md hover:scale-105'
                                     }`}
                                   >
@@ -1604,7 +1604,7 @@ export function PerfilView() {
                   {purchaseStatus && (
                     <div className={`p-4 rounded-xl border text-center font-bold text-xs uppercase tracking-wider ${
                       purchaseStatus.type === 'success' 
-                        ? 'bg-emerald-950/30 border-emerald-500/30 text-emerald-400' 
+                        ? 'bg-gaming-purple/15 border-gaming-purple/35 text-gaming-gold shadow-[0_0_15px_rgba(168,85,247,0.15)]' 
                         : 'bg-red-950/30 border-red-500/30 text-red-400'
                     }`}>
                       {purchaseStatus.message}

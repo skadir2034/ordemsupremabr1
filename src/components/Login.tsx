@@ -58,8 +58,8 @@ export function Login() {
     <div className="min-h-screen flex flex-col justify-between bg-gaming-bg text-white p-4 sm:p-6 relative overflow-x-hidden overflow-y-auto font-sans select-none select-none">
       {/* Glows styled after the Brazilian Flag Concept: Green, Yellow & Starry Night Blue */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        {/* Deep Green Rainforest Aurora Glow */}
-        <div className="absolute top-[-25%] left-[-20%] w-[80%] h-[70%] sm:w-[55%] sm:h-[55%] bg-emerald-700/15 rounded-full blur-[100px] sm:blur-[130px] animate-pulse" style={{ animationDuration: '8s' }} />
+        {/* Supreme Purple Aurora Glow */}
+        <div className="absolute top-[-25%] left-[-20%] w-[80%] h-[70%] sm:w-[55%] sm:h-[55%] bg-gaming-purple/15 rounded-full blur-[100px] sm:blur-[130px] animate-pulse" style={{ animationDuration: '8s' }} />
         {/* Supreme Gold Aurora Glow */}
         <div className="absolute bottom-[-20%] right-[-20%] w-[80%] h-[70%] sm:w-[55%] sm:h-[55%] bg-amber-500/10 rounded-full blur-[100px] sm:blur-[130px] animate-pulse" style={{ animationDuration: '6s' }} />
         {/* Blue Starry Night Core Aura */}
@@ -68,7 +68,7 @@ export function Login() {
 
       {/* Decorative Top Ticker / Header for Mobile spacing */}
       <div className="w-full text-center py-2 z-10 opacity-75 sm:opacity-100 mb-2">
-        <span className="text-[8px] sm:text-[9.5px] uppercase font-black tracking-[0.4em] font-mono text-emerald-400">
+        <span className="text-[8px] sm:text-[9.5px] uppercase font-black tracking-[0.4em] font-mono text-gaming-gold">
           📍 ORDEM • PROGRESSO • COMPREENSÃO🇧🇷
         </span>
       </div>
@@ -77,13 +77,13 @@ export function Login() {
         <motion.div 
           initial={{ opacity: 0, scale: 0.97, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          className="w-full bg-gaming-card/60 backdrop-blur-3xl border border-emerald-500/20 rounded-3xl sm:rounded-[2.5rem] p-5 sm:p-10 text-center shadow-[0_0_50px_rgba(16,185,129,0.08)] relative overflow-hidden"
+          className="w-full bg-gaming-card/60 backdrop-blur-3xl border border-gaming-purple/20 rounded-3xl sm:rounded-[2.5rem] p-5 sm:p-10 text-center shadow-[0_0_50px_rgba(168,85,247,0.08)] relative overflow-hidden"
         >
-          {/* Tech decorative bar in National Colors */}
-          <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-emerald-500 via-amber-400 to-blue-500 shadow-[0_0_20px_rgba(251,191,36,0.5)]" />
+          {/* Tech decorative bar in Guild Colors */}
+          <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-gaming-purple via-amber-400 to-gaming-purple/70 shadow-[0_0_20px_rgba(251,191,36,0.5)]" />
           
           {/* 100% Brazilian Badge */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-emerald-950/80 via-zinc-900/90 to-amber-950/80 border border-emerald-500/20 rounded-full mb-4 sm:mb-6 mx-auto shadow-inner text-emerald-400">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-gaming-purple/70 via-zinc-900/90 to-amber-950/80 border border-gaming-purple/20 rounded-full mb-4 sm:mb-6 mx-auto shadow-inner text-gaming-gold">
             <span className="text-[8.5px] sm:text-[9.5px] uppercase font-black tracking-wider font-mono flex items-center gap-1">
               🇧🇷 CLÃ OFICIAL SUPREMA ORDEM
             </span>
@@ -97,7 +97,7 @@ export function Login() {
             className="relative w-24 h-24 sm:w-28 sm:h-28 mx-auto mb-4 sm:mb-5 group flex items-center justify-center"
           >
             {/* Neon spinning background layers */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-emerald-500/10 via-amber-400/25 to-blue-600/10 animate-spin" style={{ animationDuration: '12s' }} />
+            <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-gaming-purple/10 via-amber-400/25 to-gaming-purple/20 animate-spin" style={{ animationDuration: '12s' }} />
             <div className="absolute -inset-1 rounded-full border border-dashed border-amber-400/30 scale-95 group-hover:scale-100 transition-transform duration-500" />
             
             <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-zinc-950/95 border-2 border-amber-400/50 p-1.5 sm:p-2 flex items-center justify-center shadow-[0_0_30px_rgba(251,191,36,0.35)] overflow-hidden">
@@ -108,12 +108,12 @@ export function Login() {
           {/* Epic Brazilian Styled Headings - Optimized mobile line-height and sizes */}
           <h1 className="text-2xl sm:text-4xl font-display font-black uppercase tracking-tighter mb-1 sm:mb-2 leading-tight">
             Aliança <br className="hidden sm:inline" />
-            <span className="bg-gradient-to-r from-amber-400 via-yellow-300 to-emerald-400 bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(251,191,36,0.3)]">
+            <span className="bg-gradient-to-r from-amber-400 via-yellow-300 to-gaming-gold bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(251,191,36,0.3)]">
               Suprema Ordem
             </span>
           </h1>
           
-          <p className="text-emerald-400/80 uppercase text-[9px] sm:text-[10px] tracking-[0.25em] font-black font-mono mb-6 sm:mb-8 max-w-xs mx-auto leading-relaxed">
+          <p className="text-gaming-gold/80 uppercase text-[9px] sm:text-[10px] tracking-[0.25em] font-black font-mono mb-6 sm:mb-8 max-w-xs mx-auto leading-relaxed">
             ⚡ FORTALEÇA NOSSA HIERARQUIA, JOGUE COM HONRA 🇧🇷
           </p>
 
@@ -127,7 +127,7 @@ export function Login() {
               }}
               className={`flex items-center justify-center gap-1.5 py-3.5 sm:py-3 text-[9.5px] sm:text-[10.5px] font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer select-none active:scale-98 ${
                 authMode === 'guest' 
-                  ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-black font-black shadow-[0_4px_12px_rgba(16,185,129,0.2)]' 
+                  ? 'bg-gradient-to-r from-gaming-gold to-amber-500 text-black font-black shadow-[0_4px_12px_rgba(251,191,36,0.2)]' 
                   : 'text-zinc-500 hover:text-white/80'
               }`}
             >
@@ -185,7 +185,7 @@ export function Login() {
             >
               {/* Field Wrapper for extra comfort */}
               <div className="relative group">
-                <span className="absolute inset-y-0 left-4 flex items-center text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
+                <span className="absolute inset-y-0 left-4 flex items-center text-zinc-500 group-focus-within:text-gaming-gold transition-colors">
                   <Gamepad2 size={16} />
                 </span>
                 <input 
@@ -198,7 +198,7 @@ export function Login() {
                   autoCorrect="off"
                   autoCapitalize="words"
                   spellCheck={false}
-                  className="w-full bg-zinc-950/50 border border-zinc-800 focus:border-emerald-500/40 focus:ring-1 focus:ring-emerald-500/20 rounded-xl py-3.5 sm:py-4 pl-11 pr-4 text-xs font-bold focus:outline-none focus:bg-zinc-950 transition-all text-white placeholder-zinc-600 font-sans"
+                  className="w-full bg-zinc-950/50 border border-zinc-800 focus:border-gaming-purple/50 focus:ring-1 focus:ring-gaming-purple/20 rounded-xl py-3.5 sm:py-4 pl-11 pr-4 text-xs font-bold focus:outline-none focus:bg-zinc-950 transition-all text-white placeholder-zinc-600 font-sans"
                   required
                 />
               </div>
@@ -219,7 +219,7 @@ export function Login() {
                 disabled={loading}
                 className="w-full relative group overflow-hidden rounded-xl mt-1 cursor-pointer active:scale-[0.99] touch-manipulation select-none"
               >
-                <div className="absolute inset-0 bg-emerald-500 group-hover:bg-emerald-400 transition-colors duration-300" />
+                <div className="absolute inset-0 bg-gaming-gold group-hover:bg-amber-400 transition-colors duration-300" />
                 <div className="relative py-3.5 sm:py-4 font-display font-black uppercase tracking-[0.15em] flex items-center justify-center gap-2 text-black text-xs">
                   {loading ? (
                     <RefreshCw size={14} className="animate-spin" />
@@ -245,7 +245,7 @@ export function Login() {
                   <span>PARTICIPAÇÃO EXCLUSIVA NO EVENTO CAÇA AO RATO</span>
                 </div>
                 <div className="flex items-center gap-2 text-[9px] sm:text-[10px] text-zinc-300 font-bold uppercase leading-tight">
-                  <Sparkles size={11} className="text-emerald-400 shrink-0" />
+                  <Sparkles size={11} className="text-gaming-purple shrink-0" />
                   <span>PREMIADOS COM PASSES DE ELIXIR E ITENS DA LOJA</span>
                 </div>
                 <div className="flex items-center gap-2 text-[9px] sm:text-[10px] text-zinc-300 font-bold uppercase leading-tight">
@@ -280,7 +280,7 @@ export function Login() {
           <div className="mt-6 sm:mt-8 pt-4 sm:pt-5 border-t border-zinc-900">
             <div className="flex justify-center gap-3 text-[8px] sm:text-[9.5px] font-black text-zinc-500 uppercase tracking-[0.2em] italic font-mono">
               <span>UNIDOS</span>
-              <span className="w-1 h-1 bg-emerald-500/40 rounded-full my-auto" />
+              <span className="w-1 h-1 bg-gaming-purple/40 rounded-full my-auto" />
               <span>FORTES</span>
               <span className="w-1 h-1 bg-amber-400/40 rounded-full my-auto" />
               <span>BRASIL 🇧🇷</span>

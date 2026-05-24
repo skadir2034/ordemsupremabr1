@@ -3,14 +3,25 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Circle, UserPlus, Users, LogOut, Edit2, Trash2, X } from 'lucide-react';
 import { useClan } from '../context/ClanContext';
 import { SafeAvatar } from './SafeAvatar';
+import { AVATAR_DECORATIONS } from '../collectiblesData';
 
 export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
   const [activeSubTab, setActiveSubTab] = useState('membros');
   const [selectedMember, setSelectedMember] = useState<any | null>(null);
   const { members, loading, logout, myMember, deleteMember, updateMemberRole, isEcoMode } = useClan();
   
-  const sortedMembers = useMemo(() => {
+  const [forceUpdateToggle, setForceUpdateToggle] = useState(0);
+
+  const rawSortedMembers = useMemo(() => {
     return [...members].sort((a, b) => {
+      if (activeSubTab === 'poder') {
+        return (b.heroPower || 0) - (a.heroPower || 0);
+      }
+      if (activeSubTab === 'nivel') {
+        return (b.xp || 0) - (a.xp || 0);
+      }
+      
+      // Default / Elite (membros):
       // Prioridade 1: Eventos feitos (elixir_confirm e caca_rato_confirm)
       const eventsA = (a.completedMissions || []).filter(id => id === 'elixir_confirm' || id === 'caca_rato_confirm').length;
       const eventsB = (b.completedMissions || []).filter(id => id === 'elixir_confirm' || id === 'caca_rato_confirm').length;
@@ -29,14 +40,91 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
       // Prioridade 3: Poder de herói
       return (b.heroPower || 0) - (a.heroPower || 0);
     });
-  }, [members]);
+  }, [members, activeSubTab]);
+
+  const sortedMembers = useMemo(() => {
+    if (members.length === 0) return [];
+    
+    const cacheKey = `ranking_cache_${activeSubTab}`;
+    const timeKey = `ranking_time_${activeSubTab}`;
+    const now = Date.now();
+    
+    const cachedStr = localStorage.getItem(cacheKey);
+    const cachedTimeStr = localStorage.getItem(timeKey);
+    const cachedTime = cachedTimeStr ? parseInt(cachedTimeStr, 10) : 0;
+    const ONE_HOUR = 60 * 60 * 1000;
+    
+    if (cachedStr && cachedTime && (now - cachedTime < ONE_HOUR) && forceUpdateToggle === 0) {
+      try {
+        const parsed = JSON.parse(cachedStr) as any[];
+        const existingIds = new Set(members.map(m => m.id));
+        const filteredParsed = parsed.filter(m => existingIds.has(m.id));
+        
+        const memberMap = new Map(members.map(m => [m.id, m]));
+        const updatedParsed = filteredParsed.map((cachedMember: any) => {
+          const liveMember = memberMap.get(cachedMember.id);
+          return liveMember ? Object.assign({}, cachedMember, liveMember) : cachedMember;
+        });
+
+        // Add any new members that aren't in the cached ranking to the end of the list
+        const cachedIds = new Set(filteredParsed.map(m => m.id));
+        const missingMembers = members.filter(m => !cachedIds.has(m.id));
+        if (missingMembers.length > 0) {
+          const sortedMissing = [...missingMembers].sort((a, b) => {
+            if (activeSubTab === 'poder') return (b.heroPower || 0) - (a.heroPower || 0);
+            if (activeSubTab === 'nivel') return (b.xp || 0) - (a.xp || 0);
+            return (b.heroPower || 0) - (a.heroPower || 0);
+          });
+          return [...updatedParsed, ...sortedMissing];
+        }
+
+        if (updatedParsed.length > 0) {
+          return updatedParsed;
+        }
+      } catch (err) {
+        // Fallback
+      }
+    }
+    
+    try {
+      localStorage.setItem(cacheKey, JSON.stringify(rawSortedMembers));
+      localStorage.setItem(timeKey, now.toString());
+    } catch (e) {
+      console.warn("Storage quota full, unable to write ranking cache");
+    }
+    
+    return rawSortedMembers;
+  }, [rawSortedMembers, members, activeSubTab, forceUpdateToggle]);
+
+  const forceRefresh = () => {
+    const cacheKey = `ranking_cache_${activeSubTab}`;
+    const timeKey = `ranking_time_${activeSubTab}`;
+    localStorage.removeItem(cacheKey);
+    localStorage.removeItem(timeKey);
+    setForceUpdateToggle(prev => prev + 1);
+    setTimeout(() => setForceUpdateToggle(0), 100);
+  };
+
+  const getCacheRemainingStr = () => {
+    const timeKey = `ranking_time_${activeSubTab}`;
+    const cachedTimeStr = localStorage.getItem(timeKey);
+    if (!cachedTimeStr) return 'Atualizado agora';
+    const cachedTime = parseInt(cachedTimeStr, 10);
+    const elapsed = Date.now() - cachedTime;
+    const ONE_HOUR = 60 * 60 * 1000;
+    if (elapsed >= ONE_HOUR) return 'Sincronizar';
+    
+    const remainingMs = ONE_HOUR - elapsed;
+    const remainingMins = Math.ceil(remainingMs / 1000 / 60);
+    return `Atualização automática em ${remainingMins} min`;
+  };
 
   const [editingMember, setEditingMember] = useState<string | null>(null);
 
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const isLeader = myMember?.role === 'leader';
 
-  const [visibleLimit, setVisibleLimit] = useState(6);
+  const [visibleLimit, setVisibleLimit] = useState(12);
   const [isExpanding, setIsExpanding] = useState(false);
 
   const handleShowMore = () => {
@@ -45,20 +133,18 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
       return;
     }
     setIsExpanding(true);
-    const interval = setInterval(() => {
-      setVisibleLimit((prev) => {
-        if (prev >= sortedMembers.length) {
-          clearInterval(interval);
-          setIsExpanding(false);
-          return sortedMembers.length;
-        }
-        return prev + 6;
-      });
-    }, 150);
+    const interval = setTimeout(() => {
+      setVisibleLimit((prev) => Math.min(sortedMembers.length, prev + 12));
+      setIsExpanding(false);
+    }, 200);
   };
 
   const visibleMembers = useMemo(() => {
-    return sortedMembers.slice(0, visibleLimit);
+    // Top 3 is in podium, table lists #4 onwards!
+    if (sortedMembers.length > 3) {
+      return sortedMembers.slice(3, Math.max(3, visibleLimit));
+    }
+    return [];
   }, [sortedMembers, visibleLimit]);
 
   const handleDeleteMember = async (memberId: string, name: string) => {
@@ -118,7 +204,7 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
       case 'leader': return 'text-gaming-gold';
       case 'diplomat': return 'text-gaming-purple';
       case 'military_leader': return 'text-red-500';
-      case 'recruiter': return 'text-green-500';
+      case 'recruiter': return 'text-sky-400';
       case 'muse': return 'text-pink-400';
       case 'warrior': return 'text-blue-400';
       default: return 'text-white/60';
@@ -156,7 +242,7 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
         case 'border_purple': return 'border border-purple-500';
         case 'border_gold': return 'border border-gaming-gold';
         case 'border_dark': return 'border border-red-600';
-        case 'border_emerald': return 'border border-emerald-400';
+        case 'border_emerald': return 'border border-sky-400';
         case 'border_rgb': return 'border border-pink-500';
         case 'border_laser': return 'border border-purple-500';
         case 'border_cyber': return 'border border-cyan-400';
@@ -170,7 +256,7 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
       case 'border_purple': return 'border border-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]';
       case 'border_gold': return 'border border-gaming-gold shadow-[0_0_12px_rgba(251,191,36,0.5)] animate-pulse';
       case 'border_dark': return 'border border-red-600 shadow-[0_0_10px_rgba(220,38,38,0.7)]';
-      case 'border_emerald': return 'border border-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.6)] animate-pulse';
+      case 'border_emerald': return 'border border-sky-400 shadow-[0_0_10px_rgba(56,189,248,0.6)] animate-pulse';
       case 'border_rgb': return 'border border-pink-500 shadow-[0_0_12px_rgba(236,72,153,0.7)] animate-bounce';
       case 'border_laser': return 'border border-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.7)] animate-pulse';
       case 'border_cyber': return 'border border-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.7)] animate-pulse';
@@ -187,7 +273,7 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
         case 'color_red': return 'text-[#b25d62] font-semibold';
         case 'color_cyan': return 'text-[#93c5fd] font-semibold';
         case 'color_pink': return 'text-[#c084fc] font-semibold';
-        case 'color_emerald': return 'text-[#a7f3d0] font-semibold';
+        case 'color_emerald': return 'text-[#7dd3fc] font-semibold';
         case 'color_purple': return 'text-[#c0a9df] font-semibold';
         case 'color_rgb': return 'text-gaming-gold font-extrabold';
         default: return 'text-white';
@@ -198,25 +284,231 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
       case 'color_red': return 'text-[#b25d62] font-semibold drop-shadow-[0_0_6px_rgba(178,93,98,0.3)]';
       case 'color_cyan': return 'text-[#93c5fd] font-semibold drop-shadow-[0_0_6px_rgba(147,197,253,0.3)]';
       case 'color_pink': return 'text-[#c084fc] font-semibold drop-shadow-[0_0_6px_rgba(192,132,252,0.3)]';
-      case 'color_emerald': return 'text-[#a7f3d0] font-semibold drop-shadow-[0_0_6px_rgba(167,243,208,0.3)]';
+      case 'color_emerald': return 'text-[#7dd3fc] font-semibold drop-shadow-[0_0_6px_rgba(125,211,252,0.3)]';
       case 'color_purple': return 'text-[#c0a9df] font-semibold drop-shadow-[0_0_6px_rgba(192,169,223,0.3)]';
       case 'color_rgb': return 'bg-gradient-to-r from-[#e2e8f0] via-[#c5a059] to-[#93c5fd] bg-clip-text text-transparent font-extrabold drop-shadow-[0_0_3px_rgba(226,232,240,0.3)]';
       default: return 'text-white';
     }
   };
 
+  const top1 = sortedMembers[0];
+  const top2 = sortedMembers[1];
+  const top3 = sortedMembers[2];
+
   return (
     <div className="flex flex-col h-full min-w-0">
-      <div className={`flex items-center ${isMobile ? 'gap-4 overflow-x-auto no-scrollbar' : 'gap-8'} mb-6`}>
-        <button 
-          onClick={() => setActiveSubTab('membros')}
-          className={`text-[10px] uppercase font-medium tracking-[0.2em] relative py-1 shrink-0 transition-colors ${activeSubTab === 'membros' ? 'text-white' : 'text-white/40 hover:text-white/70'}`}
-        >
-          Ranking Geral
-          {activeSubTab === 'membros' && <motion.div layoutId="memberTab" className="absolute -bottom-2 left-0 right-0 h-[2px] bg-gaming-gold shadow-[0_0_8px_rgba(251,191,36,0.5)]" />}
-        </button>
+      {/* Visual Header */}
+      <div className="flex flex-col gap-1.5 align-left mb-6 text-left">
+        <h2 className="text-2xl md:text-3xl font-display font-black uppercase text-white tracking-widest leading-none">
+          MURAL DOS <span className="text-gaming-gold">SUPREMOS</span>
+        </h2>
+        <span className="text-[8px] sm:text-[9.5px] font-mono font-black text-white/30 uppercase tracking-[0.25em]">
+          Classificação oficial de status, conquistas e poder de combate em tempo real
+        </span>
       </div>
 
+      {/* Competitive Selector Tabs */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-white/5 pb-2">
+        <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto no-scrollbar">
+          <button 
+            onClick={() => setActiveSubTab('membros')}
+            className={`text-[9.5px] uppercase font-black tracking-[0.2em] relative py-2 shrink-0 transition-colors ${activeSubTab === 'membros' ? 'text-gaming-gold' : 'text-white/40 hover:text-white/75'}`}
+          >
+            🏆 Geral (Elite)
+            {activeSubTab === 'membros' && <motion.div layoutId="memberTab" className="absolute -bottom-[9px] left-0 right-0 h-[2px] bg-gaming-gold shadow-[0_0_8px_rgba(251,191,36,0.5)]" />}
+          </button>
+          <button 
+            onClick={() => setActiveSubTab('poder')}
+            className={`text-[9.5px] uppercase font-black tracking-[0.2em] relative py-2 shrink-0 transition-colors ${activeSubTab === 'poder' ? 'text-gaming-gold' : 'text-white/40 hover:text-white/75'}`}
+          >
+            ⚔️ Poder de Herói
+            {activeSubTab === 'poder' && <motion.div layoutId="memberTab" className="absolute -bottom-[9px] left-0 right-0 h-[2px] bg-gaming-gold shadow-[0_0_8px_rgba(251,191,36,0.5)]" />}
+          </button>
+          <button 
+            onClick={() => setActiveSubTab('nivel')}
+            className={`text-[9.5px] uppercase font-black tracking-[0.2em] relative py-2 shrink-0 transition-colors ${activeSubTab === 'nivel' ? 'text-gaming-gold' : 'text-white/40 hover:text-white/75'}`}
+          >
+            ⚡ Nível & XP
+            {activeSubTab === 'nivel' && <motion.div layoutId="memberTab" className="absolute -bottom-[9px] left-0 right-0 h-[2px] bg-gaming-gold shadow-[0_0_8px_rgba(251,191,36,0.5)]" />}
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2 px-2.5 py-1 bg-white/[0.02] border border-white/5 rounded-lg text-[8px] sm:text-[9.5px] font-mono tracking-wider text-white/40">
+          <span>{getCacheRemainingStr()}</span>
+          <button 
+            onClick={forceRefresh}
+            className="text-gaming-gold hover:text-white bg-gaming-gold/10 hover:bg-gaming-gold/20 border border-gaming-gold/20 transition-all cursor-pointer rounded px-2 py-0.5 ml-1 font-bold text-[8px] uppercase tracking-wider flex items-center gap-1 shrink-0"
+          >
+            Sincronizar 🔄
+          </button>
+        </div>
+      </div>
+
+      {/* PRESTIGE PODIUM FOR TOP 3 */}
+      {!loading && sortedMembers.length > 0 && (
+        <div className="grid grid-cols-3 gap-2 sm:gap-6 items-end max-w-3xl mx-auto w-full mb-8 mt-2 px-1 sm:px-4">
+          
+          {/* #2 SILVER */}
+          <div className="flex flex-col items-center">
+            {top2 ? (
+              <motion.div 
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.15 }}
+                onClick={() => setSelectedMember(top2)}
+                className="flex flex-col items-center cursor-pointer group w-full"
+              >
+                <div className="relative mb-2 shrink-0">
+                  <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[14px] sm:text-[18px] drop-shadow-[0_0_8px_rgba(255,255,255,0.4)] z-25">🥈</span>
+                  <div className="relative w-9 h-9 sm:w-16 sm:h-16 flex items-center justify-center">
+                    <SafeAvatar 
+                      src={top2.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${top2.userId || top2.id}`} 
+                      alt={top2.name} 
+                      className={`w-full h-full rounded-full object-cover shadow-xl ${getBorderClasses(top2.profileBorder)}`} 
+                      isEcoMode={isEcoMode}
+                    />
+                    {AVATAR_DECORATIONS.find(b => b.id === top2.profileBorder) && (
+                      <img 
+                        src={AVATAR_DECORATIONS.find(b => b.id === top2.profileBorder)?.imgSrc} 
+                        alt="decor" 
+                        referrerPolicy="no-referrer"
+                        className="absolute -inset-1 sm:-inset-2 w-[calc(100%+8px)] h-[calc(100%+8px)] sm:w-[calc(100%+16px)] sm:h-[calc(100%+16px)] max-w-none pointer-events-none z-20"
+                      />
+                    )}
+                    <div className="absolute -bottom-1 -right-1 bg-zinc-650 text-white text-[6.5px] sm:text-[9px] font-black px-1 py-0.5 rounded-md border border-black font-mono leading-none z-30">
+                      L{top2.level || 0}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="w-full bg-zinc-950/45 border-t border-x border-white/5 rounded-t-xl sm:rounded-t-2rem p-2 sm:p-4 text-center flex flex-col items-center justify-end h-20 sm:h-28 shadow-xl transition-all group-hover:bg-[#18191c]/80 group-hover:border-white/10">
+                  <span className="text-xs sm:text-lg font-mono font-black text-zinc-400 leading-none mb-1">#2</span>
+                  <span className={`text-[8.5px] sm:text-xs font-black truncate max-w-full leading-tight ${getNicknameColorClass(top2.nicknameColor)}`}>{top2.name}</span>
+                  <span className="text-[7.5px] sm:text-[10px] font-mono font-black text-red-500 italic mt-1 leading-none">{(top2.heroPower || 0).toLocaleString()}</span>
+                  <span className="text-[5.5px] sm:text-[7.5px] font-black uppercase text-zinc-500 tracking-wider mt-0.5 leading-none">Poder</span>
+                </div>
+              </motion.div>
+            ) : (
+              <div className="opacity-15 flex flex-col items-center w-full">
+                <div className="w-9 h-9 sm:w-16 sm:h-16 rounded-full bg-white/5 border border-dashed border-white/20 mb-2 flex items-center justify-center text-xs text-white/40">?</div>
+                <div className="w-full bg-zinc-950/20 border-t border-x border-white/5 rounded-t-xl sm:rounded-t-2rem h-20 sm:h-28 flex flex-col items-center justify-center">
+                  <span className="text-[6.5px] font-bold text-white/20 uppercase tracking-widest text-center">Vago</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* #1 GOLD (CENTER) */}
+          <div className="flex flex-col items-center z-10">
+            {top1 ? (
+              <motion.div 
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.05 }}
+                onClick={() => setSelectedMember(top1)}
+                className="flex flex-col items-center cursor-pointer group w-full"
+              >
+                <div className="relative mb-3 shrink-0">
+                  <motion.span 
+                    animate={!isEcoMode ? { rotate: [-4, 4, -4], scale: [1, 1.04, 1] } : {}}
+                    transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                    className="absolute -top-6 left-1/2 -translate-x-1/2 text-[22px] sm:text-[28px] drop-shadow-[0_0_12px_rgba(251,191,36,0.6)] z-25"
+                  >
+                    👑
+                  </motion.span>
+                  <div className="relative w-12 h-12 sm:w-20 sm:h-20 flex items-center justify-center">
+                    <SafeAvatar 
+                      src={top1.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${top1.userId || top1.id}`} 
+                      alt={top1.name} 
+                      className={`w-full h-full rounded-full object-cover shadow-[0_0_20px_rgba(251,191,36,0.15)] ${getBorderClasses(top1.profileBorder || 'border_gold')}`} 
+                      isEcoMode={isEcoMode}
+                    />
+                    {AVATAR_DECORATIONS.find(b => b.id === (top1.profileBorder || 'border_gold')) && (
+                      <img 
+                        src={AVATAR_DECORATIONS.find(b => b.id === (top1.profileBorder || 'border_gold'))?.imgSrc} 
+                        alt="decor" 
+                        referrerPolicy="no-referrer"
+                        className="absolute -inset-1.5 sm:-inset-2.5 w-[calc(100%+12px)] h-[calc(100%+12px)] sm:w-[calc(100%+20px)] sm:h-[calc(100%+20px)] max-w-none pointer-events-none z-20"
+                      />
+                    )}
+                    <div className="absolute -bottom-1 -right-1 bg-gaming-gold text-black text-[7px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-md border border-black font-mono shadow-[0_0_8px_rgba(251,191,36,0.4)] leading-none z-30">
+                      L{top1.level || 0}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="w-full bg-[#1b1915]/90 border-t border-x border-gaming-gold/25 rounded-t-xl sm:rounded-t-2rem p-2 sm:p-5 text-center flex flex-col items-center justify-end h-26 sm:h-38 shadow-2xl relative overflow-hidden transition-all group-hover:border-gaming-gold/50">
+                  <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-gaming-gold to-transparent" />
+                  <span className="text-sm sm:text-2xl font-mono font-black text-gaming-gold leading-none drop-shadow-[0_0_8px_rgba(251,191,36,0.5)] mb-1">#1</span>
+                  <span className={`text-[9.5px] sm:text-sm font-black truncate max-w-full leading-tight ${getNicknameColorClass(top1.nicknameColor)}`}>{top1.name}</span>
+                  <span className="text-[8px] sm:text-[11px] font-mono font-black text-red-500 italic mt-1 leading-none">{(top1.heroPower || 0).toLocaleString()}</span>
+                  <span className="text-[5.5px] sm:text-[7.5px] font-black uppercase text-gaming-gold/60 tracking-wider mt-0.5 leading-none">Elite</span>
+                </div>
+              </motion.div>
+            ) : (
+              <div className="opacity-15 flex flex-col items-center w-full">
+                <div className="w-12 h-12 sm:w-20 sm:h-20 rounded-full bg-white/5 border border-dashed border-white/20 mb-3 flex items-center justify-center text-xs text-white/40">?</div>
+                <div className="w-full bg-zinc-950/20 border-t border-x border-white/5 rounded-t-xl sm:rounded-t-2rem h-26 sm:h-38 flex flex-col items-center justify-center">
+                  <span className="text-[6.5px] font-bold text-white/20 uppercase tracking-widest text-center">Vago</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* #3 BRONZE */}
+          <div className="flex flex-col items-center">
+            {top3 ? (
+              <motion.div 
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.25 }}
+                onClick={() => setSelectedMember(top3)}
+                className="flex flex-col items-center cursor-pointer group w-full"
+              >
+                <div className="relative mb-2 shrink-0">
+                  <span className="absolute -top-4 left-1/2 -translate-x-1/2 text-[14px] sm:text-[18px] drop-shadow-[0_0_8px_rgba(224,115,41,0.4)] z-25">🥉</span>
+                  <div className="relative w-9 h-9 sm:w-16 sm:h-16 flex items-center justify-center">
+                    <SafeAvatar 
+                      src={top3.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${top3.userId || top3.id}`} 
+                      alt={top3.name} 
+                      className={`w-full h-full rounded-full object-cover shadow-xl ${getBorderClasses(top3.profileBorder)}`} 
+                      isEcoMode={isEcoMode}
+                    />
+                    {AVATAR_DECORATIONS.find(b => b.id === top3.profileBorder) && (
+                      <img 
+                        src={AVATAR_DECORATIONS.find(b => b.id === top3.profileBorder)?.imgSrc} 
+                        alt="decor" 
+                        referrerPolicy="no-referrer"
+                        className="absolute -inset-1 sm:-inset-2 w-[calc(100%+8px)] h-[calc(100%+8px)] sm:w-[calc(100%+16px)] sm:h-[calc(100%+16px)] max-w-none pointer-events-none z-20"
+                      />
+                    )}
+                    <div className="absolute -bottom-1 -right-1 bg-[#ba6849] text-white text-[6.5px] sm:text-[9px] font-black px-1 py-0.5 rounded-md border border-black font-mono leading-none z-30">
+                      L{top3.level || 0}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="w-full bg-zinc-950/45 border-t border-x border-white/5 rounded-t-xl sm:rounded-t-2rem p-2 sm:p-4 text-center flex flex-col items-center justify-end h-16 sm:h-24 shadow-xl transition-all group-hover:bg-[#18191c]/80 group-hover:border-white/10">
+                  <span className="text-xs sm:text-lg font-mono font-black text-[#ca7759] leading-none mb-1">#3</span>
+                  <span className={`text-[8.5px] sm:text-xs font-black truncate max-w-full leading-tight ${getNicknameColorClass(top3.nicknameColor)}`}>{top3.name}</span>
+                  <span className="text-[7.5px] sm:text-[10px] font-mono font-black text-red-500 italic mt-1 leading-none">{(top3.heroPower || 0).toLocaleString()}</span>
+                  <span className="text-[5.5px] sm:text-[7.5px] font-black uppercase text-zinc-500 tracking-wider mt-0.5 leading-none">Poder</span>
+                </div>
+              </motion.div>
+            ) : (
+              <div className="opacity-15 flex flex-col items-center w-full">
+                <div className="w-9 h-9 sm:w-16 sm:h-16 rounded-full bg-white/5 border border-dashed border-white/20 mb-2 flex items-center justify-center text-xs text-white/40">?</div>
+                <div className="w-full bg-zinc-950/20 border-t border-x border-white/5 rounded-t-xl sm:rounded-t-2rem h-16 sm:h-24 flex flex-col items-center justify-center">
+                  <span className="text-[6.5px] font-bold text-white/20 uppercase tracking-widest text-center">Vago</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+        </div>
+      )}
+
+      {/* DETAILED RANKING LIST - FROM RANK #4 ONWARDS */}
       <div className="flex-1 bg-gaming-card/30 rounded-2xl border border-gaming-border overflow-hidden flex flex-col shadow-2xl backdrop-blur-sm">
         <div className="overflow-x-auto no-scrollbar scroll-smooth flex-1">
           {!isMobile ? (
@@ -236,18 +528,18 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
                   {loading ? (
                     Array.from({ length: 5 }).map((_, i) => (
                       <tr key={i} className="animate-pulse">
-                        <td colSpan={5} className="px-6 py-4 h-16 bg-white/5" />
+                        <td colSpan={6} className="px-6 py-4 h-16 bg-white/5" />
                       </tr>
                     ))
-                  ) : sortedMembers.length === 0 ? (
+                  ) : sortedMembers.length <= 3 ? (
                     <motion.tr 
-                      key="empty"
+                      key="empty-list"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                     >
-                      <td colSpan={5} className="px-6 py-12 text-center text-white/20 uppercase text-[10px] tracking-widest font-bold">
-                        Nenhum membro encontrado
+                      <td colSpan={6} className="px-6 py-12 text-center text-white/20 uppercase text-[9px] tracking-[0.2em] font-bold">
+                        Todos os integrantes estão listados no Pódio
                       </td>
                     </motion.tr>
                   ) : visibleMembers.map((m, index) => (
@@ -261,25 +553,32 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
                       className="group hover:bg-white/5 transition-colors cursor-pointer"
                     >
                     <td className="px-6 py-4">
-                      <div className="w-7 h-7 flex items-center justify-center text-[10px] font-bold text-white/30 border border-white/10 rounded-lg group-hover:border-gaming-gold/50 group-hover:text-gaming-gold transition-all">
-                        {index + 1}
+                      {/* Starts from index + 4, representing Rank #4 onwards */}
+                      <div className="w-7 h-7 flex items-center justify-center text-[10px] font-mono font-black text-white/30 border border-white/10 rounded-lg group-hover:border-gaming-gold/50 group-hover:text-gaming-gold transition-all">
+                        {index + 4}
                       </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="relative group/avatar">
-                          {m.avatarUrl && (
-                            <SafeAvatar 
-                              src={m.avatarUrl} 
-                              alt={m.name} 
-                              className={`w-8 h-8 rounded-full object-cover shadow-[0_0_10px_rgba(0,0,0,0.5)] ${getBorderClasses(m.profileBorder)}`} 
-                              isEcoMode={isEcoMode}
+                        <div className="relative group/avatar shrink-0 w-8 h-8 flex items-center justify-center">
+                          <SafeAvatar 
+                            src={m.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${m.userId || m.id}`} 
+                            alt={m.name} 
+                            className={`w-full h-full rounded-full object-cover shadow-[0_0_10px_rgba(0,0,0,0.5)] ${getBorderClasses(m.profileBorder)}`} 
+                            isEcoMode={isEcoMode}
+                          />
+                          {AVATAR_DECORATIONS.find(b => b.id === m.profileBorder) && (
+                            <img 
+                              src={AVATAR_DECORATIONS.find(b => b.id === m.profileBorder)?.imgSrc} 
+                              alt="decor" 
+                              referrerPolicy="no-referrer"
+                              className="absolute -inset-1 w-[calc(100%+8px)] h-[calc(100%+8px)] max-w-none pointer-events-none z-20"
                             />
                           )}
-                          <div className="absolute -top-1 -right-1 w-4 h-4 bg-gaming-gold rounded-full flex items-center justify-center border border-black shadow-[0_0_10px_rgba(251,191,36,0.8)] z-10">
+                          <div className="absolute -top-1 -right-1 w-4 h-4 bg-gaming-gold rounded-full flex items-center justify-center border border-black shadow-[0_0_10px_rgba(251,191,36,0.8)] z-30">
                             <span className="text-[7px] font-black text-black leading-none">{m.level || 0}</span>
                           </div>
-                          {!isEcoMode && <div className="absolute inset-0 rounded-full bg-gaming-gold/20 blur-md opacity-0 group-hover/avatar:opacity-100 transition-opacity" />}
+                          {!isEcoMode && <div className="absolute inset-0 rounded-full bg-gaming-gold/20 blur-md opacity-0 group-hover/avatar:opacity-100 transition-opacity z-5" />}
                         </div>
                         <div className="flex flex-col">
                           <div className="flex items-center gap-1.5">
@@ -314,8 +613,8 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <Circle size={8} className={m.status === 'online' ? 'fill-green-500 text-green-500 animate-pulse' : 'fill-white/10 text-white/10'} />
-                        <span className={`text-[10px] font-bold ${m.status === 'online' ? 'text-green-500' : 'text-white/20'}`}>
+                        <Circle size={8} className={m.status === 'online' ? 'fill-gaming-gold text-gaming-gold animate-pulse shadow-[0_0_5px_rgba(251,191,36,0.5)]' : 'fill-white/10 text-white/10'} />
+                        <span className={`text-[10px] font-bold ${m.status === 'online' ? 'text-gaming-gold' : 'text-white/20'}`}>
                           {m.status === 'online' ? 'Online' : 'Offline'}
                         </span>
                       </div>
@@ -332,6 +631,10 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
                   Array.from({ length: 3 }).map((_, i) => (
                     <div key={i} className="h-20 bg-white/5 rounded-xl animate-pulse" />
                   ))
+                ) : sortedMembers.length <= 3 ? (
+                  <div className="py-8 text-center text-white/25 uppercase text-[9px] tracking-widest font-black leading-relaxed">
+                    Nenhum integrante adicional.<br />Todos listados no Pódio de Honra.
+                  </div>
                 ) : visibleMembers.map((m, index) => (
                   <motion.div 
                     key={m.id} 
@@ -342,34 +645,38 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
                     onClick={() => setSelectedMember(m)}
                     className="bg-white/5 border border-white/10 rounded-xl p-4 flex items-center justify-between gap-4 cursor-pointer hover:bg-white/10 transition-colors gpu-accelerate"
                   >
-                  <div className="flex items-center gap-4">
-                    <div className="relative group/avatar">
-                      {m.avatarUrl ? (
-                            <SafeAvatar 
-                              src={m.avatarUrl} 
-                              alt={m.name} 
-                              className={`w-10 h-10 rounded-full object-cover shadow-[0_0_15px_rgba(0,0,0,0.5)] ${getBorderClasses(m.profileBorder)}`} 
-                              isEcoMode={isEcoMode}
-                            />
-                      ) : (
-                        <div className={`w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-[10px] font-black uppercase text-white/30 ${getBorderClasses(m.profileBorder)}`}>{m.name.substring(0,2)}</div>
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="relative group/avatar shrink-0 w-10 h-10 flex items-center justify-center">
+                      <SafeAvatar 
+                        src={m.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${m.userId || m.id}`} 
+                        alt={m.name} 
+                        className={`w-full h-full rounded-full object-cover shadow-[0_0_15px_rgba(0,0,0,0.5)] ${getBorderClasses(m.profileBorder)}`} 
+                        isEcoMode={isEcoMode}
+                      />
+                      {AVATAR_DECORATIONS.find(b => b.id === m.profileBorder) && (
+                        <img 
+                          src={AVATAR_DECORATIONS.find(b => b.id === m.profileBorder)?.imgSrc} 
+                          alt="decor" 
+                          referrerPolicy="no-referrer"
+                          className="absolute -inset-1.5 w-[calc(100%+12px)] h-[calc(100%+12px)] max-w-none pointer-events-none z-20"
+                        />
                       )}
-                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-gaming-gold rounded-full flex items-center justify-center border-2 border-gaming-bg shadow-[0_0_15px_rgba(251,191,36,0.6)] z-10 transition-transform group-hover/avatar:scale-110">
+                      <div className="absolute -top-1 -right-1 w-5 h-5 bg-gaming-gold rounded-full flex items-center justify-center border-2 border-gaming-bg shadow-[0_0_15px_rgba(251,191,36,0.6)] z-30 transition-transform group-hover/avatar:scale-110">
                         <span className="text-[10px] font-black text-black leading-none">{m.level || 0}</span>
                       </div>
-                      <div className={`absolute -bottom-0.5 -left-0.5 w-3 h-3 rounded-full border-2 border-gaming-card ${m.status === 'online' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]' : 'bg-white/20'}`} />
+                      <div className={`absolute -bottom-0.5 -left-0.5 w-3 h-3 rounded-full border-2 border-gaming-card z-30 ${m.status === 'online' ? 'bg-gaming-gold shadow-[0_0_8px_rgba(251,191,36,0.8)]' : 'bg-white/20'}`} />
                     </div>
-                    <div className="flex flex-col">
+                    <div className="flex flex-col min-w-0">
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className={`text-sm font-bold leading-tight ${getNicknameColorClass(m.nicknameColor)}`}>{m.name}</span>
+                        <span className={`text-sm font-bold leading-tight truncate max-w-[120px] ${getNicknameColorClass(m.nicknameColor)}`}>{m.name}</span>
                         {m.title && (
-                          <span className="bg-gaming-gold/10 text-gaming-gold text-[7.5px] font-black uppercase tracking-[0.11em] px-1.5 py-0.5 rounded border border-gaming-gold/25 uppercase font-sans">
+                          <span className="bg-gaming-gold/10 text-gaming-gold text-[7.5px] font-black uppercase tracking-[0.11em] px-1.5 py-0.5 rounded border border-gaming-gold/25 uppercase font-sans shrink-0">
                             {m.title}
                           </span>
                         )}
                       </div>
                       {m.customStatus && (
-                        <span className="text-[9px] text-white/50 italic font-medium tracking-wide mt-0.5">
+                        <span className="text-[9px] text-white/50 italic font-medium tracking-wide mt-0.5 truncate max-w-[180px]">
                           💬 {m.customStatus}
                         </span>
                       )}
@@ -378,9 +685,9 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <span className="text-[12px]">{getRoleIcon(m.role)}</span>
-                    <span className="text-[8px] font-bold text-white/20 uppercase">#{index + 1}</span>
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    <span className="text-[12px] leading-none">{getRoleIcon(m.role)}</span>
+                    <span className="text-[8.5px] font-black text-white/30 uppercase font-mono">#{index + 4}</span>
                   </div>
                   </motion.div>
                 ))}
@@ -389,7 +696,7 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
           )}
         </div>
 
-        {visibleLimit < sortedMembers.length && (
+        {visibleLimit < sortedMembers.length && sortedMembers.length > 3 && (
           <div className="flex justify-center p-4 border-t border-white/5 bg-black/10">
             <button
               onClick={handleShowMore}
@@ -412,8 +719,8 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
       {/* Action Bar */}
       <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-2'} gap-2 mt-6`}>
         {[
-          { label: 'Convidar', icon: Users, action: handleInvite },
-          { label: 'Sair da Aliança', icon: LogOut, danger: true, action: logout }
+          { label: 'Convidar Guerreiro', icon: Users, action: handleInvite },
+          { label: 'Desconectar da Ordem', icon: LogOut, danger: true, action: logout }
         ].map((action) => (
           <button 
             key={action.label}
@@ -450,14 +757,24 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
 
               {/* Avatar overlapping banner */}
               <div className="px-5 pb-5 relative flex flex-col">
-                <div className="relative -mt-10 mb-3 self-start">
-                  <SafeAvatar 
-                    src={selectedMember.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedMember.userId}`}
-                    className={`w-20 h-20 rounded-full object-cover bg-zinc-900 border-4 border-[#111214] ${getBorderClasses(selectedMember.profileBorder)}`}
-                    isEcoMode={isEcoMode}
-                    alt={selectedMember.name}
-                  />
-                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-gaming-gold rounded-full flex items-center justify-center border-2 border-[#111214] shadow-[0_0_12px_rgba(251,191,36,0.6)] z-10 font-black text-black text-[9px]">
+                <div className="relative -mt-12 mb-3 self-start z-10">
+                  <div className="w-20 h-20 rounded-full bg-[#111214] p-1.5 relative flex items-center justify-center transition-all">
+                    <SafeAvatar 
+                      src={selectedMember.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedMember.userId || selectedMember.id}`}
+                      className="w-full h-full rounded-full object-cover relative z-10"
+                      isEcoMode={isEcoMode}
+                      alt={selectedMember.name}
+                    />
+                    {AVATAR_DECORATIONS.find(b => b.id === selectedMember.profileBorder) && (
+                      <img 
+                        src={AVATAR_DECORATIONS.find(b => b.id === selectedMember.profileBorder)?.imgSrc} 
+                        alt="decor" 
+                        referrerPolicy="no-referrer"
+                        className="absolute -inset-2.5 w-[calc(100%+20px)] h-[calc(100%+20px)] max-w-none pointer-events-none z-20"
+                      />
+                    )}
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-gaming-gold rounded-full flex items-center justify-center border-2 border-[#111214] shadow-[0_0_12px_rgba(251,191,36,0.6)] z-30 font-black text-black text-[9px]">
                     {selectedMember.level || 0}
                   </div>
                 </div>
@@ -478,8 +795,8 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
                     {getRoleIcon(selectedMember.role)} {getRoleLabel(selectedMember.role)}
                   </span>
                   {selectedMember.status === 'online' ? (
-                    <span className="text-[7.5px] text-green-500 font-extrabold uppercase tracking-wider mt-1 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" /> Ativo Agora
+                    <span className="text-[7.5px] text-gaming-gold font-extrabold uppercase tracking-wider mt-1 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 bg-gaming-gold rounded-full animate-pulse shadow-[0_0_5px_rgba(251,191,36,0.5)]" /> Ativo Agora
                     </span>
                   ) : (
                     <span className="text-[7.5px] text-zinc-500 font-bold uppercase tracking-wider mt-1 flex items-center gap-1.5">

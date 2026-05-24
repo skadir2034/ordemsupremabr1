@@ -48,11 +48,11 @@ export default function ManualHonraView() {
   const honorGuidelines = [
     {
       id: 'regra_caravana',
-      title: 'TOLERÂNCIA ZERO PARA FURTOS DE CARAVANAS',
+      title: 'TOLERÂNCIA ZERO PARA FURTOS NO SERVIDOR 176',
       prio: 'CRÍTICO',
       prioColor: 'text-red-500 bg-red-500/10 border-red-500/20',
-      description: 'É terminantemente PROIBIDO roubar caravanas e caixotes de jogadores do nosso próprio servidor. Esta é a regra de ouro e pilar de sustentação da nossa boa vizinhança diplomática.',
-      consequence: 'Banimento sumário e imediato de todas as contas vinculadas do infrator nas diretrizes da guilda.',
+      description: 'É terminantemente PROIBIDO roubar caravanas e caixotes do nosso próprio servidor (176). No entanto, para a Grande Final SVS, o saque de mercadorias no Servidor 175 (incluindo Caioxetes) está TOTALMENTE AUTORIZADO!',
+      consequence: 'Banimento sumário e imediato caso fure a trégua interna do servidor 176.',
       icon: ShieldAlert
     },
     {
@@ -77,7 +77,7 @@ export default function ManualHonraView() {
       id: 'regra_coexistencia',
       title: 'AJUDA MÚTUA NAS INVASÕES',
       prio: 'DESEJÁVEL',
-      prioColor: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20',
+      prioColor: 'text-sky-400 bg-sky-500/10 border-sky-500/20',
       description: 'Auxiliar ativamente parceiros sob ataque de outros servidores na proteção de suas mercadorias é considerado ato de extrema honra e dignidade militar.',
       consequence: 'Indicação direta para cargos de liderança, condecorações e bônus de prestígio.',
       icon: ShieldCheck
@@ -88,11 +88,11 @@ export default function ManualHonraView() {
   const quizQuestions = [
     {
       id: 1,
-      question: 'É permitido saquear caixotes ou roubar caravanas de membros da Suprema Ordem ou de guildas parceiras do servidor?',
+      question: 'É permitido saquear caixotes ou roubar caravanas de outros jogadores? Qual a regra para o Servidor 175?',
       options: [
-        { text: 'Sim, se eu precisar de recursos rapidamente para minha evolução.', isCorrect: false },
-        { text: 'Apenas caixotes de menor raridade que estejam abandonados na estrada.', isCorrect: false },
-        { text: 'NÃO! É terminantemente proibido jogar contra o próprio servidor sob pena de exclusão.', isCorrect: true }
+        { text: 'Sim, se eu precisar de recursos todos os alvos são válidos.', isCorrect: false },
+        { text: 'Apenas saques contra o Servidor adversário 175 (incluindo Caioxetes) são liberados. No nosso SV 176 é estritamente proibido.', isCorrect: true },
+        { text: 'NÃO! Não se pode saquear nenhuma caravana no jogo inteiro independentemente do servidor.', isCorrect: false }
       ]
     },
     {
@@ -307,9 +307,9 @@ export default function ManualHonraView() {
                 </div>
 
                 {myMember?.completedMissions?.includes('manual_honra_passed') ? (
-                  <div className="w-full mt-2 bg-emerald-500/10 border border-emerald-500/25 rounded-2xl p-5 flex flex-col items-center max-w-md">
-                    <ShieldCheck className="text-emerald-400 mb-1.5 animate-bounce" size={26} />
-                    <span className="text-xs font-black uppercase text-emerald-400 tracking-wider">
+                  <div className="w-full mt-2 bg-gaming-purple/15 border border-gaming-purple/35 rounded-2xl p-5 flex flex-col items-center max-w-md">
+                    <ShieldCheck className="text-gaming-purple mb-1.5 animate-bounce" size={26} />
+                    <span className="text-xs font-black uppercase text-gaming-gold tracking-wider">
                       JURAMENTO OFICIAL ASSINADO!
                     </span>
                     <p className="text-[10px] uppercase font-semibold text-zinc-300 mt-1 max-w-xs leading-normal">
@@ -401,11 +401,11 @@ export default function ManualHonraView() {
 
             {quizStep === 4 && (
               <div className="flex flex-col items-center gap-4 text-center w-full py-4">
-                <div className="w-16 h-16 bg-gradient-to-tr from-emerald-500/20 to-teal-500/20 rounded-full border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-xl shadow-emerald-500/10">
+                <div className="w-16 h-16 bg-gradient-to-tr from-gaming-purple/20 to-indigo-500/20 rounded-full border border-gaming-purple/30 flex items-center justify-center text-gaming-gold shadow-xl shadow-gaming-purple/10">
                   <Medal size={30} className="animate-bounce" />
                 </div>
                 <div>
-                  <h3 className="font-display font-black uppercase text-base tracking-wide text-emerald-400">
+                  <h3 className="font-display font-black uppercase text-base tracking-wide text-gaming-gold">
                     JURAMENTO PROTOCOLADO COM SUCESSO!
                   </h3>
                   <p className="text-[10px] uppercase font-bold text-zinc-300 max-w-sm leading-relaxed mt-1">
@@ -413,10 +413,10 @@ export default function ManualHonraView() {
                   </p>
                 </div>
 
-                <div className="bg-emerald-950/20 border border-emerald-500/25 rounded-2xl p-4.5 max-w-md w-full font-mono text-left space-y-2 mt-2">
-                  <div className="text-[8px] text-emerald-500 font-extrabold tracking-widest">NOME DO JURADOR:</div>
+                <div className="bg-gaming-purple/10 border border-gaming-purple/25 rounded-2xl p-4.5 max-w-md w-full font-mono text-left space-y-2 mt-2">
+                  <div className="text-[8px] text-gaming-purple font-extrabold tracking-widest">NOME DO JURADOR:</div>
                   <div className="text-xs font-black text-white uppercase">{myMember?.name || 'Guerreiro Ativo'}</div>
-                  <div className="text-[8px] text-emerald-500 font-extrabold tracking-widest mt-3">TÍTULO DESBLOQUEADO:</div>
+                  <div className="text-[8px] text-gaming-purple font-extrabold tracking-widest mt-3">TÍTULO DESBLOQUEADO:</div>
                   <div className="text-xs font-black text-gaming-gold uppercase">⚔️ GUARDIÃO DA HONRA</div>
                 </div>
 
@@ -501,9 +501,9 @@ export default function ManualHonraView() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 flex items-start gap-2.5 text-emerald-400 font-bold text-[10.5px] uppercase text-left"
+                  className="bg-gaming-purple/15 border border-gaming-purple/35 rounded-2xl p-4 flex items-start gap-2.5 text-gaming-gold font-bold text-[10.5px] uppercase text-left"
                 >
-                  <span className="text-emerald-400 mt-0.5">✓</span>
+                  <span className="text-gaming-gold mt-0.5">✓</span>
                   <div>
                     Caso protocolado sob código de sigilo! Generais Suprema Ordem irão cruzar as hashes de logs em breve.
                   </div>

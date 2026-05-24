@@ -53,8 +53,8 @@ export function DetailedStats({ isMobile = false }: { isMobile?: boolean }) {
       <div className={`grid grid-cols-2 gap-3`}>
         <div className="flex flex-col gap-2">
            <h3 className="text-[10px] uppercase font-bold text-white/30 tracking-[0.3em] mb-1">Vitórias</h3>
-           <div className={`bg-gradient-to-br from-green-500/[0.08] to-transparent border border-green-500/20 p-3 md:p-5 rounded-xl flex gap-3 md:gap-5 items-center group hover:border-green-500/40 transition-colors ${isEcoMode ? '' : 'backdrop-blur-sm'}`}>
-              <span className="text-2xl md:text-4xl font-display font-black text-green-500 shrink-0 drop-shadow-[0_0_10px_rgba(34,197,94,0.3)]">0</span>
+           <div className={`bg-gradient-to-br from-gaming-purple/[0.08] to-transparent border border-gaming-purple/20 p-3 md:p-5 rounded-xl flex gap-3 md:gap-5 items-center group hover:border-gaming-purple/40 transition-colors ${isEcoMode ? '' : 'backdrop-blur-sm'}`}>
+              <span className="text-2xl md:text-4xl font-display font-black text-gaming-purple shrink-0 drop-shadow-[0_0_10px_rgba(168,85,247,0.3)]">0</span>
               <div className="flex flex-col">
                 <span className="text-[8px] md:text-[10px] uppercase text-white/60 font-black tracking-widest leading-tight">Guerra</span>
               </div>

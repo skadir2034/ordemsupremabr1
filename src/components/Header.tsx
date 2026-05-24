@@ -120,10 +120,10 @@ export function Header({ isMobile = false }: { isMobile?: boolean }) {
         <motion.button 
           whileHover={{ scale: 1.05 }}
           onClick={() => setActiveModal('coins')}
-          className="flex items-center gap-1.5 px-2 py-1.5 bg-green-500/10 border border-green-500/30 rounded-xl shrink-0 shadow-[0_0_10px_rgba(34,197,94,0.1)] h-8"
+          className="flex items-center gap-1.5 px-2 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-xl shrink-0 shadow-[0_0_10px_rgba(245,158,11,0.1)] h-8"
         >
-          <Coins size={14} className="text-green-500" />
-          <span className="text-[11px] font-mono font-black text-green-500 leading-none">{myMember?.coins || 0}</span>
+          <Coins size={14} className="text-amber-500" />
+          <span className="text-[11px] font-mono font-black text-amber-500 leading-none">{myMember?.coins || 0}</span>
         </motion.button>
       </div>
 
@@ -158,7 +158,7 @@ export function Header({ isMobile = false }: { isMobile?: boolean }) {
                     <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 mb-8 flex flex-col items-center gap-4">
                       <div className="flex items-center gap-6">
                          <div className="flex flex-col items-center">
-                            <Coins className="text-green-500 mb-1" size={24} />
+                            <Coins className="text-amber-500 mb-1" size={24} />
                             <span className="text-xl font-mono font-black text-white">+2</span>
                          </div>
                       </div>
@@ -174,7 +174,7 @@ export function Header({ isMobile = false }: { isMobile?: boolean }) {
                     </div>
 
                     {promoMessage ? (
-                      <div className={`w-full py-4 rounded-xl font-bold uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 ${promoMessage.success ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>
+                      <div className={`w-full py-4 rounded-xl font-bold uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 ${promoMessage.success ? 'bg-gaming-purple/20 text-gaming-gold' : 'bg-red-500/20 text-red-500'}`}>
                         {promoMessage.success ? <Check size={16} /> : <X size={16} />}
                         {promoMessage.text}
                       </div>
@@ -208,7 +208,7 @@ export function Header({ isMobile = false }: { isMobile?: boolean }) {
                     </div>
 
                     {promoMessage ? (
-                      <div className={`w-full py-4 rounded-xl font-bold uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 mb-4 ${promoMessage.success ? 'bg-green-500/20 text-green-500' : 'bg-red-500/20 text-red-500'}`}>
+                      <div className={`w-full py-4 rounded-xl font-bold uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 mb-4 ${promoMessage.success ? 'bg-gaming-purple/20 text-gaming-gold' : 'bg-red-500/20 text-red-500'}`}>
                         {promoMessage.success ? <Check size={16} /> : <X size={16} />}
                         {promoMessage.text}
                       </div>
@@ -287,17 +287,17 @@ export function Header({ isMobile = false }: { isMobile?: boolean }) {
 
                 {activeModal === 'coins' && (
                   <>
-                    <div className="w-20 h-20 bg-green-500/10 border border-green-500/20 rounded-2xl flex items-center justify-center mb-6">
-                      <Coins size={40} className="text-green-500 animate-spin-slow" />
+                    <div className="w-20 h-20 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center mb-6">
+                      <Coins size={40} className="text-amber-500 animate-spin-slow" />
                     </div>
                     <h2 className="text-2xl font-display font-black uppercase tracking-tight mb-2">Suas Moedas</h2>
                     <p className="text-white/40 text-[10px] uppercase font-bold tracking-[0.2em] mb-8">Acumule riquezas através do bônus diário.</p>
                     
                     <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 mb-8 flex flex-col items-center gap-4">
                       <div className="flex flex-col items-center">
-                        <span className="text-green-500 font-black text-[10px] uppercase tracking-[0.3em] mb-1">Tesouro Acumulado</span>
+                        <span className="text-amber-500 font-black text-[10px] uppercase tracking-[0.3em] mb-1">Tesouro Acumulado</span>
                         <div className="flex items-center gap-3">
-                          <Coins size={32} className="text-green-500" />
+                          <Coins size={32} className="text-amber-500" />
                           <span className="text-4xl font-mono font-black text-white">{myMember?.coins || 0}</span>
                         </div>
                       </div>
@@ -305,11 +305,11 @@ export function Header({ isMobile = false }: { isMobile?: boolean }) {
 
                     <div className="text-left w-full space-y-4">
                       <div className="flex items-start gap-3">
-                        <div className="w-2 h-2 rounded-full bg-green-500 mt-1 shrink-0" />
+                        <div className="w-2 h-2 rounded-full bg-amber-500 mt-1 shrink-0" />
                         <p className="text-[10px] text-white/60 font-bold uppercase leading-relaxed tracking-wider">Use moedas para adquirir novas Auras Animadas e Bordas de Herói clicando no seu Perfil.</p>
                       </div>
                       <div className="flex items-start gap-3">
-                        <div className="w-2 h-2 rounded-full bg-green-500 mt-1 shrink-0" />
+                        <div className="w-2 h-2 rounded-full bg-amber-500 mt-1 shrink-0" />
                         <p className="text-[10px] text-white/60 font-bold uppercase leading-relaxed tracking-wider">Novas skins e itens de personalização estão sendo forjados para moedas.</p>
                       </div>
                     </div>

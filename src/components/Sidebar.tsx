@@ -43,7 +43,8 @@ export function Sidebar({
 
   const baseIcons = [
     { icon: Home, id: 'inicio', label: 'Início', desc: 'Central de controle' },
-    { icon: Trophy, id: 'combate', label: 'Torneios/Eventos da Aliança', desc: 'Torneios, Elixir e confrontos de servidores' },
+    { icon: Award, id: 'ranking', label: 'Ranking Geral', desc: 'Classificação oficial de nobreza e poder' },
+    { icon: Trophy, id: 'combate', label: 'Temporada de Glória', desc: 'Confronto SVS e Regimentos de Elite' },
     { icon: Scale, id: 'manual_honra', label: 'Manual de Honra', desc: 'Regras de conduta, furtos e julgamentos' },
     { icon: ClipboardList, id: 'missoes', label: 'Missões', notify: true, desc: 'Deveres de guerra' },
     { icon: BookOpen, id: 'guia', label: 'Guia e Dicas', desc: 'Estratégias de guerra de servidores' },
@@ -53,13 +54,13 @@ export function Sidebar({
   ];
 
   const adminIcons = (user?.email === 'ryankevyn3000@gmail.com' || user?.email === 'ryankevyn2025@gmail.com') ? [
-    { icon: ShieldCheck, id: 'gerencia', label: 'Gerência', desc: 'Painel administrativo supremo' }
+    { icon: ShieldCheck, id: 'gerencia', label: 'Gerência', desc: 'Painel administrative supremo' }
   ] : [];
 
   const icons = [...baseIcons, ...adminIcons];
 
   // Primary mobile tabs visible in the bar
-  const primaryMobileTabs = ['inicio', 'combate', 'missoes', 'perfil'];
+  const primaryMobileTabs = ['inicio', 'ranking', 'combate', 'perfil'];
   
   // Secondary mobile tabs hidden inside the "Mais" menu
   const secondaryMobileTabs = icons.filter(i => !primaryMobileTabs.includes(i.id));
@@ -99,10 +100,10 @@ export function Sidebar({
                 whileTap={!isEcoMode ? { scale: 0.95 } : {}}
                 onClick={() => handleTabClick(item.id)}
                 title={item.label}
-                className={`relative transition-colors duration-200 flex items-center justify-center p-2.5 rounded-lg ${
+                className={`relative transition-all duration-300 flex items-center justify-center p-2.5 rounded-lg border ${
                   isTabActive(item.id) 
-                    ? 'bg-gaming-gold/20 text-gaming-gold shadow-[0_0_15px_-3px_rgba(251,191,36,0.4)]' 
-                    : 'text-white/40 hover:text-white hover:bg-white/5'
+                    ? 'bg-purple-950/60 border-gaming-gold/50 text-gaming-gold shadow-[0_0_15px_rgba(168,85,247,0.35)]' 
+                    : 'border-transparent text-white/40 hover:text-gaming-gold/80 hover:bg-purple-950/20 hover:border-gaming-gold/25'
                 }`}
               >
                 <item.icon size={20} />
@@ -165,12 +166,12 @@ export function Sidebar({
                       onClick={() => handleTabClick(item.id)}
                       className={`p-4 rounded-2xl border text-left flex flex-col gap-3 transition-all min-h-[100px] ${
                         isActive
-                          ? 'bg-gaming-gold/10 border-gaming-gold shadow-[0_0_15px_rgba(251,191,36,0.15)] text-gaming-gold'
+                          ? 'bg-gradient-to-br from-purple-950/70 to-zinc-950 border-gaming-gold/50 shadow-[0_0_15px_rgba(168,85,247,0.3)] text-gaming-gold'
                           : 'bg-zinc-950/40 border-white/5 hover:bg-zinc-900 text-zinc-400 hover:text-white hover:border-white/10'
                       }`}
                     >
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                        isActive ? 'bg-gaming-gold/20 text-gaming-gold' : 'bg-white/5 text-zinc-400'
+                        isActive ? 'bg-purple-900/40 text-gaming-gold border border-gaming-gold/20' : 'bg-white/5 text-zinc-400'
                       }`}>
                         <item.icon size={16} />
                       </div>
@@ -222,7 +223,7 @@ export function Sidebar({
             >
               <item.icon size={18} />
               <span className="text-[7.5px] font-black uppercase tracking-widest font-mono mt-0.5">
-                {item.id === 'combate' ? 'Eventos' : item.id === 'missoes' ? 'Missões' : item.label}
+                {item.id === 'combate' ? 'Glória' : item.id === 'missoes' ? 'Missões' : item.label}
               </span>
               
               {hasNotification && (
@@ -230,7 +231,7 @@ export function Sidebar({
               )}
 
               {isActive && (
-                <motion.div layoutId="activeDot" className="w-1 h-1 bg-gaming-gold rounded-full mt-0.5" />
+                <motion.div layoutId="activeDot" className="w-1.5 h-1.5 bg-gaming-gold shadow-[0_0_10px_rgba(168,85,247,0.9)] rounded-full mt-0.5" />
               )}
             </motion.button>
           );
@@ -252,7 +253,7 @@ export function Sidebar({
           </span>
 
           {(isMoreOpen || isAnySecondaryActive) && (
-            <motion.div layoutId="activeDot" className="w-1 h-1 bg-gaming-gold rounded-full mt-0.5" />
+            <motion.div layoutId="activeDot" className="w-1.5 h-1.5 bg-gaming-gold shadow-[0_0_10px_rgba(168,85,247,0.9)] rounded-full mt-0.5" />
           )}
         </motion.button>
       </aside>

@@ -53,32 +53,32 @@ export function InitialNotice({ onExplore }: InitialNoticeProps) {
               damping: 20,
               delay: 0.2
             }}
-            className="relative w-full max-w-2xl bg-[#0a0a0a] border-2 border-red-600/50 rounded-[2rem] overflow-hidden shadow-[0_0_100px_rgba(220,38,38,0.3)]"
+            className="relative w-full max-w-2xl bg-zinc-950 border-2 border-gaming-gold/40 rounded-[2rem] overflow-hidden shadow-[0_0_100px_rgba(168,85,247,0.3)]"
           >
             {/* War Background Pattern */}
-            <div className="absolute inset-0 opacity-10 pointer-events-none">
+            <div className="absolute inset-0 opacity-15 pointer-events-none">
               <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-30" />
-              <div className="absolute inset-0 bg-gradient-to-t from-red-900/50 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-purple-950/60 to-transparent" />
             </div>
 
-            {/* Glowing red accent */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-red-600 to-transparent shadow-[0_0_20px_rgba(220,38,38,0.8)]" />
+            {/* Glowing gold/purple accent */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-gaming-gold to-transparent shadow-[0_0_20px_rgba(251,191,36,0.8)]" />
 
             <div className="relative p-8 md:p-12 flex flex-col items-center text-center gap-6">
               <motion.div 
                 initial={{ y: -20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.5 }}
-                className="w-24 h-24 bg-red-600/20 rounded-full border border-red-600/40 flex items-center justify-center text-red-600 relative overflow-hidden"
+                className="w-24 h-24 bg-purple-600/20 rounded-full border border-gaming-gold/30 flex items-center justify-center text-gaming-gold relative overflow-hidden animate-pulse"
               >
-                <div className="absolute inset-0 bg-red-600/10 animate-pulse" />
-                <ShieldAlert size={48} className="relative z-10" />
+                <div className="absolute inset-0 bg-purple-600/10" />
+                <ShieldAlert size={48} className="relative z-10 text-gaming-gold" />
                 
                 {/* Cross Swords behind */}
                 <motion.div 
                   animate={{ rotate: [0, 5, -5, 0] }}
                   transition={{ duration: 0.5, repeat: Infinity }}
-                  className="absolute -bottom-2 -right-2 text-red-500/30"
+                  className="absolute -bottom-2 -right-2 text-purple-500/30"
                 >
                    <Skull size={40} />
                 </motion.div>
@@ -89,9 +89,9 @@ export function InitialNotice({ onExplore }: InitialNoticeProps) {
                   initial={{ opacity: 0, letterSpacing: '0.1em' }}
                   animate={{ opacity: 1, letterSpacing: '0.4em' }}
                   transition={{ delay: 0.7 }}
-                  className="text-red-500 font-black uppercase text-[10px]"
+                  className="text-gaming-gold font-mono font-black uppercase text-[10px]"
                 >
-                  ESTADO DE GUERRA
+                  TEMPORADA 1 PRINCIPOU • GLÓRIA
                 </motion.span>
                 <motion.h2 
                   initial={{ scale: 0.9, opacity: 0 }}
@@ -99,7 +99,7 @@ export function InitialNotice({ onExplore }: InitialNoticeProps) {
                   transition={{ delay: 0.8 }}
                   className="text-3xl md:text-5xl font-display font-black uppercase italic tracking-tighter text-white"
                 >
-                  GUERRA ENTRE <span className="text-red-600 drop-shadow-[0_0_10px_rgba(220,38,38,0.5)]">SERVIDORES</span>
+                  A GUERRA COMEÇA EM <span className="text-gaming-gold drop-shadow-[0_0_15px_rgba(251,191,36,0.5)]">6 DIAS!</span>
                 </motion.h2>
               </div>
 
@@ -107,9 +107,10 @@ export function InitialNotice({ onExplore }: InitialNoticeProps) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1 }}
-                className="text-white/60 font-bold uppercase italic text-[11px] md:text-sm leading-relaxed max-w-md"
+                className="text-zinc-200 font-bold uppercase italic text-[11px] md:text-sm leading-relaxed max-w-md"
               >
-                A BATALHA PELO DOMÍNIO DO REINO COMEÇOU! OS OUTROS SERVIDORES ESTÃO AVANÇANDO. É HORA DE SE PREPARAR PARA A VITÓRIA SUPREMA.
+                A grande final de Servidor x Servidor começará oficialmente daqui a exatamente 6 dias. 
+                Preparem suas estratégias de combate! Nosso Servidor 176 enfrentará o Servidor adversário 175 pelo domínio glorioso do reino!
               </motion.p>
 
               <motion.div 
@@ -120,10 +121,10 @@ export function InitialNotice({ onExplore }: InitialNoticeProps) {
               >
                 <button 
                   onClick={handleExplore}
-                  className="flex-1 bg-red-600 hover:bg-white hover:text-red-600 text-white p-5 rounded-2xl font-display font-black uppercase tracking-widest text-sm transition-all flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(220,38,38,0.4)] group"
+                  className="flex-1 bg-gaming-purple hover:bg-white hover:text-black text-white p-5 rounded-2xl font-display font-black uppercase tracking-widest text-sm transition-all flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(168,85,247,0.4)] group border border-gaming-gold/25"
                 >
                   VISITAR ABA DE DICAS 
-                  <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                  <ChevronRight size={20} className="group-hover:translate-x-1 transition-transform text-gaming-gold" />
                 </button>
                 <button 
                   onClick={handleClose}
@@ -133,9 +134,9 @@ export function InitialNotice({ onExplore }: InitialNoticeProps) {
                 </button>
               </motion.div>
 
-              <div className="flex items-center gap-2 text-red-500/40 mt-4">
-                <AlertTriangle size={14} />
-                <span className="text-[10px] font-black uppercase tracking-widest leading-none">MOBILIZAÇÃO IMEDIATA REQUERIDA</span>
+              <div className="flex items-center gap-2 text-gaming-gold/60 mt-4">
+                <AlertTriangle size={14} className="text-gaming-gold animate-bounce" />
+                <span className="text-[10px] font-black uppercase tracking-widest leading-none font-mono">CAMPANHA FINAL MANDATÓRIA (SVS)</span>
               </div>
             </div>
 

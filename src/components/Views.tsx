@@ -189,10 +189,10 @@ function DayHeader({ dayNum, title }: { dayNum: number; title: string }) {
 
   if (dayNum < todayDayOfWeek) {
     return (
-      <div className="bg-[#0b120b] border border-green-500/20 p-3 rounded-xl flex items-center justify-between">
+      <div className="bg-gaming-purple/5 border border-gaming-purple/30 p-3 rounded-xl flex items-center justify-between">
         <div className="flex items-center gap-2 flex-wrap">
-          <CheckCircle2 size={14} className="text-green-500" />
-          <span className="text-[9px] text-green-500 font-black uppercase tracking-widest">DIA CONCLUÍDO COM SUCESSO</span>
+          <CheckCircle2 size={14} className="text-gaming-purple" />
+          <span className="text-[9px] text-gaming-gold font-black uppercase tracking-widest">DIA CONCLUÍDO COM SUCESSO</span>
         </div>
         <span className="text-[8px] font-bold text-white/30 uppercase">HISTÓRICO</span>
       </div>
@@ -255,12 +255,12 @@ function DayNotice({ dayNum }: { dayNum: number }) {
 
   if (dayNum < todayDayOfWeek) {
     return (
-      <div className="bg-[#0b120b] border border-green-500/20 p-4 rounded-xl flex items-center gap-3">
-        <div className="w-8 h-8 bg-green-500/10 rounded-full flex items-center justify-center text-green-400 shrink-0">
+      <div className="bg-gaming-purple/5 border border-gaming-purple/30 p-4 rounded-xl flex items-center gap-3">
+        <div className="w-8 h-8 bg-gaming-purple/10 rounded-full flex items-center justify-center text-gaming-gold shrink-0">
           <CheckCircle2 size={16} />
         </div>
         <div className="flex flex-col gap-0.5 text-left">
-          <span className="text-[10px] text-green-400 font-black uppercase tracking-wider">Fase Finalizada</span>
+          <span className="text-[10px] text-gaming-gold font-black uppercase tracking-wider">Fase Finalizada</span>
           <p className="text-[9px] text-white/50 uppercase font-bold leading-tight m-0">As metas deste dia já foram concluídas no cronograma semanal.</p>
         </div>
       </div>
@@ -290,6 +290,120 @@ function DayNotice({ dayNum }: { dayNum: number }) {
       </div>
     );
   }
+}
+
+export function GuerraSvNotice() {
+  const calculateTimeRemaining = () => {
+    // Target date set to exactly 6 days and 10 hours from 2026-05-24T03:04:37Z
+    // Which is "2026-05-30T13:04:37Z"
+    const target = new Date("2026-05-30T13:04:37Z").getTime();
+    const now = Date.now();
+    const diff = target - now;
+
+    if (diff <= 0) {
+      return { days: 0, hours: 0, minutes: 0, seconds: 0, completed: true };
+    }
+
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    return { days, hours, minutes, seconds, completed: false };
+  };
+
+  const [timeLeft, setTimeLeft] = useState(calculateTimeRemaining());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeRemaining());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  return (
+    <div className="p-4 sm:p-6 bg-gradient-to-br from-amber-950/40 via-[#13110d]/95 to-zinc-950/90 border border-gaming-gold/35 rounded-2xl relative overflow-hidden flex flex-col gap-4 shadow-[0_0_30px_rgba(251,191,36,0.15)] mb-2">
+      {/* Decorative Gold Elements */}
+      <div className="absolute -right-12 -top-12 w-24 h-24 bg-gaming-gold/10 rounded-full blur-2xl pointer-events-none" />
+      <div className="absolute -left-12 -bottom-12 w-24 h-24 bg-blue-500/5 rounded-full blur-2xl pointer-events-none" />
+      
+      {/* Announcement top */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gaming-gold/20 border border-gaming-gold/40 flex items-center justify-center text-gaming-gold shrink-0">
+            <Trophy size={20} className="animate-bounce" />
+          </div>
+          <div className="flex flex-col text-left">
+            <span className="text-[9px] font-black uppercase tracking-[0.25em] text-gaming-gold font-mono animate-pulse">
+              🏆 FASE ELIMINATÓRIA • RESULTADO OFICIAL
+            </span>
+            <h4 className="text-base sm:text-lg font-display font-black uppercase text-white tracking-wide">
+              CAMPEÕES DA PRIMEIRA ETAPA!
+            </h4>
+          </div>
+        </div>
+        <div className="bg-gaming-gold/10 border border-gaming-gold/30 px-3 py-1 rounded-full w-fit flex items-center gap-1.5 self-start sm:self-center">
+          <div className="w-1.5 h-1.5 rounded-full bg-gaming-gold animate-ping" />
+          <span className="text-[9px] font-black uppercase tracking-widest text-gaming-gold font-mono">CLASSIFICADO PARA A FINAL</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
+        {/* Victory Details Section */}
+        <div className="md:col-span-12 lg:col-span-7 flex flex-col gap-2.5 text-left">
+          <h5 className="text-white font-black text-xs sm:text-sm uppercase tracking-wide leading-snug">
+            Vencemos a Semifinal em cima da <span className="text-red-500 underline decoration-red-500/40 decoration-wavy font-extrabold">Bloodpact</span> por <span className="text-gaming-gold font-black bg-gaming-gold/15 px-2.5 py-1 rounded border border-gaming-gold/30">9 x 4</span>!
+          </h5>
+          <p className="text-[10px] text-zinc-300 font-bold uppercase italic leading-relaxed">
+            Nossos guerreiros lutaram bravamente nesta primeira etapa com tática impecável e controle absoluto de recursos, assegurando nossa passagem oficial de campeões.
+          </p>
+          
+          <div className="flex items-center gap-2 mt-1.5 p-2 bg-white/5 border border-white/5 rounded-xl">
+            <Sword size={12} className="text-gaming-gold" />
+            <span className="text-[9px] font-black uppercase text-white/80 font-mono tracking-wide">
+              CONFRONTO FINAL DEFINIDO: <span className="text-gaming-gold font-black">Servidor 176 (NÓS)</span> vs <span className="text-red-400 font-black">Servidor 175 (ADVERSÁRIO)</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Real-time Ticking Countdown */}
+        <div className="md:col-span-12 lg:col-span-5 flex flex-col items-center justify-center p-3 bg-black/40 border border-white/5 rounded-xl min-w-[200px] text-center shrink-0">
+          <span className="text-[8px] font-black uppercase tracking-[0.2em] text-white/40 mb-2 flex items-center gap-1 font-mono">
+            <Clock size={10} className="text-gaming-gold animate-spin-slow" /> A FINAL SVS COMEÇA EM:
+          </span>
+          
+          <div className="flex gap-2.5 items-center justify-center font-mono">
+            <div className="flex flex-col items-center">
+              <span className="text-2xl font-black text-gaming-gold drop-shadow-[0_0_8px_rgba(251,191,36,0.3)]">{timeLeft.days}</span>
+              <span className="text-[7px] uppercase font-black tracking-widest text-white/30">Dias</span>
+            </div>
+            <span className="text-xl font-bold text-gaming-gold/50 -mt-3 animate-pulse">:</span>
+            
+            <div className="flex flex-col items-center">
+              <span className="text-2xl font-black text-gaming-gold drop-shadow-[0_0_8px_rgba(251,191,36,0.3)]">{String(timeLeft.hours).padStart(2, '0')}</span>
+              <span className="text-[7px] uppercase font-black tracking-widest text-white/30">Horas</span>
+            </div>
+            <span className="text-xl font-bold text-gaming-gold/50 -mt-3 animate-pulse">:</span>
+            
+            <div className="flex flex-col items-center">
+              <span className="text-2xl font-black text-gaming-gold drop-shadow-[0_0_8px_rgba(251,191,36,0.3)]">{String(timeLeft.minutes).padStart(2, '0')}</span>
+              <span className="text-[7px] uppercase font-black tracking-widest text-white/30">Min</span>
+            </div>
+            <span className="text-xl font-bold text-gaming-gold/50 -mt-3 animate-pulse">:</span>
+            
+            <div className="flex flex-col items-center">
+              <span className="text-2xl font-black text-gaming-gold drop-shadow-[0_0_8px_rgba(251,191,36,0.3)]">{String(timeLeft.seconds).padStart(2, '0')}</span>
+              <span className="text-[7px] uppercase font-black tracking-widest text-white/30">Seg</span>
+            </div>
+          </div>
+
+          <div className="w-full h-[2.5px] bg-white/5 rounded-full overflow-hidden mt-3.5 relative">
+            <div className="absolute left-0 top-0 h-full bg-gaming-gold rounded-full" style={{ width: timeLeft.completed ? '100%' : '72%' }} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // --- GUIA VIEW ---
@@ -469,7 +583,7 @@ export function GuiaView() {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
-            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 bg-green-500 text-black rounded-full font-black uppercase text-[10px] tracking-widest shadow-[0_0_50px_rgba(34,197,94,0.3)] flex items-center gap-2"
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 bg-gaming-purple text-white rounded-full font-black uppercase text-[10px] tracking-widest shadow-[0_0_50px_rgba(168,85,247,0.3)] flex items-center gap-2"
           >
             <CheckCircle2 size={16} /> Denúncia Enviada aos Líderes
           </motion.div>
@@ -488,28 +602,40 @@ export function GuiaView() {
            </h2>
         </div>
         <div className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2 rounded-xl backdrop-blur-md">
-           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
+           <div className="w-2 h-2 rounded-full bg-gaming-gold animate-pulse shadow-[0_0_10px_rgba(251,191,36,0.5)]" />
            <span className="text-[9px] font-black uppercase tracking-widest text-white/40">Manual Atualizado v2.5</span>
         </div>
       </div>
 
       {/* Guia Tabs Swiper */}
-      <div className="flex gap-2 p-1 bg-white/5 border border-white/10 rounded-xl w-fit overflow-x-auto max-w-full custom-scrollbar">
+      <div className="flex gap-2 p-1.5 bg-zinc-950/40 border border-white/5 rounded-2xl w-fit overflow-x-auto max-w-full no-scrollbar">
         <button 
           onClick={() => setActiveSubTab('guias')}
-          className={`px-4 sm:px-5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeSubTab === 'guias' ? 'bg-gaming-gold text-black shadow-[0_0_20px_rgba(251,191,36,0.2)]' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+          className={`px-4 sm:px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border whitespace-nowrap ${
+            activeSubTab === 'guias' 
+              ? 'bg-gradient-to-r from-purple-900 to-indigo-950 border-gaming-gold text-white shadow-[0_0_15px_rgba(168,85,247,0.35)]' 
+              : 'border-transparent text-white/40 hover:text-white hover:bg-white/5'
+          }`}
         >
           Guias Oficiais
         </button>
         <button 
           onClick={() => setActiveSubTab('guerra')}
-          className={`px-4 sm:px-5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeSubTab === 'guerra' ? 'bg-gaming-gold text-black shadow-[0_0_20px_rgba(251,191,36,0.2)]' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+          className={`px-4 sm:px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all relative border whitespace-nowrap ${
+            activeSubTab === 'guerra' 
+              ? 'bg-gradient-to-r from-purple-900 to-indigo-950 border-gaming-gold text-white shadow-[0_0_15px_rgba(168,85,247,0.35)]' 
+              : 'border-transparent text-white/40 hover:text-white hover:bg-white/5'
+          }`}
         >
           Guerra Sv (5 Dias) 🔥
         </button>
         <button 
           onClick={() => setActiveSubTab('avisos')}
-          className={`px-4 sm:px-5 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all relative whitespace-nowrap ${activeSubTab === 'avisos' ? 'bg-gaming-gold text-black shadow-[0_0_20px_rgba(251,191,36,0.2)]' : 'text-white/40 hover:text-white hover:bg-white/5'}`}
+          className={`px-4 sm:px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all relative border whitespace-nowrap ${
+            activeSubTab === 'avisos' 
+              ? 'bg-gradient-to-r from-purple-900 to-indigo-950 border-gaming-gold text-white shadow-[0_0_15px_rgba(168,85,247,0.35)]' 
+              : 'border-transparent text-white/40 hover:text-white hover:bg-white/5'
+          }`}
         >
           Avisos
         </button>
@@ -602,6 +728,9 @@ export function GuiaView() {
           animate={{ opacity: 1, scale: 1 }}
           className="flex flex-col gap-5 w-full bg-gaming-card/20 border border-white/5 rounded-2xl p-4 sm:p-6"
         >
+          {/* Final SVS Champions Notice */}
+          <GuerraSvNotice />
+
           {/* Header strategic */}
           <div className="flex flex-col gap-1.5 p-4 bg-gaming-card/40 border border-white/10 rounded-2xl relative overflow-hidden">
             {!isEcoMode && (
@@ -731,8 +860,8 @@ export function GuiaView() {
                         <p className="text-[10px] text-white/60 uppercase font-bold tracking-wide leading-relaxed mt-0.5">• Fragmentos UR/SSR/SR<br />• Insígnias de habilidade & tickets premium</p>
                       </div>
 
-                      <div className="border-l-2 border-green-500 pl-3">
-                        <h4 className="text-[10px] font-black uppercase tracking-wider text-green-400">Equipamentos</h4>
+                      <div className="border-l-2 border-gaming-gold pl-3">
+                        <h4 className="text-[10px] font-black uppercase tracking-wider text-gaming-gold">Equipamentos</h4>
                         <p className="text-[10px] text-white/60 uppercase font-bold tracking-wide leading-relaxed mt-0.5">• Guarde Baús Corvo Nv3/Nv4<br />• Segure Missões Falcão</p>
                       </div>
 
@@ -749,58 +878,6 @@ export function GuiaView() {
                 <div className="flex flex-col gap-5">
                   <DayHeader dayNum={1} title="DIA 1" />
                   <DayNotice dayNum={1} />
-
-                  {/* Customizable Visual Reference for Day 1 */}
-                  <div className="bg-white/5 border border-white/10 p-4 rounded-xl flex flex-col gap-4">
-                    <div className="flex items-center justify-between border-b border-white/10 pb-2">
-                      <div className="flex items-center gap-2">
-                        <ImageIcon size={16} className="text-gaming-gold" />
-                        <h4 className="font-display font-black uppercase text-xs text-white italic">Referência Visual: Missões Diárias (Dia 1)</h4>
-                      </div>
-                      {isLeader ? (
-                        <span className="px-2 py-0.5 bg-gaming-gold text-black text-[6px] font-black uppercase rounded animate-pulse">EDITÁVEL PELO LÍDER</span>
-                      ) : (
-                        <span className="px-2 py-0.5 bg-white/5 border border-white/10 text-white/40 text-[6px] font-black uppercase rounded">FIXO / SÓ LEITURA</span>
-                      )}
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                      <p className="text-[10px] text-white/60 font-bold uppercase italic leading-relaxed">
-                        Examine a foto personalizada abaixo com as instruções diretas enviadas pela liderança para o Dia 1.
-                      </p>
-                      
-                      <div className="aspect-video md:h-[300px] rounded-xl border border-white/10 overflow-hidden bg-black/40 group relative">
-                        <img 
-                          src={guerraDia1Image} 
-                          alt="Diretriz Visual Dia 1" 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" 
-                        />
-                        {isLeader && (
-                          <label className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer gap-2 p-4">
-                            <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center border border-white/10 group-hover:scale-110 transition-transform">
-                              <ImageIcon size={20} className="text-gaming-gold" />
-                            </div>
-                            <div className="text-center">
-                              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white block">Substituir Imagem do Dia 1</span>
-                              <span className="text-[8px] font-bold text-white/40 uppercase">Toque para selecionar foto</span>
-                            </div>
-                            <input 
-                              type="file" 
-                              className="hidden" 
-                              accept="image/*" 
-                              onChange={handleGuerraDia1ImageUpload} 
-                            />
-                          </label>
-                        )}
-                      </div>
-                      
-                      {isLeader && (
-                        <p className="text-[8px] text-gaming-gold font-bold uppercase italic text-center">
-                          * Como líder, as alterações feitas aqui são sincronizadas instantaneamente para todos os membros do clã.
-                        </p>
-                      )}
-                    </div>
-                  </div>
                 </div>
               )}
 
@@ -875,7 +952,7 @@ export function GuiaView() {
                         <div className="p-3 bg-white/5 border border-white/5 rounded-xl">
                           <span className="text-[8px] text-white/40 uppercase font-black tracking-widest block">Baús Corvo</span>
                           <span className="text-xs text-gaming-gold font-black uppercase">Mais nível = Mais ganho</span>
-                          <span className="block text-[8px] text-green-400 uppercase font-bold mt-1">✅ Guarde TODOS os Nv3/Nv4 para hoje!</span>
+                          <span className="block text-[8px] text-gaming-gold uppercase font-bold mt-1">✅ Guarde TODOS os Nv3/Nv4 para hoje!</span>
                         </div>
                       </div>
 
@@ -888,10 +965,10 @@ export function GuiaView() {
                       <div className="bg-white/[0.02] border border-white/10 p-3 rounded-lg">
                         <span className="text-[8px] text-white/40 uppercase font-black tracking-widest block mb-1.5">🎓 Melhores Tecnologias Para Focar</span>
                         <div className="grid grid-cols-2 gap-2 text-[9px] font-black uppercase tracking-wider text-gaming-gold">
-                          <div className="flex items-center gap-1"><CheckCircle2 size={10} className="text-green-500" /> Ataque de Tropas</div>
-                          <div className="flex items-center gap-1"><CheckCircle2 size={10} className="text-green-500" /> HP de Tropas</div>
-                          <div className="flex items-center gap-1"><CheckCircle2 size={10} className="text-green-500" /> Vel. de Construção</div>
-                          <div className="flex items-center gap-1"><CheckCircle2 size={10} className="text-green-500" /> Vel. de Pesquisa</div>
+                          <div className="flex items-center gap-1"><CheckCircle2 size={10} className="text-gaming-purple" /> Ataque de Tropas</div>
+                          <div className="flex items-center gap-1"><CheckCircle2 size={10} className="text-gaming-purple" /> HP de Tropas</div>
+                          <div className="flex items-center gap-1"><CheckCircle2 size={10} className="text-gaming-purple" /> Vel. de Construção</div>
+                          <div className="flex items-center gap-1"><CheckCircle2 size={10} className="text-gaming-purple" /> Vel. de Pesquisa</div>
                         </div>
                       </div>
                     </div>
@@ -942,7 +1019,7 @@ export function GuiaView() {
                       </div>
 
                       <div className="text-[10px] text-white/60 tracking-wide font-bold uppercase italic leading-relaxed flex flex-col gap-1.5 border-t border-white/5 pt-2">
-                        <span className="text-green-400 font-black">🧪 Antitoxina</span>
+                        <span className="text-gaming-gold font-black">🧪 Antitoxina</span>
                         <span>• Use estritamente 660 unidades de antitoxina para fechar metas de dia 4.</span>
                       </div>
                     </div>
@@ -1012,7 +1089,7 @@ export function GuiaView() {
                       </div>
 
                       <div className="text-[10px] text-white/80 tracking-wide font-bold uppercase italic leading-relaxed flex flex-col gap-1.5 border-t border-red-500/10 pt-2">
-                        <span className="text-green-400 font-black">🩹 Saúde Base</span>
+                        <span className="text-gaming-gold font-black">🩹 Saúde Base</span>
                         <span>• Use todos os seus aceleradores de cura estocados sem dó nem piedade.</span>
                       </div>
                     </div>
@@ -1028,8 +1105,8 @@ export function GuiaView() {
                       <p className="text-[10px] text-white/60 font-black uppercase leading-relaxed italic">• Gastar diamantes aleatoriamente.<br />• Abrir baús fora do dia correto.<br />• Gastar fragmentos de heróis cedo.</p>
                     </div>
 
-                    <div className="bg-green-500/5 border border-green-500/10 p-3.5 rounded-xl flex flex-col gap-2">
-                      <span className="text-green-400 text-[9px] font-black uppercase tracking-widest block">✅ SEMPRE FAÇA ISSO (F2P)</span>
+                    <div className="bg-gaming-gold/5 border border-gaming-gold/20 p-3.5 rounded-xl flex flex-col gap-2">
+                      <span className="text-gaming-gold text-[9px] font-black uppercase tracking-widest block">✅ SEMPRE FAÇA ISSO (F2P)</span>
                       <p className="text-[10px] text-white/60 font-black uppercase leading-relaxed italic">• Acumular o máximo de recursos.<br />• Priorizar estritamente os objetivos UR.<br />• Sincronizar gastos com o dia correto do evento.</p>
                     </div>
                   </div>
@@ -1191,32 +1268,32 @@ export function GuiaView() {
           whileHover={{ y: -3 }}
           className="relative group overflow-hidden bg-gaming-card/30 backdrop-blur-md border border-white/5 rounded-2xl p-5 md:p-8 flex flex-col gap-6 transition-all cursor-not-allowed shadow-2xl pb-16 md:pb-20"
         >
-           <div className="absolute top-0 left-0 w-full h-[2px] bg-linear-to-r from-transparent via-green-500/40 to-transparent" />
+           <div className="absolute top-0 left-0 w-full h-[2px] bg-linear-to-r from-transparent via-gaming-gold/40 to-transparent" />
 
            <div className="absolute top-4 right-5">
-              <div className="flex items-center gap-1.5 px-2.5 py-0.5 bg-green-500/10 border border-green-500/20 rounded-full">
-                <span className="w-1 h-1 bg-green-500 rounded-full animate-pulse" />
-                <span className="text-[6px] sm:text-[7px] font-black uppercase tracking-widest text-green-400">Desenvolvimento</span>
+              <div className="flex items-center gap-1.5 px-2.5 py-0.5 bg-gaming-gold/10 border border-gaming-gold/20 rounded-full">
+                <span className="w-1 h-1 bg-gaming-gold rounded-full animate-pulse" />
+                <span className="text-[6px] sm:text-[7px] font-black uppercase tracking-widest text-gaming-gold">Desenvolvimento</span>
               </div>
            </div>
 
-           <div className="w-12 h-12 md:w-16 md:h-16 bg-linear-to-br from-green-600/30 to-green-900/10 rounded-xl md:rounded-2xl flex items-center justify-center text-green-400 group-hover:scale-110 group-hover:rotate-12 transition-all border border-green-500/30 shadow-[0_0_40px_rgba(34,197,94,0.15)] relative overflow-hidden flex-shrink-0">
-              <div className="absolute inset-0 bg-linear-to-t from-green-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+           <div className="w-12 h-12 md:w-16 md:h-16 bg-linear-to-br from-gaming-gold/20 to-[#c5a059]/10 rounded-xl md:rounded-2xl flex items-center justify-center text-gaming-gold group-hover:scale-110 group-hover:rotate-12 transition-all border border-gaming-gold/30 shadow-[0_0_40px_rgba(251,191,36,0.15)] relative overflow-hidden flex-shrink-0">
+              <div className="absolute inset-0 bg-linear-to-t from-gaming-gold/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <Shield className="w-6 h-6 md:w-8 md:h-8 relative z-10" />
            </div>
 
            <div className="relative z-10">
-              <h4 className="font-display font-black uppercase text-xl md:text-2xl mb-1.5 italic text-white group-hover:text-green-300 transition-colors tracking-tighter leading-snug">Defesa <br /><span className="text-green-500">de Base 🛡️</span></h4>
+              <h4 className="font-display font-black uppercase text-xl md:text-2xl mb-1.5 italic text-white group-hover:text-amber-300 transition-colors tracking-tighter leading-snug">Defesa <br /><span className="text-gaming-gold">de Base 🛡️</span></h4>
               <p className="text-[10px] text-white/40 uppercase font-bold leading-relaxed italic group-hover:text-white/60 transition-colors">
                 Fortificações impenetráveis e sistemas de alerta precoce para neutralizar invasões noturnas.
               </p>
            </div>
 
            <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
-              <div className="flex items-center text-green-400/30 text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] gap-1.5">
+              <div className="flex items-center text-gaming-gold/30 text-[8px] md:text-[9px] font-black uppercase tracking-[0.2em] gap-1.5">
                  Arquitetura Defensiva <ChevronRight size={12} />
               </div>
-              <div className="w-8 h-8 rounded-xl border border-white/5 bg-white/[0.02] flex items-center justify-center text-white/10 group-hover:text-green-500/40 transition-colors">
+              <div className="w-8 h-8 rounded-xl border border-white/5 bg-white/[0.02] flex items-center justify-center text-white/10 group-hover:text-gaming-gold/40 transition-colors">
                 <ShieldAlert size={14} />
               </div>
            </div>
@@ -1227,7 +1304,7 @@ export function GuiaView() {
                 <motion.div 
                   initial={{ width: 0 }}
                   animate={{ width: '30%' }}
-                  className="h-full bg-linear-to-r from-green-600 to-green-400 shadow-[0_0_10px_rgba(34,197,94,0.5)]"
+                  className="h-full bg-linear-to-r from-gaming-gold to-[#c5a059] shadow-[0_0_10px_rgba(251,191,36,0.5)]"
                 />
               </div>
            </div>
@@ -1245,18 +1322,18 @@ export function GuiaView() {
               </div>
               
               <div className="flex-1 text-center md:text-left">
-                 <h4 className="font-display font-black uppercase text-lg sm:text-xl md:text-2xl mb-1 text-red-500 italic flex items-center justify-center md:justify-start gap-2">
-                    Código de Honra: Caravanas 🚨
+                 <h4 className="font-display font-black uppercase text-lg sm:text-xl md:text-2xl mb-1 text-gaming-gold italic flex items-center justify-center md:justify-start gap-2">
+                    Código de Honra: Nova Regra SVS 🚨
                  </h4>
-                 <p className="text-xs sm:text-sm text-white/60 font-bold uppercase leading-relaxed italic mb-4">
-                    "É terminantemente PROIBIDO roubar caravanas e caixotes de jogadores do nosso próprio servidor. Isso gera retaliação severa e banimento imediato da aliança."
+                 <p className="text-xs sm:text-sm text-white/90 font-bold uppercase leading-relaxed italic mb-4">
+                    "A regra mudou para a Grande Final SVS! O roubo de caravanas e caixotes está OFICIALMENTE LIBERADO E PERMITIDO contra o Servidor adversário 175 (incluindo Caioxetes)! Podem saquear para sabotá-los. Porém, continua terminantemente PROIBIDO roubar de jogadores do nosso próprio Servidor 176."
                  </p>
                  <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-black/40 rounded-lg border border-white/5 text-[8px] font-black uppercase tracking-widest">
-                       <CheckCircle2 size={12} className="text-green-500" /> Respeite Aliados
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-black/40 rounded-lg border border-white/5 text-[8px] font-black uppercase tracking-widest text-gaming-gold">
+                       <CheckCircle2 size={12} className="text-gaming-gold" /> FOCO NO SERVIDOR 175
                     </div>
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-black/40 rounded-lg border border-white/5 text-[8px] font-black uppercase tracking-widest text-red-400">
-                       <AlertTriangle size={12} /> Multa de 50 Moedas
+                       <AlertTriangle size={12} /> PROIBIDO ROUBAR SV 176
                     </div>
                     <button 
                       onClick={async () => {
@@ -1284,10 +1361,67 @@ export function CombateView() {
   const { isGuest, myMember, members, updateMemberData, isEcoMode, completeMission } = useClan();
   const [loading, setLoading] = useState(false);
 
+  // Dynamic Brasília Time zone helpers
+  const getBrasiliaTime = (): Date => {
+    try {
+      const tzString = 'America/Sao_Paulo';
+      const localDateStr = new Date().toLocaleString('en-US', { timeZone: tzString });
+      return new Date(localDateStr);
+    } catch (err) {
+      const utc = new Date();
+      return new Date(utc.getTime() - (3 * 60 * 60 * 1000));
+    }
+  };
+
+  const getBrasiliaTodayAtTime = (hour: number, minute: number): Date => {
+    const now = new Date();
+    try {
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Sao_Paulo',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      const parts = formatter.formatToParts(now);
+      const year = parts.find(p => p.type === 'year')?.value;
+      const month = parts.find(p => p.type === 'month')?.value;
+      const day = parts.find(p => p.type === 'day')?.value;
+      return new Date(`${year}-${month}-${day}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00-03:00`);
+    } catch (err) {
+      const d = new Date();
+      d.setHours(hour, minute, 0, 0);
+      return d;
+    }
+  };
+
+  const isEventActiveToday = (eventId: 'elixir' | 'rato'): { active: boolean; label: string; daysStr: string } => {
+    const date = getBrasiliaTime();
+    const day = date.getDay(); // 0 = Domingo, 1 = Segunda ... 6 = Sábado
+    
+    if (eventId === 'elixir') {
+      return {
+        active: false,
+        label: 'ENCERRADO 🛑',
+        daysStr: 'Temporada Finalizada, aguardando reabertura oficial'
+      };
+    } else {
+      // Tuesdays, Thursdays, Saturdays, Sundays (Terça, Quinta, Sábado, Domingo)
+      const active = day === 2 || day === 4 || day === 6 || day === 0;
+      return {
+        active,
+        label: active ? 'ABERTO HOJE' : 'INDISPONÍVEL HOJE 🔒',
+        daysStr: 'Terças, Quintas, Sábados e Domingos'
+      };
+    }
+  };
+
   // Countdown support for Brasilia Time (GMT-3)
   const calculateTimeLeft = () => {
-    // Target: May 22, 2026 at 23:00 Brasília Time (UTC-3) -> 2026-05-23T02:00:00Z
-    const targetDate = new Date("2026-05-22T23:00:00-03:00");
+    const activeInfo = isEventActiveToday('elixir');
+    if (!activeInfo.active) {
+      return { days: 0, hours: 0, minutes: 0, seconds: 0, completed: true };
+    }
+    const targetDate = getBrasiliaTodayAtTime(23, 0); // Active until 23:00 Brasília time
     const now = new Date();
     const difference = targetDate.getTime() - now.getTime();
 
@@ -1325,7 +1459,64 @@ export function CombateView() {
 
   // Get active combat group
   const activeGroup = myMember?.combatGroup;
-  const [selectedEvent, setSelectedEvent] = useState<'elixir' | 'rato' | null>(null);
+
+  const [selectedEvent, setSelectedEvent] = useState<'elixir' | 'rato' | null>('rato');
+
+  const [ratoCountdown, setRatoCountdown] = useState({ status: '', text: '', isActive: false });
+
+  useEffect(() => {
+    const updateRatoStatus = () => {
+      const activeInfo = isEventActiveToday('rato');
+      if (!activeInfo.active) {
+        setRatoCountdown({
+          status: "🔒 INDISPONÍVEL HOJE",
+          text: `EVENTO BLOQUEADO • Abre: Terças, Quintas, Sábados e Domingos`,
+          isActive: false
+        });
+        return;
+      }
+
+      const now = new Date();
+      const targetTime = getBrasiliaTodayAtTime(22, 0).getTime();
+      const nowTime = now.getTime();
+      
+      if (nowTime < targetTime) {
+        const diff = targetTime - nowTime;
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+        setRatoCountdown({
+          status: "AGUARDANDO INÍCIO",
+          text: `INICIA HOJE ÀS 22:00 • Faltam ${hours}h ${minutes}m ${seconds}s`,
+          isActive: false
+        });
+      } else {
+        const endOfDay = targetTime + (2 * 60 * 60 * 1000); // 2 hours duration
+        const diff = endOfDay - nowTime;
+        
+        if (diff > 0) {
+          const hours = Math.floor(diff / (1000 * 60 * 60));
+          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+          setRatoCountdown({
+            status: "EVENTO ATIVO ⚔️",
+            text: `RATO DISPONÍVEL • Restam: ${hours}h ${minutes}m ${seconds}s`,
+            isActive: true
+          });
+        } else {
+          setRatoCountdown({
+            status: "FINALIZADO HOJE ✅",
+            text: `AGUARDANDO O PRÓXIMO DIA DE INCURSÃO`,
+            isActive: false
+          });
+        }
+      }
+    };
+
+    updateRatoStatus();
+    const interval = setInterval(updateRatoStatus, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleRegisterGroup = async (group: 'A' | 'B' | 'C') => {
     if (isGuest) {
@@ -1333,6 +1524,11 @@ export function CombateView() {
       return;
     }
     if (!myMember) return;
+
+    if (!isEventActiveToday('elixir').active) {
+      alert("Este torneio está oficialmente encerrado nesta temporada da Aliança! Novas inscrições e alistamentos suspensos até a reabertura oficial.");
+      return;
+    }
 
     if (myMember.combatGroup === group) {
       alert("Você já está alistado neste regimento de combate!");
@@ -1385,6 +1581,11 @@ export function CombateView() {
       return;
     }
     if (!myMember) return;
+
+    if (!isEventActiveToday('rato').active) {
+      alert("Este evento está indisponível hoje! Inscrições e confirmações fechadas até o próximo dia correto (Terças, Quintas, Sábados e Domingos).");
+      return;
+    }
 
     const hasClaimedRato = myMember?.completedMissions?.includes('caca_rato_confirm');
     if (hasClaimedRato) {
@@ -1597,22 +1798,22 @@ export function CombateView() {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-zinc-850 pb-4">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+            <span className="w-2 h-2 rounded-full bg-gaming-gold animate-pulse shrink-0" />
             <span className="text-[9px] uppercase font-black text-white/50 tracking-[0.4em] font-mono">CENTRAL DE TORNEIOS & EVENTOS DA ALIANÇA</span>
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4.5xl font-display font-black uppercase italic tracking-tighter text-white leading-none">
-            CENTRAL DE DEPLOY — <span className="text-gaming-gold text-shadow-gold text-nowrap">LUTA PELO ELIXIR</span>
+            CENTRAL DE DEPLOY — <span className="text-gaming-gold text-shadow-gold text-nowrap">ATIVIDADES DA ALIANÇA</span>
           </h2>
         </div>
         
-        {/* Date Container with Countdown under it - SET TO POSTPONED */}
-        <div className="bg-zinc-950/80 border border-amber-500/20 px-4 py-2.5 rounded-2xl flex flex-col items-center justify-center shrink-0 lg:min-w-[220px] shadow-lg">
+        {/* Active Event Banner */}
+        <div className="bg-zinc-950/80 border border-gaming-gold/20 px-4 py-2.5 rounded-2xl flex flex-col items-center justify-center shrink-0 lg:min-w-[220px] shadow-lg">
           <span className="text-[8px] font-black uppercase text-zinc-400 tracking-wider font-mono">STATUS DO CONFRONTO</span>
-          <span className="text-xs sm:text-sm font-mono font-black text-amber-500 italic">⚠️ ADIADO / POSTERGADO</span>
+          <span className="text-xs sm:text-sm font-mono font-black text-gaming-gold italic">⚔️ SEGUNDO DIA ATIVO</span>
           
           <div className="mt-1 pb-0.5 w-full flex flex-col items-center">
-            <span className="text-[8px] font-black uppercase text-amber-500 tracking-wider font-mono animate-pulse flex items-center gap-1">
-              INSCRIÇÕES PAUSADAS
+            <span className="text-[8px] font-black uppercase text-gaming-gold tracking-wider font-mono animate-pulse flex items-center gap-1">
+              • CAÇA AO RATO DISPONÍVEL •
             </span>
           </div>
         </div>
@@ -1621,92 +1822,140 @@ export function CombateView() {
       {/* PAINEL CENTRAL DE TORNEIOS DA ALIANÇA */}
       <div className={`grid gap-4 ${selectedEvent ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'}`}>
         {/* Luta pelo Elixir Card */}
-        {(selectedEvent === null || selectedEvent === 'elixir') && (
-          <motion.div 
-            whileHover={!isEcoMode ? { scale: 1.015, y: -2 } : {}}
-            onClick={() => setSelectedEvent(selectedEvent === 'elixir' ? null : 'elixir')}
-            className={`cursor-pointer transition-all rounded-3xl p-5 relative overflow-hidden flex flex-col justify-between shadow-xl ${
-              selectedEvent === 'elixir'
-                ? 'bg-red-950/20 border-2 border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.15)]'
-                : 'bg-zinc-900/40 border border-white/5 hover:border-red-500/35'
-            }`}
-          >
-            <div className="absolute top-0 right-0 px-3 py-1 bg-red-500 text-black text-[9px] font-black uppercase tracking-widest rounded-bl-2xl">
-              OBRIGATÓRIO • RECOMPENSA: 50 XP
-            </div>
-            <div>
-              <div className="flex items-center gap-2.5 mb-2.5">
-                <div className="w-9 h-9 rounded-xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-400">
-                  <Trophy size={18} />
+        {(selectedEvent === null || selectedEvent === 'elixir') && (() => {
+          const state = isEventActiveToday('elixir');
+          return (
+            <motion.div 
+              whileHover={(!isEcoMode && state.active) ? { scale: 1.015, y: -2 } : {}}
+              onClick={() => setSelectedEvent(selectedEvent === 'elixir' ? null : 'elixir')}
+              className={`cursor-pointer transition-all rounded-3xl p-5 relative overflow-hidden flex flex-col justify-between shadow-xl ${
+                !state.active 
+                  ? 'bg-zinc-950/40 border border-zinc-900 text-zinc-500 shadow-inner' 
+                  : selectedEvent === 'elixir'
+                    ? 'bg-red-950/20 border-2 border-red-500 shadow-[0_0_20px_rgba(239,68,68,0.15)]'
+                    : 'bg-zinc-900/40 border border-white/5 hover:border-red-500/35'
+              }`}
+            >
+              <div className={`absolute top-0 right-0 px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-bl-2xl ${
+                !state.active 
+                  ? 'bg-zinc-900 text-zinc-500 border-l border-b border-zinc-800' 
+                  : 'bg-red-500 text-black'
+              }`}>
+                {state.active ? 'OBRIGATÓRIO • RECOMPENSA: 50 XP' : '🔒 INDISPONÍVEL HOJE'}
+              </div>
+              <div>
+                <div className="flex items-center gap-2.5 mb-2.5">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${
+                    !state.active 
+                      ? 'bg-zinc-950 border-zinc-800 text-zinc-600' 
+                      : 'bg-red-500/15 border-red-500/30 text-red-400'
+                  }`}>
+                    {state.active ? <Trophy size={18} /> : <Lock size={16} />}
+                  </div>
+                  <div>
+                    <h3 className={`text-sm font-display font-black uppercase tracking-wide ${state.active ? 'text-white' : 'text-zinc-400'}`}>
+                      Luta pelo Elixir {!state.active && <span className="text-zinc-600 text-[10px] font-bold tracking-tight lowercase block sm:inline italic">(bloqueado)</span>}
+                    </h3>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[7.5px] uppercase font-bold text-zinc-500 tracking-wider">Torneio de Clãs de Alto Nível</span>
+                      <span className={`text-[8px] font-black uppercase tracking-wider w-fit px-1.5 py-0.5 rounded mt-1 ${
+                        state.active 
+                          ? 'bg-red-500/15 text-red-400 border border-red-500/20 animate-pulse' 
+                          : 'bg-zinc-900/20 text-zinc-500 border border-zinc-800'
+                      }`}>
+                        {state.active ? '🟢 CONFRONTO LIBERADO HOJE!' : `🔒 ABRE SÓ: ${state.daysStr.toUpperCase()}`}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-sm font-display font-black uppercase text-white tracking-wide">Luta pelo Elixir</h3>
-                  <span className="text-[7.5px] uppercase font-bold text-zinc-400 tracking-wider">Torneio de Clãs de Alto Nível</span>
+                <p className={`text-[11px] leading-relaxed font-bold uppercase italic mb-4 ${state.active ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                  O principal confronto estratégico tático por depósitos de Elixir da aliança. O comparecimento é estritamente compulsório para todos os guerreiros listados.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 mt-auto border-t border-white/5 pt-3">
+                <span className={`text-[9.5px] font-black uppercase tracking-widest italic ${state.active ? 'text-amber-500 animate-pulse' : 'text-zinc-600'}`}>
+                  👉 {selectedEvent === 'elixir' ? 'APERTE PARA FECHAR OS PROTOCOLOS' : 'APERTE PARA VER MAIS DETALHES'}
+                </span>
+                <div className="flex items-center justify-between border-t border-white/5 pt-2 mt-1">
+                  <span className={`text-[8px] font-black uppercase bg-red-500/10 px-2 py-0.5 rounded font-mono ${state.active ? 'text-red-500 border border-red-500/25' : 'text-zinc-650'}`}>
+                    ⚠️ CATEGORIA: OBRIGATÓRIO (DIRETRIZ DE GUERRA)
+                  </span>
+                  <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest font-mono">
+                    {state.active ? 'STATUS: ATIVO' : 'STATUS: TRANCADO'}
+                  </span>
                 </div>
               </div>
-              <p className="text-[11px] text-zinc-400 leading-relaxed font-bold uppercase italic mb-4">
-                O principal confronto estratégico tático por depósitos de Elixir da aliança. O comparecimento é estritamente compulsório para todos os guerreiros listados.
-              </p>
-            </div>
-            <div className="flex flex-col gap-2 mt-auto border-t border-white/5 pt-3">
-              <span className="text-[9.5px] font-black text-amber-500 uppercase tracking-widest animate-pulse italic">
-                👉 {selectedEvent === 'elixir' ? 'APERTE PARA FECHAR OS PROTOCOLOS' : 'APERTE PARA SABER MAIS & ALISTAR-SE'}
-              </span>
-              <div className="flex items-center justify-between border-t border-white/5 pt-2 mt-1">
-                <span className="text-[8px] font-black uppercase text-red-500 bg-red-500/10 px-2 py-0.5 rounded font-mono">
-                  ⚠️ CATEGORIA: OBRIGATÓRIO (DIRETRIZ DE GUERRA)
-                </span>
-                <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest animate-pulse italic">
-                  Status: Adiado
-                </span>
-              </div>
-            </div>
-          </motion.div>
-        )}
+            </motion.div>
+          );
+        })()}
 
         {/* Caça ao Rato Card */}
-        {(selectedEvent === null || selectedEvent === 'rato') && (
-          <motion.div 
-            whileHover={!isEcoMode ? { scale: 1.015, y: -2 } : {}}
-            onClick={() => setSelectedEvent(selectedEvent === 'rato' ? null : 'rato')}
-            className={`cursor-pointer transition-all rounded-3xl p-5 relative overflow-hidden flex flex-col justify-between shadow-xl ${
-              selectedEvent === 'rato'
-                ? 'bg-amber-950/20 border-2 border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.15)]'
-                : 'bg-zinc-900/40 border border-white/5 hover:border-amber-500/35'
-            }`}
-          >
-            <div className="absolute top-0 right-0 px-3 py-1 bg-amber-500 text-black text-[9px] font-black uppercase tracking-widest rounded-bl-2xl">
-              OPCIONAL • RECOMPENSA: 25 XP
-            </div>
-            <div>
-              <div className="flex items-center gap-2.5 mb-2.5">
-                <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/20 flex items-center justify-center text-amber-400">
-                  <Compass size={18} />
+        {(selectedEvent === null || selectedEvent === 'rato') && (() => {
+          const state = isEventActiveToday('rato');
+          return (
+            <motion.div 
+              whileHover={(!isEcoMode && state.active) ? { scale: 1.015, y: -2 } : {}}
+              onClick={() => setSelectedEvent(selectedEvent === 'rato' ? null : 'rato')}
+              className={`cursor-pointer transition-all rounded-3xl p-5 relative overflow-hidden flex flex-col justify-between shadow-xl ${
+                !state.active 
+                  ? 'bg-zinc-950/40 border border-zinc-900 text-zinc-500 shadow-inner' 
+                  : selectedEvent === 'rato'
+                    ? 'bg-amber-950/20 border-2 border-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.15)]'
+                    : 'bg-zinc-900/40 border border-white/5 hover:border-amber-500/35'
+              }`}
+            >
+              <div className={`absolute top-0 right-0 px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-bl-2xl ${
+                !state.active 
+                  ? 'bg-zinc-900 text-zinc-500 border-l border-b border-zinc-800' 
+                  : 'bg-amber-500 text-black'
+              }`}>
+                {state.active ? 'INÍCIO: HOJE ÀS 22:00H • +25 XP' : '🔒 INDISPONÍVEL HOJE'}
+              </div>
+              <div>
+                <div className="flex items-center gap-2.5 mb-2.5">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${
+                    !state.active 
+                      ? 'bg-zinc-950 border-zinc-800 text-zinc-600' 
+                      : 'bg-amber-500/15 border-amber-500/20 text-amber-400'
+                  }`}>
+                    {state.active ? <Compass size={18} /> : <Lock size={16} />}
+                  </div>
+                  <div>
+                    <h3 className={`text-sm font-display font-black uppercase tracking-wide ${state.active ? 'text-white' : 'text-zinc-400'}`}>
+                      Caça ao Rato {!state.active && <span className="text-zinc-600 text-[10px] font-bold tracking-tight lowercase block sm:inline italic">(bloqueado)</span>}
+                    </h3>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-[7.5px] uppercase font-bold text-zinc-500 tracking-wider">Incursão e Controle de Pragas</span>
+                      <span className={`text-[8px] font-black uppercase tracking-wider w-fit px-1.5 py-0.5 rounded mt-1 ${
+                        state.active 
+                          ? 'bg-gaming-gold/20 text-gaming-gold border border-gaming-gold/30 animate-pulse' 
+                          : 'bg-zinc-900/20 text-zinc-500 border border-zinc-801'
+                      }`}>
+                        {state.active ? '🟢 INCURSÃO HOJE ÀS 22:00H!' : `🔒 ABRE SÓ: ${state.daysStr.toUpperCase()}`}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-sm font-display font-black uppercase text-white tracking-wide">Caça ao Rato</h3>
-                  <span className="text-[7.5px] uppercase font-bold text-zinc-400 tracking-wider">Incursão e Controle de Pragas</span>
+                <p className={`text-[11px] leading-relaxed font-bold uppercase italic mb-4 ${state.active ? 'text-zinc-400' : 'text-zinc-600'}`}>
+                  Invasão especial para abate rápido e coleta de recompensas em bônus individuais na Alcatéia. Use iscas de rato para ativar bônus!
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 mt-auto border-t border-white/5 pt-3">
+                <span className={`text-[9.5px] font-black uppercase tracking-widest italic ${state.active ? 'text-amber-400 animate-pulse' : 'text-zinc-600'}`}>
+                  👉 {selectedEvent === 'rato' ? 'APERTE PARA FECHAR PROTOCOLOS' : 'APERTE PARA VER MAIS DETALHES'}
+                </span>
+                <div className="flex items-center justify-between border-t border-white/5 pt-2 mt-1 flex-wrap gap-2">
+                  <span className={`text-[8px] font-black uppercase bg-amber-500/10 px-2 py-0.5 rounded font-mono ${state.active ? 'text-amber-400 border border-amber-500/25' : 'text-zinc-650'}`}>
+                    👍 RECOMPENSA: +25 XP
+                  </span>
+                  <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest font-mono">
+                    {state.active ? 'STATUS: ATIVO' : 'STATUS: TRANCADO'}
+                  </span>
                 </div>
               </div>
-              <p className="text-[11px] text-zinc-400 leading-relaxed font-bold uppercase italic mb-4">
-                Invasão especial para abate rápido e coleta de recompensas em bônus individuais na Alcatéia. Use iscas de rato para ativar bônus!
-              </p>
-            </div>
-            <div className="flex flex-col gap-2 mt-auto border-t border-white/5 pt-3">
-              <span className="text-[9.5px] font-black text-amber-400 uppercase tracking-widest animate-pulse italic">
-                👉 {selectedEvent === 'rato' ? 'APERTE PARA FECHAR PROTOCOLOS' : 'APERTE PARA SABER MAIS & CONFIRMAR PRESENÇA'}
-              </span>
-              <div className="flex items-center justify-between border-t border-white/5 pt-2 mt-1 flex-wrap gap-2">
-                <span className="text-[8px] font-black uppercase text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded font-mono">
-                  👍 CATEGORIA: OPCIONAL (PARTICIPAÇÃO LIVRE)
-                </span>
-                <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest font-mono">
-                  ⏱️ FREQUÊNCIA: A CADA 2 DIAS
-                </span>
-              </div>
-            </div>
-          </motion.div>
-        )}
+            </motion.div>
+          );
+        })()}
       </div>
 
       {/* COMUNICADO OFICIAL DE ADIAMENTO - ONLY FOR ELIXIR */}
@@ -1849,6 +2098,23 @@ export function CombateView() {
             {/* B) INTERACTIVE SECTION - THREE COHESIVE TRIPLE-COLORS */}
             <div className="flex flex-col gap-6">
               <div className="bg-zinc-900/30 border border-zinc-800 rounded-3xl p-6 flex flex-col gap-5 shadow-2xl relative overflow-hidden">
+                {!isEventActiveToday('elixir').active && (
+                  <div className="absolute inset-0 bg-black/95 backdrop-blur-md z-20 flex flex-col items-center justify-center p-6 text-center">
+                    <Lock className="text-zinc-600 mb-3 animate-pulse" size={40} />
+                    <h4 className="text-sm font-display font-black uppercase text-zinc-400 tracking-wider mb-2">EVENTO OFICIALMENTE ENCERRADO</h4>
+                    <p className="text-[10px] uppercase font-bold text-white/50 max-w-xs leading-relaxed mb-4">
+                      A temporada de batalhas táticas por Elixir foi encerrada por diretrizes oficiais da Liderança da Aliança.
+                    </p>
+                    <div className="bg-zinc-950/80 border border-zinc-900 p-3 rounded-xl mb-4 max-w-xs">
+                      <p className="text-[9px] text-red-500 uppercase font-black tracking-widest font-mono">
+                        STATUS: AGUARDANDO NOVA TEMPORADA
+                      </p>
+                    </div>
+                    <p className="text-[9px] text-zinc-500 uppercase font-bold max-w-xs leading-relaxed">
+                      Novas inscrições suspensas temporariamente até reabertura oficial.
+                    </p>
+                  </div>
+                )}
                 {isGuest && (
                   <div className="absolute inset-0 bg-black/95 backdrop-blur-lg z-20 flex flex-col items-center justify-center p-6 text-center">
                     <Skull className="text-red-600 mb-3 animate-pulse" size={40} />
@@ -1918,7 +2184,7 @@ export function CombateView() {
                         {activeGroup === 'A' && (
                           <span className={`text-[8px] px-2 py-0.5 rounded font-black uppercase tracking-widest font-mono ${
                             myMember?.completedMissions?.includes('elixir_confirm')
-                              ? 'bg-green-600 text-white'
+                              ? 'bg-gaming-purple text-white'
                               : 'bg-orange-600 text-white animate-pulse'
                           }`}>
                             {myMember?.completedMissions?.includes('elixir_confirm') ? '✓ APROVADO' : '⏳ PENDENTE LÍDER'} (50 XP)
@@ -1967,7 +2233,7 @@ export function CombateView() {
                         {activeGroup === 'B' && (
                           <span className={`text-[8px] px-2 py-0.5 rounded font-black uppercase tracking-widest font-mono ${
                             myMember?.completedMissions?.includes('elixir_confirm')
-                              ? 'bg-green-600 text-white'
+                              ? 'bg-gaming-purple text-white'
                               : 'bg-amber-500 text-black animate-pulse'
                           }`}>
                             {myMember?.completedMissions?.includes('elixir_confirm') ? '✓ APROVADO' : '⏳ PENDENTE LÍDER'} (50 XP)
@@ -2016,7 +2282,7 @@ export function CombateView() {
                         {activeGroup === 'C' && (
                           <span className={`text-[8px] px-2 py-0.5 rounded font-black uppercase tracking-widest font-mono ${
                             myMember?.completedMissions?.includes('elixir_confirm')
-                              ? 'bg-green-600 text-white'
+                              ? 'bg-gaming-purple text-white'
                               : 'bg-blue-600 text-white animate-pulse'
                           }`}>
                             {myMember?.completedMissions?.includes('elixir_confirm') ? '✓ APROVADO' : '⏳ PENDENTE LÍDER'} (50 XP)
@@ -2160,6 +2426,20 @@ export function CombateView() {
                   "O controle de pragas garante o fluxo contínuo de suprimentos em nossa Alcatéia. A caçada de roedores é um dever sagrado militar de combate da guilda!"
                 </p>
 
+                {/* DYNAMIC TIMER BADGE FOR CAÇA AO RATO */}
+                <div className="border border-gaming-gold/30 bg-purple-950/20 rounded-2xl p-5 border-l-4 border-l-gaming-gold shadow-[0_0_20px_rgba(168,85,247,0.15)] flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-sans">
+                  <div>
+                    <span className="text-[9px] uppercase font-black text-gaming-gold tracking-widest font-mono">STATUS DO CICLO DE ATIVIDADE</span>
+                    <h4 className="text-sm font-display font-black uppercase text-purple-200 tracking-wide mt-0.5">{ratoCountdown.status}</h4>
+                    <p className="text-xs text-zinc-200 font-extrabold uppercase font-mono tracking-wide mt-1 animate-pulse">
+                      ⏳ {ratoCountdown.text}
+                    </p>
+                  </div>
+                  <div className="bg-black/30 border border-white/5 py-1.5 px-3.5 rounded-full font-mono text-[9px] uppercase font-black text-white/60 shrink-0">
+                    CONTAGEM PERMANENTE RECORRENTE
+                  </div>
+                </div>
+
                 {/* INFO BLOCKS FOR BAITS AND 22:00 INVOCATION */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-1">
                   <div className="border border-red-950/65 bg-red-950/15 rounded-2xl p-4 border-l-4 border-l-red-500">
@@ -2193,10 +2473,10 @@ export function CombateView() {
                   </div>
                 </div>
 
-                <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-2xl p-4 flex items-start gap-3 mt-1">
+                <div className="bg-gaming-purple/10 border border-gaming-purple/20 rounded-2xl p-4 flex items-start gap-3 mt-1">
                   <span className="text-lg">💰</span>
                   <div className="flex flex-col text-left">
-                    <span className="text-[9px] font-black uppercase text-emerald-400 tracking-wider font-mono">BÔNUS DE CONFIRMAÇÃO</span>
+                    <span className="text-[9px] font-black uppercase text-gaming-gold tracking-wider font-mono">BÔNUS DE CONFIRMAÇÃO</span>
                     <p className="text-[10.5px] text-zinc-300 font-bold uppercase tracking-wide leading-relaxed mt-0.5 animate-pulse">
                       Garante +25 XP direto na guilda após aprovação dos oficiais. Cadastre sua presença ao lado para entrar na lista de convocação!
                     </p>
@@ -2208,6 +2488,23 @@ export function CombateView() {
             {/* PAINEL DE INSCRIÇÃO DA CAÇADA & CONFIRMADOS */}
             <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-6 text-left">
               <div className="bg-zinc-900/30 border border-zinc-800 rounded-3xl p-5 sm:p-6 flex flex-col gap-5 shadow-2xl relative overflow-hidden font-sans">
+                {!isEventActiveToday('rato').active && (
+                  <div className="absolute inset-0 bg-black/90 backdrop-blur-md z-20 flex flex-col items-center justify-center p-6 text-center">
+                    <Lock className="text-zinc-500 mb-3 animate-pulse" size={40} />
+                    <h4 className="text-sm font-display font-black uppercase text-zinc-400 tracking-wider mb-2">EVENTO BLOQUEADO HOJE</h4>
+                    <p className="text-[10px] uppercase font-bold text-white/50 max-w-xs leading-relaxed mb-4">
+                      O cronograma oficial da Aliança reserva este evento apenas para os dias designados.
+                    </p>
+                    <div className="bg-zinc-950/80 border border-zinc-800 p-3 rounded-xl mb-4 max-w-xs">
+                      <p className="text-[9px] text-amber-500 uppercase font-black tracking-widest font-mono">
+                        HOJE CORRESPONDE A DIA DE OUTRAS MISSÕES
+                      </p>
+                    </div>
+                    <p className="text-[9px] text-zinc-500 uppercase font-bold max-w-xs leading-relaxed">
+                      Abertura automática às Terças, Quintas, Sábados e Domingos às 22h!
+                    </p>
+                  </div>
+                )}
                 {isGuest && (
                   <div className="absolute inset-0 bg-black/95 backdrop-blur-lg z-20 flex flex-col items-center justify-center p-6 text-center">
                     <Skull className="text-red-600 mb-3 animate-pulse" size={40} />
@@ -2241,7 +2538,7 @@ export function CombateView() {
                   onClick={handleRegisterRato}
                   className={`w-full py-4 rounded-xl font-display font-black uppercase tracking-widest text-xs transition-all relative overflow-hidden cursor-pointer ${
                     myMember?.completedMissions?.includes('caca_rato_confirm')
-                      ? 'bg-green-950/20 border border-green-500/20 text-green-500/80 cursor-not-allowed text-center'
+                      ? 'bg-gaming-purple/15 border border-gaming-purple/35 text-gaming-gold cursor-not-allowed text-center'
                       : myMember?.completedMissions?.includes('caca_rato_pending')
                         ? 'bg-amber-500/10 border border-amber-500/30 text-amber-400 cursor-not-allowed text-center animate-pulse'
                         : 'bg-amber-500 hover:bg-white text-black hover:shadow-[0_0_20px_rgba(245,158,11,0.25)] text-center'
@@ -2272,7 +2569,7 @@ export function CombateView() {
                           <span className="text-[11px] font-extrabold uppercase text-white tracking-wide truncate max-w-[130px]">{m.name}</span>
                           <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${
                             isApproved 
-                              ? 'bg-green-500/10 text-green-400 border border-green-500/20' 
+                              ? 'bg-gaming-gold/15 text-gaming-gold border border-gaming-gold/25' 
                               : 'bg-amber-500/10 text-amber-400 border border-amber-500/20 animate-pulse'
                           }`}>
                             {isApproved ? 'XP ENTREGUE' : 'ATIVO NO EVENTO'}
@@ -2405,7 +2702,7 @@ function DeprecatedPerfilView() {
     { id: 'border_purple', title: 'Aura Púrpura', desc: 'Proteção mística violeta.', price: 80, color: 'border-purple-500' },
     { id: 'border_gold', title: 'Fogo Dourado', desc: 'A aura lendária animada.', price: 150, color: 'border-gaming-gold', animated: true },
     { id: 'border_dark', title: 'Vazio Sombrio', desc: 'Glow vermelho do abismo.', price: 100, color: 'border-red-600' },
-    { id: 'border_emerald', title: 'Jade Imperial', desc: 'Pulso de jade mística.', price: 120, color: 'border-emerald-400', animated: true },
+    { id: 'border_emerald', title: 'Safira Celestial', desc: 'Pulso de safira mística.', price: 120, color: 'border-sky-400', animated: true },
     { id: 'border_rgb', title: 'Chroma RGB', desc: 'Arco-íris dinâmico supremo.', price: 200, color: 'border-pink-500', animated: true }
   ];
 
@@ -2434,7 +2731,7 @@ function DeprecatedPerfilView() {
     { id: 'color_red', title: 'Fúria do Alfa', desc: 'Tom carmesim escuro e imponente.', price: 40, textClass: 'text-[#b25d62] font-semibold drop-shadow-[0_0_6px_rgba(178,93,98,0.3)]' },
     { id: 'color_cyan', title: 'Prata da Geada', desc: 'Misty azul-gélido das montanhas.', price: 40, textClass: 'text-[#93c5fd] font-semibold drop-shadow-[0_0_6px_rgba(147,197,253,0.3)]' },
     { id: 'color_pink', title: 'Rosé de Inverno', desc: 'Toque místico de orquídea e névoa.', price: 50, textClass: 'text-[#c084fc] font-semibold drop-shadow-[0_0_6px_rgba(192,132,252,0.3)]' },
-    { id: 'color_emerald', title: 'Sálvia do Bosque', desc: 'Verde sutil das florestas antigas.', price: 55, textClass: 'text-[#a7f3d0] font-semibold drop-shadow-[0_0_6px_rgba(167,243,208,0.3)]' },
+    { id: 'color_emerald', title: 'Safira Serena', desc: 'Azul-safira sutil das águas místicas.', price: 55, textClass: 'text-[#7dd3fc] font-semibold drop-shadow-[0_0_6px_rgba(125,211,252,0.3)]' },
     { id: 'color_purple', title: 'Névoa Cósmica', desc: 'Aura suave de lavanda do crepúsculo.', price: 45, textClass: 'text-[#c0a9df] font-semibold drop-shadow-[0_0_6px_rgba(192,169,223,0.3)]' },
     { id: 'color_rgb', title: 'Espírito Lunar', desc: 'Degradê suave do luar com prata e safira.', price: 120, textClass: 'text-transparent bg-clip-text bg-gradient-to-r from-[#e2e8f0] via-[#c5a059] to-[#93c5fd] font-extrabold drop-shadow-[0_0_4px_rgba(226,232,240,0.3)]' }
   ];
@@ -2538,7 +2835,7 @@ function DeprecatedPerfilView() {
         case 'border_purple': return 'border-2 border-purple-500';
         case 'border_gold': return 'border-2 border-gaming-gold';
         case 'border_dark': return 'border-2 border-red-600';
-        case 'border_emerald': return 'border-2 border-emerald-400';
+        case 'border_emerald': return 'border-2 border-sky-400';
         case 'border_rgb': return 'border-2 border-pink-500';
         case 'border_laser': return 'border-2 border-purple-500';
         case 'border_cyber': return 'border-2 border-cyan-400';
@@ -2552,7 +2849,7 @@ function DeprecatedPerfilView() {
       case 'border_purple': return 'border-2 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.5)]';
       case 'border_gold': return 'border-2 border-gaming-gold shadow-[0_0_20px_rgba(251,191,36,0.6)] animate-pulse';
       case 'border_dark': return 'border-2 border-red-600 shadow-[0_0_20px_rgba(220,38,38,0.7)]';
-      case 'border_emerald': return 'border-2 border-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.6)] animate-pulse';
+      case 'border_emerald': return 'border-2 border-sky-400 shadow-[0_0_15px_rgba(56,189,248,0.6)] animate-pulse';
       case 'border_rgb': return 'border-2 border-pink-500 shadow-[0_0_20px_rgba(236,72,153,0.7)] animate-bounce';
       case 'border_laser': return 'border-2 border-transparent bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 shadow-[0_0_20px_rgba(239,68,68,0.7)] animate-pulse';
       case 'border_cyber': return 'border-2 border-cyan-400 ring-2 ring-pink-500/40 shadow-[0_0_20px_rgba(6,182,212,0.7)] animate-pulse';
@@ -2569,7 +2866,7 @@ function DeprecatedPerfilView() {
         case 'color_red': return 'text-[#b25d62] font-semibold';
         case 'color_cyan': return 'text-[#93c5fd] font-semibold';
         case 'color_pink': return 'text-[#c084fc] font-semibold';
-        case 'color_emerald': return 'text-[#a7f3d0] font-semibold';
+        case 'color_emerald': return 'text-[#7dd3fc] font-semibold';
         case 'color_purple': return 'text-[#c0a9df] font-semibold';
         case 'color_rgb': return 'text-gaming-gold font-extrabold';
         default: return 'text-white';
@@ -2580,7 +2877,7 @@ function DeprecatedPerfilView() {
       case 'color_red': return 'text-[#b25d62] font-semibold drop-shadow-[0_0_8px_rgba(178,93,98,0.3)]';
       case 'color_cyan': return 'text-[#93c5fd] font-semibold drop-shadow-[0_0_8px_rgba(147,197,253,0.3)]';
       case 'color_pink': return 'text-[#c084fc] font-semibold drop-shadow-[0_0_8px_rgba(192,132,252,0.3)]';
-      case 'color_emerald': return 'text-[#a7f3d0] font-semibold drop-shadow-[0_0_8px_rgba(167,243,208,0.3)]';
+      case 'color_emerald': return 'text-[#7dd3fc] font-semibold drop-shadow-[0_0_8px_rgba(125,211,252,0.3)]';
       case 'color_purple': return 'text-[#c0a9df] font-semibold drop-shadow-[0_0_8px_rgba(192,169,223,0.3)]';
       case 'color_rgb': return 'bg-gradient-to-r from-[#e2e8f0] via-[#c5a059] to-[#93c5fd] bg-clip-text text-transparent font-extrabold drop-shadow-[0_0_4px_rgba(226,232,240,0.3)]';
       default: return 'text-white';
@@ -2589,7 +2886,7 @@ function DeprecatedPerfilView() {
   
   const compressImage = (base64: string, maxWidth = 300, maxHeight = 300): Promise<string> => {
     return new Promise((resolve) => {
-      const img = new Image();
+      const img = new window.Image();
       img.src = base64;
       img.onload = () => {
         const canvas = document.createElement('canvas');
@@ -2779,7 +3076,7 @@ function DeprecatedPerfilView() {
                 </form>
                 
                 {purchaseStatus?.id === 'status_save' && (
-                  <span className="text-[9px] text-green-400 uppercase font-black tracking-widest text-center animate-pulse">{purchaseStatus.message}</span>
+                  <span className="text-[9px] text-gaming-gold uppercase font-black tracking-widest text-center animate-pulse">{purchaseStatus.message}</span>
                 )}
 
                 <div className="flex flex-col gap-1.5 mt-2">
@@ -2886,7 +3183,7 @@ function DeprecatedPerfilView() {
                     </div>
                   )}
                   {myMember?.bannerEffect === 'effect_matrix' && (
-                    <div className="absolute inset-0 overflow-hidden font-mono text-[5px] text-green-500/20 select-none whitespace-nowrap">
+                    <div className="absolute inset-0 overflow-hidden font-mono text-[5px] text-gaming-purple/40 select-none whitespace-nowrap">
                       <div className="absolute top-2 left-2">101010111</div>
                       <div className="absolute top-8 left-16">010110100</div>
                     </div>
@@ -2911,7 +3208,7 @@ function DeprecatedPerfilView() {
                       />
                       {/* Discord Badge/Active Online Status */}
                       <div className="absolute bottom-0 right-0 w-5 h-5 bg-[#18191c] rounded-full flex items-center justify-center p-0.5">
-                        <div className="w-full h-full bg-green-500 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
+                        <div className="w-full h-full bg-gaming-gold rounded-full shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
                       </div>
                     </div>
                   </div>
@@ -3058,7 +3355,7 @@ function DeprecatedPerfilView() {
                     disabled={myMember?.profileBorder === border.id}
                     className={`w-full py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                       myMember?.profileBorder === border.id 
-                        ? 'bg-green-500/10 text-green-500 border border-green-500/20 shadow-[0_0_10px_rgba(34,197,94,0.15)]' 
+                        ? 'bg-gaming-purple/20 text-gaming-gold border border-gaming-purple/40 shadow-[0_0_15px_rgba(168,85,247,0.2)]' 
                         : 'bg-gaming-gold text-black hover:shadow-[0_0_20px_rgba(251,191,36,0.4)] hover:-translate-y-0.5'
                     }`}
                   >
@@ -3104,7 +3401,7 @@ function DeprecatedPerfilView() {
                           disabled={isEquipped || isLockedByLevel}
                           className={`w-full py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                             isEquipped 
-                              ? 'bg-green-500/10 text-green-500 border border-green-500/20' 
+                              ? 'bg-gaming-purple/20 text-gaming-gold border border-gaming-purple/40 shadow-[0_0_15px_rgba(168,85,247,0.2)]' 
                               : isLockedByLevel
                                 ? 'bg-black/40 border border-white/5 text-white/20 cursor-not-allowed'
                                 : isUnlocked
@@ -3155,7 +3452,7 @@ function DeprecatedPerfilView() {
                           bgOption.id !== 'padrão'
                             ? 'bg-white/5 border border-white/5 text-white/30 cursor-not-allowed'
                             : isApplied 
-                              ? 'bg-green-500/10 text-green-500 border border-green-500/20 shadow-[0_0_10px_rgba(34,197,94,0.15)]' 
+                              ? 'bg-gaming-purple/20 text-gaming-gold border border-gaming-purple/40 shadow-[0_0_15px_rgba(168,85,247,0.2)]' 
                               : 'bg-white/5 border border-white/10 text-white hover:bg-white/10'
                         }`}
                       >
@@ -3208,7 +3505,7 @@ function DeprecatedPerfilView() {
                           onClick={() => handleBuyColor(colorOption)}
                           className={`w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                             isEquipped 
-                              ? 'bg-green-500/10 text-green-500 border border-green-500/20 shadow-[0_0_10px_rgba(34,197,94,0.15)]' 
+                              ? 'bg-gaming-purple/20 text-gaming-gold border border-gaming-purple/40 shadow-[0_0_15px_rgba(168,85,247,0.2)]' 
                               : isUnlocked
                                 ? 'bg-white/5 border border-white/10 text-white hover:bg-white/10'
                                 : 'bg-gaming-gold text-black hover:shadow-[0_0_20px_rgba(251,191,36,0.4)] hover:-translate-y-0.5'
@@ -3400,7 +3697,7 @@ export function ConfiguracoesView() {
             
             <div className="text-left">
               <span className="text-[8px] uppercase font-black text-white/40 tracking-widest block font-sans">PERFIL ATUAL:</span>
-              <span className={`text-[10px] font-black uppercase tracking-widest ${isEcoMode ? 'text-green-400' : 'text-gaming-gold'}`}>
+              <span className={`text-[10px] font-black uppercase tracking-widest ${isEcoMode ? 'text-sky-450' : 'text-gaming-gold'}`}>
                 {isEcoMode ? '⚡ MÁXIMA FLUIDEZ (CELULAR FRACO)' : '🚀 EXTRA ELEGÂNCIA (LENDÁRIO)'}
               </span>
             </div>
@@ -3417,7 +3714,7 @@ export function ConfiguracoesView() {
               disabled={isOptimizing}
               className={`py-3 px-4 rounded-xl border text-center transition-all flex flex-col items-center justify-center gap-1 cursor-pointer outline-none ${
                 isEcoMode 
-                  ? 'bg-green-500/10 border-green-500 text-green-100 shadow-[0_0_15px_rgba(34,197,94,0.15)] font-black' 
+                  ? 'bg-sky-500/10 border-sky-500 text-sky-100 shadow-[0_0_15px_rgba(56,189,248,0.15)] font-black' 
                   : 'bg-white/5 border-white/5 hover:border-white/15 text-white/60 hover:text-white'
               }`}
             >
@@ -3465,7 +3762,7 @@ export function ConfiguracoesView() {
             <div className="flex flex-col gap-1">
               <span className="text-[7px] font-bold text-white/40 uppercase tracking-widest font-mono">Processador CPU</span>
               <div className="flex items-center gap-1.5">
-                <span className={`w-1.5 h-1.5 rounded-full ${isEcoMode ? 'bg-green-400' : 'bg-gaming-gold'}`} />
+                <span className={`w-1.5 h-1.5 rounded-full ${isEcoMode ? 'bg-sky-400' : 'bg-gaming-gold'}`} />
                 <span className="text-[10px] font-black uppercase text-white font-mono">
                   {isEcoMode ? 'Carga Reduzida (-50%)' : 'Modo Full Performance'}
                 </span>
@@ -3475,7 +3772,7 @@ export function ConfiguracoesView() {
             <div className="flex flex-col gap-1">
               <span className="text-[7px] font-bold text-white/40 uppercase tracking-widest font-mono">Placa de Vídeo GPU</span>
               <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
                 <span className="text-[10px] font-black uppercase text-white font-mono">
                   {isEcoMode ? 'Aceleração Compositor 3D' : 'Efeitos Shaders de Luxo'}
                 </span>
@@ -3485,7 +3782,7 @@ export function ConfiguracoesView() {
             <div className="flex flex-col gap-1">
               <span className="text-[7px] font-bold text-white/40 uppercase tracking-widest font-mono">Memória RAM</span>
               <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
                 <span className="text-[10px] font-black uppercase text-white font-mono">
                   {isEcoMode ? 'Pré-render Otimizado' : 'Modo Render Fluido'}
                 </span>
@@ -3495,7 +3792,7 @@ export function ConfiguracoesView() {
             <div className="flex flex-col gap-1">
               <span className="text-[7px] font-bold text-white/40 uppercase tracking-widest font-mono">Animações & Blurs</span>
               <div className="flex items-center gap-1.5">
-                <span className={`w-1.5 h-1.5 rounded-full ${isEcoMode ? 'bg-green-400' : 'bg-gaming-gold'}`} />
+                <span className={`w-1.5 h-1.5 rounded-full ${isEcoMode ? 'bg-sky-400' : 'bg-gaming-gold'}`} />
                 <span className="text-[10px] font-black uppercase text-white font-mono">
                   {isEcoMode ? 'Ignoradas/Sem Lag' : 'Ativas 120Hz'}
                 </span>
@@ -3739,7 +4036,7 @@ export function RewardsView() {
                          initial={{ y: 20, opacity: 0 }}
                          animate={{ y: 0, opacity: 1 }}
                          exit={{ y: -20, opacity: 0 }}
-                         className={`absolute inset-0 flex items-center justify-center text-[7.5px] sm:text-[8.5px] px-1 text-center font-bold ${purchaseStatus.type === 'success' ? 'bg-green-500 text-black' : 'bg-red-500 text-white'}`}
+                         className={`absolute inset-0 flex items-center justify-center text-[7.5px] sm:text-[8.5px] px-1 text-center font-bold ${purchaseStatus.type === 'success' ? 'bg-gaming-gold text-black' : 'bg-red-500 text-white'}`}
                         >
                           {purchaseStatus.message}
                         </motion.span>
@@ -3832,7 +4129,7 @@ export function DevelopmentView({ tab, progress = 65 }: { tab: string, progress?
             <div className="flex flex-col gap-1.5 text-[9px] sm:text-[10px] font-bold uppercase italic text-white/60">
               <div className="flex justify-between"><span>Defensores Escalados:</span> <span className="text-white">100 / 100</span></div>
               <div className="flex justify-between"><span>Poder Coletivo:</span> <span className="text-gaming-gold">SUPREMO</span></div>
-              <div className="flex justify-between"><span>Coesão do Sistema:</span> <span className="text-green-400">98% Estável</span></div>
+              <div className="flex justify-between"><span>Coesão do Sistema:</span> <span className="text-sky-400">98% Estável</span></div>
             </div>
             <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden">
               <div className="bg-gaming-gold h-full rounded-full" style={{ width: '92%' }} />
@@ -3942,7 +4239,7 @@ export function DevelopmentView({ tab, progress = 65 }: { tab: string, progress?
                 <div className="flex flex-col gap-1 text-[10px] uppercase font-black text-white/60">
                   <p>Incursão Inimiga: <span className="text-red-400 font-bold">Nenhum perigo</span></p>
                   <p>Força da Guarnição: <span className="text-gaming-purple">95.000 Power</span></p>
-                  <p>Bônus de Região: <span className="text-green-400">XP EM DOBRO</span></p>
+                  <p>Bônus de Região: <span className="text-gaming-gold">XP EM DOBRO</span></p>
                 </div>
                 <div className="p-3 bg-white/5 border border-white/5 rounded-xl text-center">
                   <span className="text-[9px] font-black tracking-widest text-white/50">TERRITÓRIO PROTEGIDO ✅</span>
@@ -4004,7 +4301,7 @@ export function DevelopmentView({ tab, progress = 65 }: { tab: string, progress?
               </div>
               <div className="flex sm:flex-col items-end gap-2 sm:gap-1 w-full sm:w-auto justify-between border-t border-white/5 sm:border-0 pt-2 sm:pt-0">
                 <div className="flex items-center gap-2">
-                  <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-sm inline-block ${item.result === 'vitoria' ? 'bg-green-500/10 text-green-400' : 'bg-yellow-500/10 text-yellow-400'}`}>{item.result}</span>
+                  <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-sm inline-block ${item.result === 'vitoria' ? 'bg-gaming-gold/15 text-gaming-gold' : 'bg-yellow-500/10 text-yellow-400'}`}>{item.result}</span>
                   <span className="font-mono text-xs font-black text-white/50 tracking-wider">{item.score}</span>
                 </div>
                 <span className="text-[9px] font-black text-gaming-gold tracking-widest uppercase italic">{item.reward}</span>
@@ -4118,7 +4415,7 @@ export function GerenciaView() {
       case 'leader': return 'text-amber-400 bg-amber-500/10 border-amber-500/20';
       case 'diplomat': return 'text-purple-400 bg-purple-500/10 border-purple-500/20';
       case 'military_leader': return 'text-red-400 bg-red-500/10 border-red-500/20';
-      case 'recruiter': return 'text-green-400 bg-green-500/10 border-green-500/20';
+      case 'recruiter': return 'text-sky-400 bg-sky-500/10 border-sky-500/20';
       case 'muse': return 'text-pink-400 bg-pink-500/10 border-pink-500/20';
       case 'warrior': return 'text-blue-400 bg-blue-500/10 border-blue-500/20';
       default: return 'text-zinc-400 bg-zinc-550/10 border-zinc-500/10';
@@ -4190,27 +4487,27 @@ export function GerenciaView() {
       </div>
 
       {/* Internal Functional Navigation Sub-Tabs */}
-      <div className="flex border-b border-zinc-850 p-1 bg-zinc-950/30 rounded-2xl w-full sm:w-fit gap-2">
+      <div className="flex border-b border-zinc-850 p-1.5 bg-zinc-950/40 rounded-2xl w-full sm:w-fit gap-2 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setActiveTab('membros')}
-          className={`px-5 py-2.5 rounded-xl font-display font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 ${
+          className={`px-5 py-2.5 rounded-xl font-display font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 border ${
             activeTab === 'membros' 
-              ? 'bg-gaming-gold text-black shadow-lg shadow-amber-500/5' 
-              : 'text-zinc-400 hover:text-white hover:bg-white/[0.02]'
+              ? 'bg-gradient-to-r from-purple-900 to-indigo-950 border-gaming-gold text-white shadow-[0_0_20px_rgba(168,85,247,0.4)]' 
+              : 'border-transparent text-zinc-400 hover:text-white hover:bg-white/[0.02]'
           }`}
         >
-          <Users size={14} />
+          <Users size={14} className={activeTab === 'membros' ? 'text-gaming-gold' : ''} />
           Membros & Hierarquia
         </button>
         <button
           onClick={() => setActiveTab('eventos')}
-          className={`px-5 py-2.5 rounded-xl font-display font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 relative ${
+          className={`px-5 py-2.5 rounded-xl font-display font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 relative border ${
             activeTab === 'eventos' 
-              ? 'bg-gaming-gold text-black shadow-lg shadow-amber-500/5' 
-              : 'text-zinc-400 hover:text-white hover:bg-white/[0.02]'
+              ? 'bg-gradient-to-r from-purple-900 to-indigo-950 border-gaming-gold text-white shadow-[0_0_20px_rgba(168,85,247,0.4)]' 
+              : 'border-transparent text-zinc-400 hover:text-white hover:bg-white/[0.02]'
           }`}
         >
-          <Trophy size={14} />
+          <Trophy size={14} className={activeTab === 'eventos' ? 'text-gaming-gold animate-pulse' : ''} />
           Eventos & Conclusões
           {(members.filter(m => m.completedMissions?.includes('caca_rato_pending')).length > 0 ||
             members.filter(m => m.combatGroup && !m.combatGroupClaimed).length > 0) && (
@@ -4222,13 +4519,13 @@ export function GerenciaView() {
         </button>
         <button
           onClick={() => setActiveTab('ouvidoria')}
-          className={`px-5 py-2.5 rounded-xl font-display font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 relative ${
+          className={`px-5 py-2.5 rounded-xl font-display font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 relative border ${
             activeTab === 'ouvidoria' 
-              ? 'bg-gaming-gold text-black shadow-lg shadow-amber-500/5' 
-              : 'text-zinc-400 hover:text-white hover:bg-white/[0.02]'
+              ? 'bg-gradient-to-r from-purple-900 to-indigo-950 border-gaming-gold text-white shadow-[0_0_20px_rgba(168,85,247,0.4)]' 
+              : 'border-transparent text-zinc-400 hover:text-white hover:bg-white/[0.02]'
           }`}
         >
-          <AlertTriangle size={14} />
+          <AlertTriangle size={14} className={activeTab === 'ouvidoria' ? 'text-gaming-gold' : ''} />
           Ouvidoria de Furtos
           {theftReports.length > 0 && (
             <span className="bg-red-500 text-white font-mono text-[9px] font-black px-1.5 py-0.5 rounded-full">
@@ -4610,7 +4907,7 @@ export function GerenciaView() {
                                   clearTheftReport(report.id);
                                 }
                               }}
-                              className="px-2.5 py-1.5 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-zinc-900 hover:border-emerald-550 border border-emerald-500/20 rounded-lg text-[9px] font-display font-black uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer"
+                              className="px-2.5 py-1.5 bg-gaming-purple/10 hover:bg-gaming-purple text-purple-300 hover:text-white border border-gaming-purple/20 rounded-lg text-[9px] font-display font-black uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer"
                             >
                               ✓ RESOLVIDO
                             </button>

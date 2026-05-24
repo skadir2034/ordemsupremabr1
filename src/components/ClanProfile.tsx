@@ -49,7 +49,7 @@ export function ClanProfile({
         case 'border_purple': return 'border-2 border-purple-500';
         case 'border_gold': return 'border-2 border-gaming-gold';
         case 'border_dark': return 'border-2 border-red-600';
-        case 'border_emerald': return 'border-2 border-emerald-400';
+        case 'border_emerald': return 'border-2 border-sky-400';
         case 'border_rgb': return 'border-2 border-pink-500';
         case 'border_laser': return 'border-2 border-purple-500';
         case 'border_cyber': return 'border-2 border-cyan-400';
@@ -63,7 +63,7 @@ export function ClanProfile({
       case 'border_purple': return 'border-2 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.5)]';
       case 'border_gold': return 'border-2 border-gaming-gold shadow-[0_0_20px_rgba(251,191,36,0.6)] animate-pulse';
       case 'border_dark': return 'border-2 border-red-600 shadow-[0_0_20px_rgba(220,38,38,0.7)]';
-      case 'border_emerald': return 'border-2 border-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.6)] animate-pulse';
+      case 'border_emerald': return 'border-2 border-sky-400 shadow-[0_0_15px_rgba(56,189,248,0.6)] animate-pulse';
       case 'border_rgb': return 'border-2 border-pink-500 shadow-[0_0_20px_rgba(236,72,153,0.7)] animate-bounce';
       case 'border_laser': return 'border-2 border-transparent bg-gradient-to-r from-red-500 via-yellow-500 to-blue-500 shadow-[0_0_20px_rgba(239,68,68,0.7)] animate-pulse';
       case 'border_cyber': return 'border-2 border-cyan-400 ring-2 ring-pink-500/40 shadow-[0_0_20px_rgba(6,182,212,0.7)] animate-pulse';
@@ -80,7 +80,7 @@ export function ClanProfile({
         case 'color_red': return 'text-[#b25d62] font-semibold';
         case 'color_cyan': return 'text-[#93c5fd] font-semibold';
         case 'color_pink': return 'text-[#c084fc] font-semibold';
-        case 'color_emerald': return 'text-[#a7f3d0] font-semibold';
+        case 'color_emerald': return 'text-[#7dd3fc] font-semibold';
         case 'color_purple': return 'text-[#c0a9df] font-semibold';
         case 'color_rgb': return 'text-gaming-gold font-extrabold';
         default: return 'text-white';
@@ -91,7 +91,7 @@ export function ClanProfile({
       case 'color_red': return 'text-[#b25d62] font-semibold drop-shadow-[0_0_8px_rgba(178,93,98,0.3)]';
       case 'color_cyan': return 'text-[#93c5fd] font-semibold drop-shadow-[0_0_8px_rgba(147,197,253,0.3)]';
       case 'color_pink': return 'text-[#c084fc] font-semibold drop-shadow-[0_0_8px_rgba(192,132,252,0.3)]';
-      case 'color_emerald': return 'text-[#a7f3d0] font-semibold drop-shadow-[0_0_8px_rgba(167,243,208,0.3)]';
+      case 'color_emerald': return 'text-[#7dd3fc] font-semibold drop-shadow-[0_0_8px_rgba(125,211,252,0.3)]';
       case 'color_purple': return 'text-[#c0a9df] font-semibold drop-shadow-[0_0_8px_rgba(192,169,223,0.3)]';
       case 'color_rgb': return 'bg-gradient-to-r from-[#e2e8f0] via-[#c5a059] to-[#93c5fd] bg-clip-text text-transparent font-extrabold drop-shadow-[0_0_3px_rgba(226,232,240,0.3)]';
       default: return 'text-white';
@@ -141,7 +141,7 @@ export function ClanProfile({
           </div>
         )}
         {myMember?.bannerEffect === 'effect_matrix' && (
-          <div className="absolute inset-0 bg-black/40 overflow-hidden font-mono text-[7px] text-green-500/25 select-none whitespace-nowrap leading-none">
+          <div className="absolute inset-0 bg-black/40 overflow-hidden font-mono text-[7px] text-gaming-purple/40 select-none whitespace-nowrap leading-none">
             {Array.from({ length: 12 }).map((_, i) => (
               <div key={i} className="absolute animate-pulse" style={{ left: `${i * 9}%`, top: `${(i % 3) * 20}%`, animationDelay: `${i * 200}ms` }}>
                 101001100101
@@ -247,9 +247,9 @@ export function ClanProfile({
                 <div className="bg-white/5 border border-white/10 rounded-xl p-3 flex flex-col gap-1 hover:bg-white/10 transition-all group overflow-hidden relative">
                    <div className="relative z-10 flex flex-col">
                       <span className="text-[7px] uppercase font-black text-white/30 tracking-widest">Status</span>
-                      <span className="text-[10px] font-black uppercase text-green-500 italic tracking-tighter">Ativo</span>
+                      <span className="text-[10px] font-black uppercase text-gaming-gold italic tracking-tighter">Ativo</span>
                    </div>
-                   <Circle size={24} className="absolute -right-2 -bottom-2 text-green-500/10 fill-current group-hover:scale-110 transition-transform" />
+                   <Circle size={24} className="absolute -right-2 -bottom-2 text-gaming-gold/10 fill-current group-hover:scale-110 transition-transform" />
                 </div>
 
                 <div className="col-span-2 bg-linear-to-r from-gaming-gold/10 to-transparent border border-gaming-gold/20 rounded-xl p-3 flex items-center justify-between group overflow-hidden relative shadow-lg">

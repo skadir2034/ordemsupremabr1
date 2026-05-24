@@ -116,7 +116,7 @@ export function MissoesView() {
               whileHover={!isLocked && !isCompleted ? { scale: 1.01, backgroundColor: 'rgba(255, 255, 255, 0.05)' } : {}}
               className={`relative overflow-hidden rounded-2xl border p-4 sm:p-5 flex flex-col gap-3 transition-all ${
                 isCompleted 
-                  ? 'bg-green-500/5 border-green-500/20 grayscale-[0.5]' 
+                  ? 'bg-gaming-purple/5 border-gaming-purple/20 grayscale-[0.3]' 
                   : isLocked 
                     ? 'bg-white/5 border-white/5 opacity-50' 
                     : 'bg-gaming-card/40 border-gaming-border'
@@ -124,7 +124,7 @@ export function MissoesView() {
             >
               {isCompleted && (
                 <div className="absolute top-3 right-3 sm:top-4 sm:right-4">
-                  <CheckCircle2 className="text-green-500" size={18} />
+                  <CheckCircle2 className="text-gaming-purple" size={18} />
                 </div>
               )}
               {isLocked && (
@@ -135,12 +135,12 @@ export function MissoesView() {
 
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                  isCompleted ? 'bg-green-500/20 text-green-500' : 'bg-gaming-gold/10 text-gaming-gold'
+                  isCompleted ? 'bg-gaming-purple/20 text-gaming-purple' : 'bg-gaming-gold/10 text-gaming-gold'
                 }`}>
                   <mission.icon className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <h4 className={`font-display font-black uppercase text-sm sm:text-base truncate ${isCompleted ? 'text-green-500/70' : 'text-white'}`}>
+                  <h4 className={`font-display font-black uppercase text-sm sm:text-base truncate ${isCompleted ? 'text-white/40' : 'text-white'}`}>
                     {mission.title}
                   </h4>
                   <p className="text-[9px] sm:text-[10px] text-white/40 font-bold uppercase tracking-wider leading-snug">{mission.description}</p>
@@ -154,7 +154,7 @@ export function MissoesView() {
                 </div>
                 
                 {isCompleted ? (
-                   <span className="text-[9px] font-black uppercase text-green-500 tracking-widest">Concluída</span>
+                   <span className="text-[9px] font-black uppercase text-gaming-gold tracking-widest">Concluída</span>
                 ) : isLocked ? (
                    <span className="text-[9px] font-black uppercase text-white/20 tracking-widest">Bloqueada</span>
                 ) : (
