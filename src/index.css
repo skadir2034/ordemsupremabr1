@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-  --color-gaming-bg: #04140e;
-  --color-gaming-card: #091e15;
-  --color-gaming-border: rgba(52, 211, 153, 0.15);
+  --color-gaming-bg: #0c031c;
+  --color-gaming-card: #18092f;
+  --color-gaming-border: rgba(168, 85, 247, 0.25);
   --color-gaming-gold: #fbbf24;
-  --color-gaming-purple: #3b82f6;
-  --color-gaming-accent: #10b981;
+  --color-gaming-purple: #a855f7;
+  --color-gaming-accent: #fbbf24;
   
   --font-sans: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Outfit", "Oswald", "Plus Jakarta Sans", sans-serif;
   
-  --shadow-gaming: 0 0 16px rgba(52, 211, 153, 0.08);
-  --shadow-gaming-lg: 0 0 32px rgba(59, 130, 246, 0.12);
+  --shadow-gaming: 0 0 16px rgba(168, 85, 247, 0.12);
+  --shadow-gaming-lg: 0 0 32px rgba(251, 191, 36, 0.15);
 }
 
 @layer base {
@@ -39,7 +39,7 @@
   }
 
   .eco-mode .gaming-gradient {
-    background: #04140e !important;
+    background: #0c031c !important;
   }
 
   /* Replace heavy blurs with solid styling to avoid mobile GPU lag */
@@ -56,11 +56,11 @@
   .eco-mode .backdrop-blur-3xl {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    background-color: #091e15 !important;
+    background-color: #18092f !important;
   }
 
   .eco-mode .border-white\/10 {
-    border-color: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(168, 85, 247, 0.1) !important;
   }
 
   .no-scrollbar::-webkit-scrollbar {
@@ -91,39 +91,39 @@
 }
 
 [data-theme='neon'] {
-  --color-gaming-bg: #03120a;
-  --color-gaming-card: #081b0f;
-  --color-gaming-border: rgba(16, 185, 129, 0.2);
-  --color-gaming-gold: #facc15;
-  --color-gaming-purple: #0ea5e9;
-  --color-gaming-accent: #10b981;
+  --color-gaming-bg: #0e0626;
+  --color-gaming-card: #1f0e4d;
+  --color-gaming-border: rgba(236, 72, 153, 0.3);
+  --color-gaming-gold: #f472b6;
+  --color-gaming-purple: #d946ef;
+  --color-gaming-accent: #c084fc;
 }
 
 [data-theme='dark'] {
-  --color-gaming-bg: #04140e;
-  --color-gaming-card: #091e15;
-  --color-gaming-border: rgba(52, 211, 153, 0.15);
+  --color-gaming-bg: #0c031c;
+  --color-gaming-card: #18092f;
+  --color-gaming-border: rgba(168, 85, 247, 0.25);
   --color-gaming-gold: #fbbf24;
-  --color-gaming-purple: #3b82f6;
-  --color-gaming-accent: #10b981;
+  --color-gaming-purple: #a855f7;
+  --color-gaming-accent: #fbbf24;
 }
 
 [data-theme='gold'] {
-  --color-gaming-bg: #0a0e05;
-  --color-gaming-card: #141b0b;
-  --color-gaming-border: rgba(234, 179, 8, 0.2);
-  --color-gaming-gold: #eab308;
-  --color-gaming-purple: #2563eb;
-  --color-gaming-accent: #eab308;
+  --color-gaming-bg: #0f0d05;
+  --color-gaming-card: #1b160a;
+  --color-gaming-border: rgba(251, 191, 36, 0.25);
+  --color-gaming-gold: #fbbf24;
+  --color-gaming-purple: #d97706;
+  --color-gaming-accent: #fbbf24;
 }
 
 [data-theme='classic'] {
-  --color-gaming-bg: #030f0c;
-  --color-gaming-card: #0a1f1a;
-  --color-gaming-border: rgba(255, 255, 255, 0.1);
-  --color-gaming-gold: #ffd700;
-  --color-gaming-purple: #60a5fa;
-  --color-gaming-accent: #ffd700;
+  --color-gaming-bg: #050a14;
+  --color-gaming-card: #0b1325;
+  --color-gaming-border: rgba(147, 197, 253, 0.25);
+  --color-gaming-gold: #93c5fd;
+  --color-gaming-purple: #3b82f6;
+  --color-gaming-accent: #cbd5e1;
 }
 
 @keyframes fall {

@@ -123,18 +123,23 @@ export default function App() {
               />
             </div>
 
-            <div className={isMobile ? 'flex flex-col gap-4' : 'grid grid-cols-12 gap-6'}>
-              {/* Stats Section */}
-              <div className={isMobile ? 'grid grid-cols-1 gap-4' : 'col-span-12 lg:col-span-6 grid grid-cols-1 lg:grid-cols-2 gap-6'}>
-                <BaseStats isMobile={isMobile} />
-                <DetailedStats isMobile={isMobile} />
-              </div>
-
-              {/* Member List Section */}
-              <div id="member-list-section" className={isMobile ? 'w-full pb-8' : 'col-span-12 lg:col-span-6'}>
-                <MemberList isMobile={isMobile} />
-              </div>
+            {/* Stats Section in Full-Width for optimized layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-8">
+              <BaseStats isMobile={isMobile} />
+              <DetailedStats isMobile={isMobile} />
             </div>
+          </motion.div>
+        );
+      case 'ranking':
+        return (
+          <motion.div
+            key="ranking-view"
+            initial={!isEcoMode ? { opacity: 0, y: 15 } : { opacity: 1 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={!isEcoMode ? { opacity: 0, y: 15 } : { opacity: 1 }}
+            className="flex-1 flex flex-col gap-6"
+          >
+            <MemberList isMobile={isMobile} />
           </motion.div>
         );
       case 'combate':
