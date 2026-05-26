@@ -48,7 +48,7 @@ export const joinClan = async (userId: string, userName: string, userEmail: stri
     completedMissions: [],
     visitedMissionsBoard: false,
     premiumPass: false,
-    appTheme: 'dark',
+    appTheme: 'neon',
     chatTheme: 'dark',
     profileBg: 'https://cdnb.artstation.com/p/assets/images/images/017/680/475/small/andrej-otepka-square-04-tmp04web.jpg?1556922748',
     lastCelebratedLevel: 0,
