@@ -43,11 +43,11 @@
   }
 
   /* Replace heavy blurs with solid styling to avoid mobile GPU lag */
-  .eco-mode .bg-gaming-card/30,
-  .eco-mode .bg-gaming-card/40,
-  .eco-mode .bg-gaming-card/60,
-  .eco-mode .bg-gaming-card/80,
-  .eco-mode .bg-white/5,
+  .eco-mode .bg-gaming-card\/30,
+  .eco-mode .bg-gaming-card\/40,
+  .eco-mode .bg-gaming-card\/60,
+  .eco-mode .bg-gaming-card\/80,
+  .eco-mode .bg-white\/5,
   .eco-mode .backdrop-blur-sm,
   .eco-mode .backdrop-blur-md,
   .eco-mode .backdrop-blur-lg,

@@ -16,6 +16,7 @@ import { LevelUpModal } from './components/LevelUpModal';
 import { db } from './lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { BrazilianConfetti, ChampionsTicker, ChampionsNoticeCard } from './components/BrazilianCelebration';
+import { GloriaParticlesBg } from './components/GloriaParticlesBg';
 
 import { 
   CombateView, 
@@ -109,13 +110,13 @@ export default function App() {
             initial={!isEcoMode ? { opacity: 0, scale: 0.98 } : { opacity: 1 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={!isEcoMode ? { opacity: 0, scale: 0.98 } : { opacity: 1 }}
-            className={`flex flex-col gap-4 md:gap-6 flex-1`}
+            className="flex flex-col gap-4 md:gap-6 flex-1 relative overflow-hidden"
           >
             {/* Champions Celebration Notice Banner */}
             <ChampionsNoticeCard />
 
             {/* Top Section - Clan Info (Always visible on Inicio) */}
-            <div className={isMobile ? 'w-full' : 'col-span-12'}>
+            <div className={isMobile ? 'w-full z-10' : 'col-span-12 z-10'}>
               <ClanProfile 
                 isMobile={isMobile} 
                 activeTab={activeTab} 
@@ -124,7 +125,7 @@ export default function App() {
             </div>
 
             {/* Stats Section in Full-Width for optimized layout */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-8 z-10">
               <BaseStats isMobile={isMobile} />
               <DetailedStats isMobile={isMobile} />
             </div>
@@ -421,14 +422,15 @@ export default function App() {
 
   return (
     <div 
-      data-theme={myMember?.appTheme || 'dark'}
+      data-theme={myMember?.appTheme || 'neon'}
       style={{ '--ui-opacity': (myMember?.opacityLevel || 80) / 100 } as React.CSSProperties}
       className={`flex min-h-screen bg-gaming-bg text-white selection:bg-gaming-gold/30 overflow-x-hidden font-sans ${isMobile ? 'flex-col' : 'flex-row'} ${isEcoMode ? 'eco-mode' : ''}`}
     >
       <BrazilianConfetti />
       <Sidebar isMobile={isMobile} activeTab={activeTab} setActiveTab={setActiveTab} />
       
-      <main className={`flex-1 flex flex-col gaming-gradient min-h-screen transition-all duration-500 ${!isMobile ? 'ml-16' : 'pb-20'}`}>
+      <main className={`flex-1 flex flex-col gaming-gradient min-h-screen transition-all duration-500 relative overflow-hidden ${!isMobile ? 'ml-16' : 'pb-20'}`}>
+        {activeTab === 'inicio' && <GloriaParticlesBg />}
         <ChampionsTicker />
         <Header isMobile={isMobile} />
         <InitialNotice onExplore={() => setActiveTab('guia')} />
