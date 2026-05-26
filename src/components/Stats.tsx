@@ -27,8 +27,8 @@ export function BaseStats({ isMobile = false }: { isMobile?: boolean }) {
                 <stat.icon size={isMobile ? 18 : 20} />
               </div>
               <div className="flex flex-col gap-0.5 truncate w-full">
-                <span className={`${isMobile ? 'text-lg' : 'text-xl'} font-display font-black leading-none tracking-tight truncate`}>{stat.value}</span>
-                <span className="text-[7px] md:text-[9px] text-white/40 font-bold tracking-widest uppercase truncate">{stat.label}</span>
+                <span className="text-sm md:text-base font-bold text-zinc-100 leading-none tracking-tight truncate">{stat.value}</span>
+                <span className="text-[7.5px] md:text-[8.5px] text-zinc-400 font-bold tracking-wider uppercase truncate">{stat.label}</span>
               </div>
             </div>
             {stat.progress && !isMobile && (
@@ -51,39 +51,39 @@ export function DetailedStats({ isMobile = false }: { isMobile?: boolean }) {
   return (
     <div className="flex flex-col gap-4 md:gap-6">
       <div className={`grid grid-cols-2 gap-3`}>
-        <div className="flex flex-col gap-2">
-           <h3 className="text-[10px] uppercase font-bold text-white/30 tracking-[0.3em] mb-1">Vitórias</h3>
-           <div className={`bg-gradient-to-br from-gaming-purple/[0.08] to-transparent border border-gaming-purple/20 p-3 md:p-5 rounded-xl flex gap-3 md:gap-5 items-center group hover:border-gaming-purple/40 transition-colors ${isEcoMode ? '' : 'backdrop-blur-sm'}`}>
-              <span className="text-2xl md:text-4xl font-display font-black text-gaming-purple shrink-0 drop-shadow-[0_0_10px_rgba(168,85,247,0.3)]">0</span>
+        <div className="flex flex-col gap-1.5">
+           <h3 className="text-[10px] uppercase font-bold text-zinc-400 tracking-[0.2em] mb-0.5">Vitórias</h3>
+           <div className={`bg-purple-950/20 border border-purple-500/10 p-3 rounded-xl flex gap-3 items-center group hover:border-purple-500/20 transition-colors ${isEcoMode ? '' : 'backdrop-blur-sm'}`}>
+              <span className="text-xl font-bold text-gaming-purple shrink-0">0</span>
               <div className="flex flex-col">
-                <span className="text-[8px] md:text-[10px] uppercase text-white/60 font-black tracking-widest leading-tight">Guerra</span>
+                <span className="text-[8px] md:text-[9.5px] uppercase text-zinc-400 font-bold tracking-wider leading-tight">Guerra</span>
               </div>
            </div>
         </div>
-        <div className="flex flex-col gap-2">
-           <h3 className="text-[10px] uppercase font-bold text-white/30 tracking-[0.3em] mb-1">Derrotas</h3>
-           <div className={`bg-gradient-to-br from-gaming-gold/[0.08] to-transparent border border-gaming-gold/20 p-3 md:p-5 rounded-xl flex gap-3 md:gap-5 items-center group hover:border-gaming-gold/40 transition-colors ${isEcoMode ? '' : 'backdrop-blur-sm'}`}>
-              <span className="text-2xl md:text-4xl font-display font-black text-gaming-gold shrink-0 drop-shadow-[0_0_10px_rgba(251,191,36,0.3)]">0</span>
+        <div className="flex flex-col gap-1.5">
+           <h3 className="text-[10px] uppercase font-bold text-zinc-400 tracking-[0.2em] mb-0.5">Derrotas</h3>
+           <div className={`bg-amber-950/20 border border-amber-500/10 p-3 rounded-xl flex gap-3 items-center group hover:border-amber-500/20 transition-colors ${isEcoMode ? '' : 'backdrop-blur-sm'}`}>
+              <span className="text-xl font-bold text-gaming-gold shrink-0">0</span>
               <div className="flex flex-col">
-                <span className="text-[8px] md:text-[10px] uppercase text-white/60 font-black tracking-widest leading-tight">Guerra</span>
+                <span className="text-[8px] md:text-[9.5px] uppercase text-zinc-400 font-bold tracking-wider leading-tight">Guerra</span>
               </div>
            </div>
         </div>
       </div>
 
       <div className="flex flex-col gap-3">
-        <h3 className="text-[10px] uppercase font-bold text-white/30 tracking-[0.3em] mb-1">Recursos do Clã</h3>
-        <div className={`grid gap-3 ${isMobile ? 'grid-cols-2 md:grid-cols-3' : 'grid-cols-1'}`}>
+        <h3 className="text-[10px] uppercase font-bold text-zinc-400 tracking-[0.2em] mb-0.5">Recursos do Clã</h3>
+        <div className={`grid gap-2 ${isMobile ? 'grid-cols-2' : 'grid-cols-1 md:grid-cols-3'}`}>
             {[
               { label: 'Doações', val: totalDonations.toLocaleString(), color: 'text-gaming-gold', hint: 'Este ciclo' },
-              { label: 'Troféus Clã', val: '0', color: 'text-white', hint: 'Zerar' },
+              { label: 'Troféus Clã', val: '0', color: 'text-zinc-100', hint: 'Zerar' },
               { label: 'Próx Nv', val: '0', color: 'text-gaming-purple', hint: 'XP Pendente' }
             ].map((item) => (
-              <div key={item.label} className={`bg-gaming-card border border-gaming-border p-3 md:p-4 rounded-xl flex flex-col gap-1 hover:border-white/20 transition-all shadow-lg ${isEcoMode ? '' : 'backdrop-blur-sm'}`}>
-                  <span className={`text-base md:text-2xl font-display font-black ${item.color} leading-none tracking-tight`}>{item.val}</span>
+              <div key={item.label} className={`bg-zinc-950/40 border border-white/5 p-3 rounded-xl flex flex-col gap-0.5 hover:border-white/15 transition-all shadow-md ${isEcoMode ? '' : 'backdrop-blur-sm'}`}>
+                  <span className={`text-sm md:text-base font-bold ${item.color} leading-none tracking-tight`}>{item.val}</span>
                   <div className="flex flex-col truncate">
-                    <span className="text-[7px] md:text-[9px] uppercase text-white/40 font-bold tracking-widest truncate">{item.label}</span>
-                    <span className="text-[6px] md:text-[8px] text-white/10 font-bold tracking-wider uppercase truncate">{item.hint}</span>
+                    <span className="text-[7.5px] md:text-[8.5px] uppercase text-zinc-400 font-semibold tracking-wider truncate">{item.label}</span>
+                    <span className="text-[6.5px] text-zinc-500/80 font-bold tracking-wider uppercase truncate">{item.hint}</span>
                   </div>
               </div>
             ))}

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { Trophy, Crown, Sparkles, Star, Flame, PartyPopper, ShieldCheck, Clock } from 'lucide-react';
+import { Trophy, Crown, Sparkles, Star, Flame, PartyPopper, ShieldCheck, Clock, X } from 'lucide-react';
 import { useClan } from '../context/ClanContext';
 
 // 1. CONFETTI & SPARKS CELL - LIGHTWEIGHT, ANIMATED & GPU-OPTIMIZED
@@ -83,34 +83,54 @@ export function BrazilianConfetti() {
 // 2. RUNNING CHAMPIONS TICKER (TOP BAR MARQUEE)
 export function ChampionsTicker() {
   const { isEcoMode } = useClan();
+  const [dismissed, setDismissed] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    const isDismissed = localStorage.getItem('ticker_dismissed_v2') === 'true';
+    setDismissed(isDismissed);
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted || dismissed) return null;
   
   return (
     <div 
-      className="w-full bg-gradient-to-r from-purple-950/90 via-[#18092f]/95 to-purple-950/90 border-b border-gaming-gold/25 py-1.5 overflow-hidden flex items-center justify-center select-none" 
+      className="w-full bg-gradient-to-r from-purple-950/90 via-[#18092f]/95 to-purple-950/90 border-b border-gaming-gold/25 py-1 flex items-center justify-between px-4 select-none relative" 
       id="royal-glory-ticker"
     >
-      <div className="flex whitespace-nowrap min-w-full items-center gap-16 relative">
-        <div className={`flex items-center gap-16 ${isEcoMode ? '' : 'animate-[marquee_25s_linear_infinite]'}`}>
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-8 font-sans">
-              <span className="text-[10px] font-black uppercase tracking-[0.25em] text-gaming-gold flex items-center gap-2">
-                <Trophy size={11} className="text-gaming-gold animate-bounce" /> 
-                TEMPORADA 1 INICIADA • GLÓRIA ABSOLUTA 
-              </span>
-              <span className="text-[9px] px-2 py-0.5 bg-gaming-gold/10 text-gaming-gold rounded border border-gaming-gold/20 font-black uppercase tracking-wider block">
-                ⭐ CAMPEÕES SVS SEMIFINAL: 176 (9) x (4) BLOODPACT ⭐
-              </span>
-              <span className="text-[10px] font-black uppercase tracking-[0.25em] text-purple-300 flex items-center gap-2">
-                <Crown size={11} className="text-gaming-gold animate-pulse" /> 
-                RUMO À GRANDE FINAL: SERVIDOR 176 vs SERVIDOR 175
-              </span>
-              <span className="text-white/80 font-black leading-none py-0.5 text-[9px] uppercase tracking-widest flex items-center gap-1.5 font-mono">
-                🟣 TEMPORADA DA GLÓRIA AMARANTE 🟣
-              </span>
-            </div>
-          ))}
+      <div className="flex-1 overflow-hidden">
+        <div className="flex whitespace-nowrap min-w-full items-center gap-16 relative">
+          <div className={`flex items-center gap-16 ${isEcoMode ? '' : 'animate-[marquee_25s_linear_infinite]'}`}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-8 font-sans">
+                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-gaming-gold flex items-center gap-2">
+                  <Trophy size={11} className="text-gaming-gold animate-bounce" /> 
+                  TEMPORADA 1 INICIADA • GLÓRIA ABSOLUTA 
+                </span>
+                <span className="text-[9px] px-2 py-0.5 bg-gaming-gold/10 text-gaming-gold rounded border border-gaming-gold/20 font-black uppercase tracking-wider block">
+                  ⭐ CAMPEÕES SVS SEMIFINAL: 176 (9) x (4) BLOODPACT ⭐
+                </span>
+                <span className="text-[10px] font-black uppercase tracking-[0.25em] text-purple-300 flex items-center gap-2">
+                  <Crown size={11} className="text-gaming-gold animate-pulse" /> 
+                  RUMO À GRANDE FINAL: SERVIDOR 176 vs SERVIDOR 175
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
+
+      <button 
+        onClick={() => {
+          localStorage.setItem('ticker_dismissed_v2', 'true');
+          setDismissed(true);
+        }}
+        className="ml-3 shrink-0 p-1 rounded-full bg-black/40 text-gaming-gold hover:text-white transition-colors border border-gaming-gold/25 flex items-center justify-center cursor-pointer hover:bg-black/80 w-5 h-5"
+        title="Ocultar barra"
+      >
+        <X size={10} className="font-extrabold" />
+      </button>
     </div>
   );
 }
@@ -129,78 +149,91 @@ if (typeof document !== 'undefined') {
 
 // 3. ROYAL CHAMPIONS CELEBRATION BANNER CARD (GLÓRIA & NEW SVS FINAL)
 export function ChampionsNoticeCard() {
+  const [dismissed, setDismissed] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    const isDismissed = localStorage.getItem('notice_card_dismissed_v2') === 'true';
+    setDismissed(isDismissed);
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted || dismissed) return null;
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: -15 }}
+      initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
-      className="relative overflow-hidden rounded-3xl border border-gaming-gold/45 bg-gradient-to-br from-purple-950/50 via-[#160a2c]/95 to-zinc-950 p-5 md:p-8 flex flex-col md:flex-row gap-6 md:gap-8 items-center shadow-[0_0_50px_rgba(168,85,247,0.25)] group"
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className="relative overflow-hidden rounded-2xl border border-white/10 bg-zinc-950/80 p-4 md:p-6 flex flex-col md:flex-row gap-5 md:gap-6 items-center shadow-md group"
       id="royal-champions-glory-card"
     >
-      {/* Soft Purple and Gold Radiant Background Glow */}
-      <div className="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_top_right,var(--color-gaming-gold)_0%,var(--color-gaming-purple)_50%,transparent_100%)] blur-2xl pointer-events-none" />
-      <div className="absolute -left-16 -top-16 w-32 h-32 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+      <button
+        onClick={() => {
+          localStorage.setItem('notice_card_dismissed_v2', 'true');
+          setDismissed(true);
+        }}
+        className="absolute top-3 right-3 z-10 p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/40 hover:text-white border border-white/5 transition-colors cursor-pointer"
+        title="Fechar"
+      >
+        <X size={12} />
+      </button>
+
+      {/* Soft Purple glow */}
+      <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_top_right,var(--color-gaming-gold)_0%,var(--color-gaming-purple)_50%,transparent_100%)] blur-xl pointer-events-none" />
       
-      {/* Decorative Golden Stars Pattern */}
-      <div className="absolute right-4 top-4 flex gap-1 text-gaming-gold/30 group-hover:text-gaming-gold/60 transition-colors pointer-events-none">
-        <Star size={12} className="animate-pulse" />
-        <Star size={16} className="animate-bounce" style={{ animationDelay: '200ms' }} />
-        <Star size={12} className="animate-pulse" style={{ animationDelay: '400ms' }} />
+      {/* Small Decorative Golden Stars */}
+      <div className="absolute right-12 top-3 flex gap-1 text-gaming-gold/20 pointer-events-none">
+        <Star size={10} className="animate-pulse" />
+        <Star size={12} className="animate-pulse" style={{ animationDelay: '200ms' }} />
       </div>
 
-      {/* Gold & Purple Imperial Shield Icon Section */}
+      {/* Elegant Trophy Area */}
       <div className="relative shrink-0 flex items-center justify-center">
-        <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/20 via-gaming-gold/20 to-purple-800/20 rounded-full blur-xl scale-125 animate-pulse" />
-        <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full bg-linear-to-b from-purple-900/50 to-slate-950/80 border-2 border-gaming-gold/40 flex items-center justify-center shadow-inner relative box-shadow-lg">
+        <div className="absolute inset-0 bg-purple-500/10 rounded-full blur-lg scale-110" />
+        <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-xl bg-zinc-900 border border-white/10 flex items-center justify-center">
           <motion.div
-            animate={{ rotate: [0, -3, 3, 0], scale: [1, 1.05, 1] }}
+            animate={{ rotate: [0, -2, 2, 0], scale: [1, 1.03, 1] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            className="text-gaming-gold flex flex-col items-center"
+            className="text-gaming-gold flex flex-col items-center gap-1"
           >
-            <Trophy size={54} className="drop-shadow-[0_0_20px_rgba(251,191,36,0.7)]" />
-            <div className="absolute bottom-1 bg-purple-700 px-2.5 py-0.5 rounded-full border border-gaming-gold text-[8px] font-black uppercase text-white flex items-center gap-0.5 tracking-wider shadow">
-              🏆 TEMPORADA 1
-            </div>
+            <Trophy size={32} className="text-gaming-gold" />
+            <span className="text-[7px] font-bold tracking-wider text-zinc-400">T1 • GLÓRIA</span>
           </motion.div>
         </div>
       </div>
 
-      {/* Text Message & Highlight Column */}
-      <div className="flex-1 flex flex-col gap-3 md:gap-3.5 text-center md:text-left min-w-0">
-        <div className="flex flex-col gap-1">
+      {/* Text column scaled down for supreme organization */}
+      <div className="flex-1 flex flex-col gap-2 text-center md:text-left min-w-0">
+        <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-center md:justify-start gap-1.5 flex-wrap">
-            <span className="px-2.5 py-0.5 bg-purple-500/15 text-purple-300 border border-purple-500/30 rounded-md text-[8.5px] font-black uppercase tracking-[0.25em] flex items-center gap-1 italic animate-pulse">
-              <PartyPopper size={10} className="text-gaming-gold animate-spin" /> TEMPORADA 1 INICIADA: GLÓRIA
+            <span className="px-2 py-0.5 bg-purple-500/10 text-purple-300 border border-purple-500/20 rounded text-[8px] font-bold uppercase tracking-wider">
+              🎮 T1 Iniciada
             </span>
-            <span className="px-2 py-0.5 bg-gaming-gold/10 text-gaming-gold border border-gaming-gold/20 rounded-md text-[8.5px] font-black uppercase tracking-[0.2em]">
-              SEMIFINAL: VENCEMOS POR 9x4
-            </span>
-            <span className="px-2 py-0.5 bg-red-500/10 text-red-300 border border-red-500/20 rounded-md text-[8.5px] font-black uppercase tracking-[0.2em] font-mono animate-bounce">
-              BLOODPACT DETONADA ⚔️
+            <span className="px-2 py-0.5 bg-gaming-gold/10 text-gaming-gold border border-gaming-gold/25 rounded text-[8px] font-bold uppercase tracking-wider">
+              Semifinal: 176 [9 x 4] Bloodpact
             </span>
           </div>
-          <h2 className="text-xl md:text-3xl font-display font-black uppercase italic tracking-tight text-white leading-tight mt-1.5">
-            SOMOS <span className="text-transparent bg-clip-text bg-gradient-to-r from-gaming-gold via-purple-300 to-amber-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.3)]">OS GRANDES CAMPEÕES OFICIAIS DA PRIMEIRA ETAPA!</span>
+          <h2 className="text-sm md:text-base font-display font-black uppercase text-white tracking-wide leading-tight">
+            Somos os Campeões da Primeira Etapa!
           </h2>
         </div>
 
-        <p className="text-zinc-200 text-[11px] md:text-xs font-semibold uppercase tracking-[0.05em] leading-relaxed max-w-2xl">
-          Nossa Aliança Suprema venceu bravamente a equipe da <span className="text-red-400 font-bold decoration-wavy underline">Bloodpact</span> pelo placar oficial de <strong className="text-gaming-gold">9x4</strong> na semifinal! 
-          Agora, estamos oficialmente classificados e indo rumo à grande final do confronto servidor X servidor (Nosso Servidor 176 vs Servidor 175)! 
-          A grande final começa em 6 dias e 10 horas. Preparem-se guerreiros, a glória eterna está por vir! 🛡️🟣✨
+        <p className="text-zinc-400 text-[10.5px] leading-relaxed max-w-2xl font-medium normalcy-case">
+          Nossa Aliança Suprema venceu a Bloodpact na semifinal e garantiu a classificação para a grande final do confronto Servidor x Servidor contra o Servidor 175! O embate decisivo inicia em 6 dias. Preparem as armas!
         </p>
 
-        {/* Mini stats highlight under Brazil event */}
-        <div className="flex space-x-4 items-center self-center md:self-start mt-1 bg-black/40 border border-white/5 py-1 px-3 rounded-full w-fit">
-          <div className="flex items-center gap-1.5">
-            <ShieldCheck size={14} className="text-purple-400 shrink-0" />
-            <span className="text-[10px] font-black text-purple-300 uppercase tracking-wider font-mono">Status: Classificado Final SVS</span>
-          </div>
-          <div className="w-1.5 h-1.5 rounded-full bg-zinc-650" />
-          <div className="flex items-center gap-1.5">
-            <Flame size={12} className="text-gaming-gold shrink-0 animate-pulse" />
-            <span className="text-[10px] font-black text-gaming-gold uppercase tracking-wider font-mono">Temporada 1 de Glória</span>
-          </div>
+        {/* Status badges */}
+        <div className="flex items-center gap-3 justify-center md:justify-start mt-0.5 text-zinc-500 text-[9.5px] font-semibold">
+          <span className="flex items-center gap-1">
+            <ShieldCheck size={11} className="text-emerald-500 shrink-0" />
+            Classificado: Final SVS
+          </span>
+          <span className="w-1 h-1 rounded-full bg-zinc-700 font-bold" />
+          <span className="flex items-center gap-1">
+            <Flame size={11} className="text-amber-500 shrink-0 animate-pulse" />
+            Dicas disponíveis em "Guia SVS"
+          </span>
         </div>
       </div>
     </motion.div>

@@ -1012,13 +1012,13 @@ export function PerfilView() {
                 </div>
 
                 {/* Nickname, Titles, and Status details */}
-                <div className="flex flex-col items-center md:items-start text-center md:text-left gap-1 md:pb-2">
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
-                    <h2 className={`text-2xl sm:text-3xl md:text-4xl font-display font-black tracking-tight uppercase leading-none filter drop-shadow [text-shadow:_0_2px_10px_rgba(0,0,0,0.5)] ${getNicknameColorClass(myMember?.nicknameColor)}`}>
+                <div className="flex flex-col items-center md:items-start text-center md:text-left gap-1 md:pb-1 text-zinc-100">
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                    <h2 className={`text-lg sm:text-xl md:text-2xl font-sans font-bold tracking-tight uppercase leading-none ${getNicknameColorClass(myMember?.nicknameColor)}`}>
                       {myMember?.name || 'Recruta'}
                     </h2>
                     {myMember?.title && myMember?.showTitle !== false && (
-                      <span className="px-2.5 py-0.5 bg-gaming-gold/10 text-gaming-gold border border-gaming-gold/20 rounded-md text-[8px] font-black uppercase tracking-widest h-fit">
+                      <span className="px-2 py-0.5 bg-gaming-gold/10 text-gaming-gold border border-gaming-gold/15 rounded text-[7.5px] font-bold uppercase tracking-wider h-fit">
                         🏅 {myMember.title}
                       </span>
                     )}

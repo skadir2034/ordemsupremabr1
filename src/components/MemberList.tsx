@@ -298,46 +298,46 @@ export function MemberList({ isMobile = false }: { isMobile?: boolean }) {
   return (
     <div className="flex flex-col h-full min-w-0">
       {/* Visual Header */}
-      <div className="flex flex-col gap-1.5 align-left mb-6 text-left">
-        <h2 className="text-2xl md:text-3xl font-display font-black uppercase text-white tracking-widest leading-none">
-          MURAL DOS <span className="text-gaming-gold">SUPREMOS</span>
+      <div className="flex flex-col gap-1 mb-5 text-left">
+        <h2 className="text-sm sm:text-base font-bold uppercase text-white tracking-wider leading-none">
+          Mural dos <span className="text-gaming-gold">Supremos</span>
         </h2>
-        <span className="text-[8px] sm:text-[9.5px] font-mono font-black text-white/30 uppercase tracking-[0.25em]">
+        <span className="text-[7.5px] sm:text-[8.5px] font-mono font-medium text-zinc-500 uppercase tracking-widest">
           Classificação oficial de status, conquistas e poder de combate em tempo real
         </span>
       </div>
 
       {/* Competitive Selector Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-white/5 pb-2">
-        <div className="flex items-center gap-4 sm:gap-6 overflow-x-auto no-scrollbar">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 border-b border-white/5 pb-1.5">
+        <div className="flex items-center gap-3 sm:gap-5 overflow-x-auto no-scrollbar">
           <button 
             onClick={() => setActiveSubTab('membros')}
-            className={`text-[9.5px] uppercase font-black tracking-[0.2em] relative py-2 shrink-0 transition-colors ${activeSubTab === 'membros' ? 'text-gaming-gold' : 'text-white/40 hover:text-white/75'}`}
+            className={`text-[8px] sm:text-[9px] uppercase font-bold tracking-wider relative py-1.5 shrink-0 transition-colors ${activeSubTab === 'membros' ? 'text-gaming-gold' : 'text-zinc-450 hover:text-zinc-300'}`}
           >
             🏆 Geral (Elite)
-            {activeSubTab === 'membros' && <motion.div layoutId="memberTab" className="absolute -bottom-[9px] left-0 right-0 h-[2px] bg-gaming-gold shadow-[0_0_8px_rgba(251,191,36,0.5)]" />}
+            {activeSubTab === 'membros' && <motion.div layoutId="memberTab" className="absolute -bottom-[7px] left-0 right-0 h-[1.5px] bg-gaming-gold" />}
           </button>
           <button 
             onClick={() => setActiveSubTab('poder')}
-            className={`text-[9.5px] uppercase font-black tracking-[0.2em] relative py-2 shrink-0 transition-colors ${activeSubTab === 'poder' ? 'text-gaming-gold' : 'text-white/40 hover:text-white/75'}`}
+            className={`text-[8px] sm:text-[9px] uppercase font-bold tracking-wider relative py-1.5 shrink-0 transition-colors ${activeSubTab === 'poder' ? 'text-gaming-gold' : 'text-zinc-450 hover:text-zinc-300'}`}
           >
             ⚔️ Poder de Herói
-            {activeSubTab === 'poder' && <motion.div layoutId="memberTab" className="absolute -bottom-[9px] left-0 right-0 h-[2px] bg-gaming-gold shadow-[0_0_8px_rgba(251,191,36,0.5)]" />}
+            {activeSubTab === 'poder' && <motion.div layoutId="memberTab" className="absolute -bottom-[7px] left-0 right-0 h-[1.5px] bg-gaming-gold" />}
           </button>
           <button 
             onClick={() => setActiveSubTab('nivel')}
-            className={`text-[9.5px] uppercase font-black tracking-[0.2em] relative py-2 shrink-0 transition-colors ${activeSubTab === 'nivel' ? 'text-gaming-gold' : 'text-white/40 hover:text-white/75'}`}
+            className={`text-[8px] sm:text-[9px] uppercase font-bold tracking-wider relative py-1.5 shrink-0 transition-colors ${activeSubTab === 'nivel' ? 'text-gaming-gold' : 'text-zinc-450 hover:text-zinc-300'}`}
           >
             ⚡ Nível & XP
-            {activeSubTab === 'nivel' && <motion.div layoutId="memberTab" className="absolute -bottom-[9px] left-0 right-0 h-[2px] bg-gaming-gold shadow-[0_0_8px_rgba(251,191,36,0.5)]" />}
+            {activeSubTab === 'nivel' && <motion.div layoutId="memberTab" className="absolute -bottom-[7px] left-0 right-0 h-[1.5px] bg-gaming-gold" />}
           </button>
         </div>
 
-        <div className="flex items-center gap-2 px-2.5 py-1 bg-white/[0.02] border border-white/5 rounded-lg text-[8px] sm:text-[9.5px] font-mono tracking-wider text-white/40">
+        <div className="flex items-center gap-2 px-2 py-1 bg-white/[0.01] border border-white/5 rounded-md text-[7.5px] sm:text-[8.5px] font-mono tracking-wider text-zinc-500">
           <span>{getCacheRemainingStr()}</span>
           <button 
             onClick={forceRefresh}
-            className="text-gaming-gold hover:text-white bg-gaming-gold/10 hover:bg-gaming-gold/20 border border-gaming-gold/20 transition-all cursor-pointer rounded px-2 py-0.5 ml-1 font-bold text-[8px] uppercase tracking-wider flex items-center gap-1 shrink-0"
+            className="text-gaming-gold hover:text-white bg-gaming-gold/5 hover:bg-gaming-gold/15 border border-gaming-gold/15 transition-all cursor-pointer rounded px-1.5 py-0.5 ml-1 font-bold text-[7.5px] uppercase tracking-wider flex items-center gap-1 shrink-0"
           >
             Sincronizar 🔄
           </button>

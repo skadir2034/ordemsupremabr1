@@ -32,12 +32,12 @@ export function MissoesView() {
         <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 animate-pulse mb-2">
           <Lock size={28} />
         </div>
-        <div className="flex flex-col gap-2">
-          <span className="text-red-500 font-black uppercase text-[10px] tracking-[0.3em] font-mono">Painel de Missões Fechado</span>
-          <h2 className="text-2xl sm:text-3xl font-display font-black uppercase italic tracking-tighter text-white">
-            MISSÕES DA <span className="text-red-500">ALIANÇA</span>
+        <div className="flex flex-col gap-1.5">
+          <span className="text-red-500 font-bold uppercase text-[8px] tracking-widest font-mono">Painel de Missões Fechado</span>
+          <h2 className="text-sm sm:text-base font-bold uppercase text-white tracking-wide">
+            Missões da <span className="text-red-500">Aliança</span>
           </h2>
-          <p className="text-zinc-400 text-xs sm:text-sm font-bold uppercase italic leading-relaxed max-w-md mt-1">
+          <p className="text-zinc-500 text-[10px] font-bold uppercase leading-relaxed max-w-md mt-1">
             Contas de convidado não têm autorização operacional para participar de missões da guilda ou acumular conquistas e recompensas permanentes!
           </p>
         </div>
@@ -97,12 +97,13 @@ export function MissoesView() {
   ];
 
   return (
-    <div className="flex flex-col gap-4 sm:gap-6 p-3 sm:p-5 md:p-8">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-xl sm:text-2xl md:text-3xl font-display font-black uppercase italic tracking-tighter">
+    <div className="flex flex-col gap-4 sm:gap-5 p-2 sm:p-4 md:p-6">
+      <div className="flex flex-col gap-1 border-b border-white/5 pb-4">
+        <span className="text-[7.5px] uppercase font-bold text-gaming-gold tracking-widest block">QUADRO DE MISSÕES</span>
+        <h2 className="text-sm sm:text-base font-bold uppercase text-white tracking-wide leading-none">
           Quadro de <span className="text-gaming-gold">Missões</span>
         </h2>
-        <p className="text-white/40 text-[9px] sm:text-[10px] uppercase font-bold tracking-[0.2em]">Cumpra seus deveres para ascender na hierarquia.</p>
+        <p className="text-zinc-500 text-[9px] uppercase font-medium tracking-wider mt-1">Cumpra seus deveres para ascender na hierarquia.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
